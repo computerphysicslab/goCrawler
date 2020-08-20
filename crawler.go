@@ -55,24 +55,25 @@ var regexLinkOk string = `(?i)^https*://.*(fulltext|article|covid|coronavirus|nC
 var engStopWords string = `a|and|be|have|i|in|of|that|t_h_e|to|with|from|is|on|up|for|should|even|why|by|during|we|could|but|about|as|or|this|at|not|all|other` +
 	`|if|can|how|may|who|an|no|our|what|use|get|will|has|their|was|than|which|these|also|been|when|through|were|under|there|those|out|after|such|any|before` +
 	`|here|only|some|its|where|into|like|would|against|between|most|so|over|because|now|while|since|however|non|without|among|both|another|still|just|way|very` +
-	`|good|around|every|each|his|her|then|much|less|few|same|within|per|whether|cannot`
+	`|good|around|every|each|his|her|then|much|less|few|same|within|per|whether|cannot|doesn|accross|ongoing|pre`
 
 var engLowRelevancyWords string = `|articles*|publications*|questions*|times|data|source|people|information|news*|search|content|home|sites*|best|well|pdf|files` +
 	`|uploads|programs*|support|help|default|files*|available|please|including|websites*|related|work|number|days*|using|two|ref|first|daily|public|cases*|high|possible` +
 	`|system|review|based|provide|results|additional|include|current|important|week|group|full|different|person|take|continue|national|needs*|millions*|requiremets*|working` +
 	`|you|your|more|says|read|make|made|see|does|due|she|one|said|being|had|need|them|many|used|must|do|they|it|he|are|twitter|facebook|date|time|pages*|topics*|example` +
-	`|things|real|wiki|early|year|currently|higher|specific|state|resources|social|study|guidance|local|leave`
+	`|things|real|wiki|early|year|currently|higher|specific|state|resources*|social|study|guidance|local|leave|online|centers*|email|blog|don|according|updates*d*|world` +
+	`|cookies|javascript|google|internet|webinar|color|challenges*`
 
 var regexStopwords string = `(?i)\W([0-9]+|.|..|` + engStopWords + engLowRelevancyWords +
 	`|https*|www|php|aspx|index|en|html` +
 	`|january|february|march|april|may|june|july|august|september|october|november|december` +
 	`|com|org|gov|uk|edu|net|us|co|gob|au|ca)\W`
 
-var regexRankingKeywords string = `(?i)\W(covid|health|patients|care|coronavirus|pandemic|disease|sars|cov|virus|community|emergency|services|medical|risk|clinical` +
-	`|response|testing|infection|test|children|workers|symptoms|tests|research|respiratory|fund|contact|vaccine|department|individuals|employees|members|access` +
-	`|organizations|patient|crisis|treatment|spread|healthcare|center|food|policy|states|family|government|hospital|positive|business|federal|safety|fda|development` +
-	`|act|economic|severe|service|impact|school|outbreak|control|cdc|staff|small|relief|order|studies|reported|communities|plan|assistance|face|across|sick|world` +
-	`|university|know|human|foundation|country|viral|evidence|employer|online|infected|long|part|transmission|critical|paid|countries|cells|benefits)\W`
+var regexRankingKeywords string = `(?i)\W(covid|coronavirus|pandemic|virus|emergency|sars|online|cov|center|testing|distancing|cdc|healthcare|vaccine|spread|outbreak` +
+	`|providers|centers|respiratory|email|funding|fda|organizations|nonprofit|nonprofits|eligible|impacted|according|vaccines|infected|masks|quarantine|businesses|health` +
+	`|don|infection|cares|viral|grants|provider|sba|updated|ppe|infectious|telehealth|reopening|virtual|federal|ultrasound|labor|symptoms|influenza|icu|employee|experiencing` +
+	`|impacts|employees|clinical|wuhan|challenges|prior|app|ppp|click|lockdown|trump|anti|medicare|hydroxychloroquine|paycheck|eligibility|hospitalized|prevention|closures` +
+	`|viruses|medicaid|med|infections|authorized|eua|asymptomatic|respirators|osha|statewide|ace2|coverings|transmission|epidemic)\W`
 
 var proxyHost string = "proxy1.sacyl.es:3128"
 var proxyUser string = "25163283H"
@@ -886,7 +887,7 @@ func doNextLink() bool {
 		corpusFreqsWithoutEnglish := make(freq) // specific corpus token frequencies w/o english baseline
 
 		var intercorpusScaleFactor float64
-		intercorpusContrast := 4.0
+		intercorpusContrast := 20.0
 		if g[0].Key == "the" {
 			intercorpusScaleFactor = float64(1+goCorpusFreqLib.Freq("the")) / float64(g[0].Value)
 		} else {
