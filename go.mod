@@ -8,6 +8,7 @@ require (
 	github.com/kljensen/snowball v0.6.0
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/spf13/viper v1.7.1
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7

@@ -25,6 +25,7 @@ import (
 	"github.com/jackdanger/collectlinks"
 	snowballeng "github.com/kljensen/snowball/english"
 	"github.com/patrickmn/go-cache"
+	"github.com/spf13/viper"
 	"jaytaylor.com/html2text"
 
 	"github.com/computerphysicslab/goPackages/goDebug"
@@ -38,74 +39,20 @@ import (
 /******************************************************************************/
 /******************************************************************************/
 
-// “2019-nCoV acute respiratory disease”
-// Corpus frequencies:  [{covid 20781} {health 12862} {patients 6615} {care 6443} {coronavirus 6060} {pandemic 4426} {disease 4185} {sars 4129} {cov 3924} {virus 3722} {community 3480} {emergency 3425} {services 3415} {medical 3385} {risk 3311} {clinical 3129} {response 3092} {testing 3080} {infection 2875} {test 2747} {children 2642} {workers 2585} {symptoms 2513} {tests 2156} {research 2151} {respiratory 2148} {fund 2143} {contact 2142} {vaccine 2125} {department 2038} {individuals 2031} {employees 2030} {members 1971} {access 1970} {organizations 1924} {patient 1915} {crisis 1862} {treatment 1847} {spread 1842} {healthcare 1822} {center 1816} {food 1805} {policy 1770} {states 1766} {family 1725} {government 1712} {hospital 1691} {positive 1680} {business 1677} {federal 1672} {safety 1655} {fda 1647} {development 1644} {act 1624} {economic 1592} {severe 1543} {service 1540} {impact 1529} {school 1522} {outbreak 1521} {control 1516} {cdc 1515} {staff 1514} {small 1514} {relief 1503} {order 1472} {studies 1471} {reported 1458} {communities 1458} {plan 1456} {assistance 1432} {face 1393} {across 1389} {sick 1377} {world 1376} {university 1376} {know 1371} {human 1371} {foundation 1368} {country 1340} {viral 1332} {evidence 1311} {employer 1306} {online 1302} {infected 1293} {long 1288} {part 1284} {transmission 1281} {critical 1266} {paid 1265} {countries 1263} {cells 1258} {benefits 1258}]
-// covid health patients care coronavirus pandemic disease sars cov virus community emergency services medical risk clinical response testing infection test children workers symptoms tests research respiratory fund contact vaccine department individuals employees members access organizations patient crisis treatment spread healthcare center food policy states family government hospital positive business federal safety fda development act economic severe service impact school outbreak control cdc staff small relief order studies reported communities plan assistance face across sick world university know human foundation country viral evidence employer online infected long part transmission critical paid countries cells benefits
-
-var regexBannedDomains string = `(?i)((facebook|twitter|reddit|instagram|google|youtube|urldefense|thesexyouwant)\.(com|org)|archive\.org|repubblica\.it|(^en)\.wikipedia\.org)`
-
-var regexLinkBannedTokens string = `(?i)(login|signup|pdf|\.(pdf|ps|xls|ods|csv|json|png|jpg|gif|zip|tar|gz|iso|rar|mp3|wav|avi|mpeg|mpg|mp4|mov|docx|exe|7z|ppt|doc))`
-
-var curatedDomains string = `en\.wikipedia\.org|cureus|cochrane|biomedcentral|nature\.com|doi\.org|sciencemag\.org|thelancet\.com|springer\.com|aappublications\.org` +
-	`|academic\.oup\.com|sciencedirect\.com|arxiv\.org|medrxiv\.org|cms\.gov|nih\.gov|who\.int|nejm\.org|wired\.com|mayoclinic\.org`
-
-var regexLinkOk string = `(?i)^https*://.*(fulltext|article|covid|coronavirus|nCoV|sars|pandemic|epidemiology|immunology|immunity|immunization|vaccine|hydroxychloroquine|lockdown|asymptomatic|serological` +
-	`|infection|respiratory|disease|` + curatedDomains + `)`
-
-var engStopWords string = `a|and|be|have|i|in|of|that|t_h_e|to|with|from|is|on|up|for|should|even|why|by|during|we|could|but|about|as|or|this|at|not|all|other` +
-	`|if|can|how|may|who|an|no|our|what|use|get|will|has|their|was|than|which|these|also|been|when|through|were|under|there|those|out|after|such|any|before` +
-	`|here|only|some|its|where|into|like|would|against|between|most|so|over|because|now|while|since|however|non|without|among|both|another|still|just|way|very` +
-	`|good|around|every|each|his|her|then|much|less|few|same|within|per|whether|cannot|doesn|accross|ongoing|pre`
-
-var engLowRelevancyWords string = `|articles*|publications*|questions*|times|data|source|people|information|news*|search|content|home|sites*|best|well|pdf|files` +
-	`|uploads|programs*|support|help|default|files*|available|please|including|websites*|related|work|number|days*|using|two|ref|first|daily|public|cases*|high|possible` +
-	`|system|review|based|provide|results|additional|include|current|important|week|group|full|different|person|take|continue|national|needs*|millions*|requiremets*|working` +
-	`|you|your|more|says|read|make|made|see|does|due|she|one|said|being|had|need|them|many|used|must|do|they|it|he|are|twitter|facebook|date|time|pages*|topics*|example` +
-	`|things|real|wiki|early|year|currently|higher|specific|state|resources*|social|study|guidance|local|leave|online|centers*|email|blog|don|according|updates*d*|world` +
-	`|cookies|javascript|google|internet|webinar|color|challenges*`
-
-var regexStopwords string = `(?i)\W([0-9]+|.|..|` + engStopWords + engLowRelevancyWords +
-	`|https*|www|php|aspx|index|en|html` +
-	`|january|february|march|april|may|june|july|august|september|october|november|december` +
-	`|com|org|gov|uk|edu|net|us|co|gob|au|ca)\W`
-
-var regexRankingKeywords string = `(?i)\W(covid|coronavirus|pandemic|virus|emergency|sars|online|cov|center|testing|distancing|cdc|healthcare|vaccine|spread|outbreak` +
-	`|providers|centers|respiratory|email|funding|fda|organizations|nonprofit|nonprofits|eligible|impacted|according|vaccines|infected|masks|quarantine|businesses|health` +
-	`|don|infection|cares|viral|grants|provider|sba|updated|ppe|infectious|telehealth|reopening|virtual|federal|ultrasound|labor|symptoms|influenza|icu|employee|experiencing` +
-	`|impacts|employees|clinical|wuhan|challenges|prior|app|ppp|click|lockdown|trump|anti|medicare|hydroxychloroquine|paycheck|eligibility|hospitalized|prevention|closures` +
-	`|viruses|medicaid|med|infections|authorized|eua|asymptomatic|respirators|osha|statewide|ace2|coverings|transmission|epidemic)\W`
-
-var proxyHost string = "proxy1.sacyl.es:3128"
-var proxyUser string = "25163283H"
-var proxyPass string = "H0sp1t20"
-var downloadTimeout = 8 * time.Second
-
-// Pages w/ great links
-var bootstrapingLinks = []string{
-	"https://asm.org/COVID/COVID-19-Research-Registry/Home",
-	"http://www.disaster-ology.com/home/2020/5/4/may-4th-coronavirus-emergency-management-curated-list",
-	"https://www.bbc.com/future/article/20200812-exponential-growth-bias-the-numerical-error-behind-covid-19",
-	"https://en.wikipedia.org/wiki/Coronavirus_disease_2019",
-	"https://www.fda.gov/emergency-preparedness-and-response/mcm-issues/coronavirus-disease-2019-covid-19",
-	"https://www.fda.gov/emergency-preparedness-and-response/counterterrorism-and-emerging-threats/coronavirus-disease-2019-covid-19",
-	"https://www.cdc.gov/coronavirus/2019-ncov/faq.html",
-	"https://www.id-hub.com/2020/04/22/top-10-articles-covid-19/",
-	"https://www.linksmedicus.com/news/coronavirus-disease-covid-19-updates/",
-	"https://www.fda.gov/medical-devices/emergency-situations-medical-devices/faqs-diagnostic-testing-sars-cov-2",
-	"https://springernature.github.io/covid19-publications/",
-	"https://iars.org/coronavirus-resources/",
-	"https://www.goethe-university-frankfurt.de/74958144?search=covid",
-	"https://www.who.int/emergencies/diseases/novel-coronavirus-2019/global-research-on-novel-coronavirus-2019-ncov",
-	"https://www.nytimes.com/2020/08/05/well/live/coronavirus-covid-symptoms.html",
-	"https://www.nytimes.com/interactive/2020/08/05/well/covid-19-symptoms.html",
-	"https://www.sciencemag.org/news/2020/08/russia-s-approval-covid-19-vaccine-less-meets-press-release",
-	"https://journals.asm.org/search/coronavirus%20jcode%3Aaem%7C%7Caac%7C%7Ccdli%7C%7Ccmr%7C%7Ceukcell%7C%7Ciai%7C%7Cjb%7C%7Cjcm%7C%7Cjvi%7C%7Cmbio%7C%7Cmmbr%7C%7Cga%7C%7Cmcb%7C%7Cmsph%7C%7Cmsys%20limit_from%3A2019-01-01%20limit_to%3A2020-01-23%20numresults%3A10%20sort%3Arelevance-rank%20format_result%3Astandard?_ga=2.34252577.1885462816.1583650093-393486013.1583650093",
-	"https://github.com/soroushchehresa/awesome-coronavirus#articles-and-books",
-	"https://github.com/gerryguy311/CyberProfDevelopmentCovidResources",
-	"https://github.com/pyk/covid19-resources",
-	"https://www.ahip.org/health-insurance-providers-respond-to-coronavirus-covid-19/",
-	"https://dontforgetthebubbles.com/evidence-summary-paediatric-covid-19-literature/",
-}
+var regexBannedDomains string
+var regexLinkBannedTokens string
+var curatedDomains string
+var regexLinkOk string
+var engStopWordsWOthe string
+var engStopWords string
+var engLowRelevancyWords string
+var regexStopwords string
+var regexRankingKeywords string
+var proxyHost string
+var proxyUser string
+var proxyPass string
+var downloadTimeout time.Duration
+var bootstrapingLinks []string
 
 /******************************************************************************/
 /******************************************************************************/
@@ -835,6 +782,8 @@ func doNextLink() bool {
 	// Current doc frequencies
 	fDoc := make(freq)
 	fDoc.add(curatedContent)
+	// remove "the" frequency
+	fDoc["the"] = 0
 	gDoc := rSortFreq(fDoc)
 	// if nextLink == "https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-daily-deaths/" {
 	// 	fmt.Println("\n\nDoc frequencies: ", gDoc[:1])
@@ -938,7 +887,50 @@ func doNextLink() bool {
 	return true
 }
 
+func yamlInit() {
+	argsWithoutProg := os.Args[1:]
+	viper.SetConfigName(argsWithoutProg[0]) // name of config file (without extension)
+	viper.AddConfigPath(".")                // look for config in the working directory
+	err := viper.ReadInConfig()             // Find and read the config file
+	if err != nil {                         // Handle errors reading the config file
+		panic(fmt.Errorf("Fatal error config file: %s", err))
+	}
+	regexBannedDomains = viper.GetString("regexBannedDomains")
+	regexLinkBannedTokens = viper.GetString("regexLinkBannedTokens")
+	curatedDomains = viper.GetString("curatedDomains")
+	regexLinkOk = `(?i)^https*://.*(` + viper.GetString("linkOk") + `|` + curatedDomains + `)`
+	engStopWordsWOthe = viper.GetString("engStopWordsWOthe")
+	engStopWords = `the|` + engStopWordsWOthe
+	engLowRelevancyWords = `|` + viper.GetString("engLowRelevancyWords")
+	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + viper.GetString("specialStopwords") + `)\W`
+	regexRankingKeywords = viper.GetString("regexRankingKeywords")
+	proxyHost = viper.GetString("proxyHost")
+	proxyUser = viper.GetString("proxyUser")
+	proxyPass = viper.GetString("proxyPass")
+	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
+	bootstrapingLinks = viper.GetStringSlice("bootstrapingLinks")
+
+	fmt.Printf("\n\nargsWithoutProg: %+v", argsWithoutProg)
+	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
+	fmt.Printf("\n\nregexLinkBannedTokens: %s", regexLinkBannedTokens)
+	fmt.Printf("\n\ncuratedDomains: %s", curatedDomains)
+	fmt.Printf("\n\nregexLinkOk: %s", regexLinkOk)
+	fmt.Printf("\n\nengStopWordsWOthe: %s", engStopWordsWOthe)
+	fmt.Printf("\n\nengStopWords: %s", engStopWords)
+	fmt.Printf("\n\nengLowRelevancyWords: %s", engLowRelevancyWords)
+	fmt.Printf("\n\nregexStopwords: %s", regexStopwords)
+	fmt.Printf("\n\nregexRankingKeywords: %s", regexRankingKeywords)
+	fmt.Printf("\n\nproxyHost: %s", proxyHost)
+	fmt.Printf("\n\nproxyUser: %s", proxyUser)
+	fmt.Printf("\n\nproxyPass: %s", proxyPass)
+	fmt.Printf("\n\ndownloadTimeout: %+v", downloadTimeout)
+	fmt.Printf("\n\nbootstrapingLinks: %+v", bootstrapingLinks)
+}
+
 func main() {
+	fmt.Println("* Loading YAML config ...")
+	yamlInit()
+
 	fmt.Println("* Init English corpus ...")
 	goCorpusFreqLib.Init()
 
