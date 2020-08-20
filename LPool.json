@@ -38,7 +38,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/faq.html",
   "Domain": "cdc.gov",
-  "Count": 26,
+  "Count": 24,
   "Status": 2
  },
  {
@@ -170,7 +170,7 @@
  {
   "Url": "https://www.linkedin.com/shareArticle",
   "Domain": "linkedin.com",
-  "Count": 79,
+  "Count": 73,
   "Status": 2
  },
  {
@@ -248,13 +248,13 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/index.html",
   "Domain": "cdc.gov",
-  "Count": 140,
+  "Count": 130,
   "Status": 2
  },
  {
   "Url": "https://www.osha.gov/SLTC/covid-19/",
   "Domain": "osha.gov",
-  "Count": 27,
+  "Count": 20,
   "Status": 2
  },
  {
@@ -296,7 +296,7 @@
  {
   "Url": "https://www.epa.gov/pesticide-registration/list-n-disinfectants-use-against-sars-cov-2",
   "Domain": "epa.gov",
-  "Count": 20,
+  "Count": 19,
   "Status": 2
  },
  {
@@ -362,7 +362,7 @@
  {
   "Url": "http://www.linkedin.com/shareArticle",
   "Domain": "linkedin.com",
-  "Count": 33,
+  "Count": 28,
   "Status": 2
  },
  {
@@ -380,7 +380,7 @@
  {
   "Url": "https://coronavirus.jhu.edu/map.html",
   "Domain": "coronavirus.jhu.edu",
-  "Count": 16,
+  "Count": 15,
   "Status": 2
  },
  {
@@ -8756,7 +8756,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/infection-control/control-recommendations.html",
   "Domain": "cdc.gov",
-  "Count": 7,
+  "Count": 6,
   "Status": 2
  },
  {
@@ -9278,7 +9278,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/lab/guidelines-clinical-specimens.html",
   "Domain": "cdc.gov",
-  "Count": 5,
+  "Count": 4,
   "Status": 0
  },
  {
@@ -9890,7 +9890,7 @@
  {
   "Url": "https://www.nih.gov/health-information/coronavirus",
   "Domain": "nih.gov",
-  "Count": 8,
+  "Count": 6,
   "Status": 2
  },
  {
@@ -11192,25 +11192,25 @@
  {
   "Url": "https://www.who.int/health-topics/coronavirus",
   "Domain": "who.int",
-  "Count": 14,
+  "Count": 13,
   "Status": 2
  },
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019",
   "Domain": "who.int",
-  "Count": 66,
+  "Count": 57,
   "Status": 2
  },
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public",
   "Domain": "who.int",
-  "Count": 17,
+  "Count": 11,
   "Status": 2
  },
  {
   "Url": "https://www.who.int/news-room/q-a-detail/q-a-coronaviruses",
   "Domain": "who.int",
-  "Count": 7,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -11888,7 +11888,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/about/index.html",
   "Domain": "cdc.gov",
-  "Count": 16,
+  "Count": 15,
   "Status": 2
  },
  {
@@ -13202,8 +13202,8 @@
  {
   "Url": "https://iuhealth.org/news-hub/iu-health-virtual-clinic-offers-free-coronavirus-screening",
   "Domain": "iuhealth.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.iehp.org/en/about/coronavirus",
@@ -14888,7 +14888,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/php/public-health-recommendations.html",
   "Domain": "cdc.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -15086,7 +15086,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/critical-workers/implementing-safety-practices.html",
   "Domain": "cdc.gov",
-  "Count": 8,
+  "Count": 7,
   "Status": 2
  },
  {
@@ -15110,7 +15110,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/",
   "Domain": "cdc.gov",
-  "Count": 14,
+  "Count": 13,
   "Status": 2
  },
  {
@@ -15147,7 +15147,7 @@
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/guidance-agricultural-workers.html",
   "Domain": "cdc.gov",
   "Count": 7,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/guidance-manufacturing-workers-employers.html",
@@ -15284,7 +15284,7 @@
  {
   "Url": "https://www.dhs.gov/coronavirus",
   "Domain": "dhs.gov",
-  "Count": 5,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -15446,7 +15446,7 @@
  {
   "Url": "https://www.tsa.gov/coronavirus",
   "Domain": "tsa.gov",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -15464,7 +15464,7 @@
  {
   "Url": "https://www.irs.gov/coronavirus",
   "Domain": "irs.gov",
-  "Count": 17,
+  "Count": 13,
   "Status": 2
  },
  {
@@ -15566,7 +15566,7 @@
  {
   "Url": "https://www.arts.gov/coronavirus",
   "Domain": "arts.gov",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -15686,7 +15686,7 @@
  {
   "Url": "https://www.fisheries.noaa.gov/national/noaa-fisheries-coronavirus-covid-19-update",
   "Domain": "fisheries.noaa.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
@@ -18770,7 +18770,7 @@
  {
   "Url": "https://w1.buysub.com/servlet/ConvertibleGateway",
   "Domain": "w1.buysub.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -21632,7 +21632,7 @@
  {
   "Url": "https://www.coronavirus.gov",
   "Domain": "coronavirus.gov",
-  "Count": 22,
+  "Count": 21,
   "Status": 2
  },
  {
@@ -22196,13 +22196,13 @@
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/events-as-they-happen",
   "Domain": "who.int",
-  "Count": 8,
+  "Count": 7,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/locations-confirmed-cases.html",
   "Domain": "cdc.gov",
-  "Count": 7,
+  "Count": 6,
   "Status": 2
  },
  {
@@ -22832,7 +22832,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-nCoV/index.html",
   "Domain": "cdc.gov",
-  "Count": 39,
+  "Count": 37,
   "Status": 2
  },
  {
@@ -22856,8 +22856,8 @@
  {
   "Url": "https://www.ecdc.europa.eu/en/current-risk-assessment-novel-coronavirus-situation",
   "Domain": "ecdc.europa.eu",
-  "Count": 3,
-  "Status": 2
+  "Count": 2,
+  "Status": 0
  },
  {
   "Url": "https://ec.europa.eu/info/live-work-travel-eu/health/coronavirus-response_en",
@@ -23156,13 +23156,13 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/about/symptoms.html",
   "Domain": "cdc.gov",
-  "Count": 17,
+  "Count": 16,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/daily-life-coping/managing-stress-anxiety.html",
   "Domain": "cdc.gov",
-  "Count": 8,
+  "Count": 7,
   "Status": 2
  },
  {
@@ -23270,7 +23270,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-nCoV/summary.html",
   "Domain": "cdc.gov",
-  "Count": 13,
+  "Count": 12,
   "Status": 2
  },
  {
@@ -23822,7 +23822,7 @@
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public/myth-busters",
   "Domain": "who.int",
-  "Count": 8,
+  "Count": 7,
   "Status": 2
  },
  {
@@ -24050,7 +24050,7 @@
  {
   "Url": "https://www.worldometers.info/coronavirus/",
   "Domain": "worldometers.info",
-  "Count": 7,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -27140,7 +27140,7 @@
  {
   "Url": "https://www.theatlantic.com/health/archive/2020/03/coronavirus-what-you-can-do-help-slow-outbreak/607369/",
   "Domain": "theatlantic.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -27380,13 +27380,13 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/specific-groups/guidance-business-response.html",
   "Domain": "cdc.gov",
-  "Count": 23,
+  "Count": 16,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/index.html",
   "Domain": "cdc.gov",
-  "Count": 18,
+  "Count": 17,
   "Status": 2
  },
  {
@@ -27434,25 +27434,25 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/index.html",
   "Domain": "cdc.gov",
-  "Count": 14,
+  "Count": 13,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/travelers/index.html",
   "Domain": "cdc.gov",
-  "Count": 25,
+  "Count": 21,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/guidance-business-response.html",
   "Domain": "cdc.gov",
-  "Count": 22,
+  "Count": 20,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/organizations/cleaning-disinfection.html",
   "Domain": "cdc.gov",
-  "Count": 14,
+  "Count": 13,
   "Status": 2
  },
  {
@@ -27728,7 +27728,7 @@
  {
   "Url": "https://www.in.gov/coronavirus/",
   "Domain": "in.gov",
-  "Count": 4,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -27746,19 +27746,19 @@
  {
   "Url": "https://www.doh.wa.gov/Emergencies/Coronavirus",
   "Domain": "doh.wa.gov",
-  "Count": 5,
+  "Count": 4,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/prepare/prevention.html",
   "Domain": "cdc.gov",
-  "Count": 13,
+  "Count": 12,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/prevent-getting-sick/cloth-face-cover.html",
   "Domain": "cdc.gov",
-  "Count": 9,
+  "Count": 8,
   "Status": 2
  },
  {
@@ -27830,7 +27830,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/specific-groups/high-risk-complications.html",
   "Domain": "cdc.gov",
-  "Count": 18,
+  "Count": 16,
   "Status": 2
  },
  {
@@ -28220,7 +28220,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/about/coping.html",
   "Domain": "cdc.gov",
-  "Count": 10,
+  "Count": 9,
   "Status": 2
  },
  {
@@ -28472,7 +28472,7 @@
  {
   "Url": "https://www.maine.gov/dhhs/mecdc/infectious-disease/epi/airborne/coronavirus.shtml",
   "Domain": "maine.gov",
-  "Count": 6,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -28556,7 +28556,7 @@
  {
   "Url": "https://www.ncdhhs.gov/divisions/public-health/coronavirus-disease-2019-covid-19-response-north-carolina",
   "Domain": "ncdhhs.gov",
-  "Count": 5,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -28742,7 +28742,7 @@
  {
   "Url": "https://www.sba.gov/funding-programs/loans/coronavirus-relief-options/paycheck-protection-program-ppp",
   "Domain": "sba.gov",
-  "Count": 16,
+  "Count": 12,
   "Status": 2
  },
  {
@@ -28850,7 +28850,7 @@
  {
   "Url": "https://www.eeoc.gov/wysk/what-you-should-know-about-covid-19-and-ada-rehabilitation-act-and-other-eeo-laws",
   "Domain": "eeoc.gov",
-  "Count": 8,
+  "Count": 7,
   "Status": 2
  },
  {
@@ -29126,7 +29126,7 @@
  {
   "Url": "https://www.irs.gov/coronavirus/economic-impact-payment-information-center",
   "Domain": "irs.gov",
-  "Count": 6,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -29187,7 +29187,7 @@
   "Url": "https://govstatus.egov.com/ORUnemployment_COVID19",
   "Domain": "govstatus.egov.com",
   "Count": 2,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://govstatus.egov.com/or-dhs-covid-19",
@@ -30254,7 +30254,7 @@
  {
   "Url": "https://www.sba.gov/page/coronavirus-covid-19-small-business-guidance-loan-resources",
   "Domain": "sba.gov",
-  "Count": 28,
+  "Count": 23,
   "Status": 2
  },
  {
@@ -30530,7 +30530,7 @@
  {
   "Url": "https://www.nih.gov/coronavirus",
   "Domain": "nih.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -30830,7 +30830,7 @@
  {
   "Url": "https://www.osha.gov/SLTC/covid-19/standards.html",
   "Domain": "osha.gov",
-  "Count": 8,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -31556,7 +31556,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/php/risk-assessment.html",
   "Domain": "cdc.gov",
-  "Count": 9,
+  "Count": 7,
   "Status": 2
  },
  {
@@ -31568,7 +31568,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/travelers/after-travel-precautions.html",
   "Domain": "cdc.gov",
-  "Count": 5,
+  "Count": 4,
   "Status": 0
  },
  {
@@ -31790,7 +31790,7 @@
  {
   "Url": "https://www.sba.gov/disaster-assistance/coronavirus-covid-19",
   "Domain": "sba.gov",
-  "Count": 10,
+  "Count": 8,
   "Status": 2
  },
  {
@@ -31820,13 +31820,13 @@
  {
   "Url": "https://www.sba.gov/funding-programs/loans/coronavirus-relief-options",
   "Domain": "sba.gov",
-  "Count": 13,
+  "Count": 11,
   "Status": 2
  },
  {
   "Url": "https://covid19relief.sba.gov/",
   "Domain": "covid19relief.sba.gov",
-  "Count": 11,
+  "Count": 8,
   "Status": 2
  },
  {
@@ -31910,7 +31910,7 @@
  {
   "Url": "https://www.dol.gov/agencies/whd/pandemic",
   "Domain": "dol.gov",
-  "Count": 16,
+  "Count": 13,
   "Status": 2
  },
  {
@@ -32180,7 +32180,7 @@
  {
   "Url": "https://covid19.nj.gov/",
   "Domain": "covid19.nj.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -32402,7 +32402,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/about/related-stigma.html",
   "Domain": "cdc.gov",
-  "Count": 5,
+  "Count": 3,
   "Status": 0
  },
  {
@@ -32558,7 +32558,7 @@
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports",
   "Domain": "who.int",
-  "Count": 5,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -36038,7 +36038,7 @@
  {
   "Url": "https://www.dol.gov/agencies/whd/pandemic/ffcra-employer-paid-leave",
   "Domain": "dol.gov",
-  "Count": 10,
+  "Count": 7,
   "Status": 2
  },
  {
@@ -36056,7 +36056,7 @@
  {
   "Url": "https://www.eeoc.gov/facts/pandemic_flu.html",
   "Domain": "eeoc.gov",
-  "Count": 11,
+  "Count": 6,
   "Status": 2
  },
  {
@@ -37376,7 +37376,7 @@
  {
   "Url": "https://api.whatsapp.com/send",
   "Domain": "api.whatsapp.com",
-  "Count": 9,
+  "Count": 8,
   "Status": 0
  },
  {
@@ -40430,7 +40430,7 @@
  {
   "Url": "https://www.canada.ca/en/department-finance/economic-response-plan/covid19-individuals.html",
   "Domain": "canada.ca",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -40478,7 +40478,7 @@
  {
   "Url": "https://www.canada.ca/en/public-health/services/diseases/2019-novel-coronavirus-infection/being-prepared.html",
   "Domain": "canada.ca",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -40682,7 +40682,7 @@
  {
   "Url": "https://espanol.cdc.gov/enes/coronavirus/2019-ncov/index.html",
   "Domain": "espanol.cdc.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -41198,7 +41198,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/reopen-guidance.html",
   "Domain": "cdc.gov",
-  "Count": 5,
+  "Count": 4,
   "Status": 0
  },
  {
@@ -41312,7 +41312,7 @@
  {
   "Url": "https://iocdf.org/covid19/",
   "Domain": "iocdf.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
@@ -41498,7 +41498,7 @@
  {
   "Url": "https://disasterphilanthropy.org/disaster/2019-ncov-coronavirus/",
   "Domain": "disasterphilanthropy.org",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -41510,7 +41510,7 @@
  {
   "Url": "https://www.dol.gov/agencies/whd/fmla/pandemic",
   "Domain": "dol.gov",
-  "Count": 5,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -42044,7 +42044,7 @@
  {
   "Url": "https://www.dol.gov/agencies/whd/pandemic/ffcra-employee-paid-leave",
   "Domain": "dol.gov",
-  "Count": 9,
+  "Count": 7,
   "Status": 2
  },
  {
@@ -42110,7 +42110,7 @@
  {
   "Url": "https://www.dol.gov/agencies/whd/pandemic/ffcra-questions",
   "Domain": "dol.gov",
-  "Count": 17,
+  "Count": 14,
   "Status": 2
  },
  {
@@ -42140,7 +42140,7 @@
  {
   "Url": "https://www.osha.gov/SLTC/covid-19/controlprevention.html",
   "Domain": "osha.gov",
-  "Count": 4,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -42830,7 +42830,7 @@
  {
   "Url": "https://www.who.int/es/emergencies/diseases/novel-coronavirus-2019",
   "Domain": "who.int",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -43226,13 +43226,13 @@
  {
   "Url": "https://artiststhrive.org/covid-19",
   "Domain": "artiststhrive.org",
-  "Count": 7,
+  "Count": 5,
   "Status": 2
  },
  {
   "Url": "https://www.americansforthearts.org/by-topic/disaster-preparedness/coronavirus-covid-19-resource-and-response-center",
   "Domain": "americansforthearts.org",
-  "Count": 20,
+  "Count": 14,
   "Status": 2
  },
  {
@@ -43244,7 +43244,7 @@
  {
   "Url": "https://covid19freelanceartistresource.wordpress.com/",
   "Domain": "covid19freelanceartistresource.wordpress.com",
-  "Count": 27,
+  "Count": 21,
   "Status": 2
  },
  {
@@ -43334,7 +43334,7 @@
  {
   "Url": "https://www.annuity.org/financial-literacy/covid-19-financial-guide/",
   "Domain": "annuity.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -43412,13 +43412,13 @@
  {
   "Url": "https://fmaonline.net/nonprofit-financial-management/how-we-help/covid-19-response-resources/",
   "Domain": "fmaonline.net",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
   "Url": "https://www.arts.gov/covid-19-resources-for-artists-and-arts-organizations",
   "Domain": "arts.gov",
-  "Count": 6,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -43442,7 +43442,7 @@
  {
   "Url": "https://covid.response.arts.ufl.edu/",
   "Domain": "covid.response.arts.ufl.edu",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -43460,7 +43460,7 @@
  {
   "Url": "https://www.collegeart.org/news/2020/03/09/coronavirus-online-resources-for-teaching-remotely/",
   "Domain": "collegeart.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
@@ -43484,13 +43484,13 @@
  {
   "Url": "https://www.artworkarchive.com/blog/digital-tools-for-artists-to-run-a-remote-career-during-coronavirus",
   "Domain": "artworkarchive.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
   "Url": "https://www.apap365.org/Advocacy/COVID19/COVID-19-Government-Relief",
   "Domain": "apap365.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
@@ -43502,25 +43502,25 @@
  {
   "Url": "https://www.arts.gov/COVID-19-FAQs",
   "Domain": "arts.gov",
-  "Count": 8,
+  "Count": 5,
   "Status": 2
  },
  {
   "Url": "https://www.nefa.org/covid-19",
   "Domain": "nefa.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
   "Url": "https://howlround.com/happenings/panel-artists-time-global-pandemic-asl-captioned",
   "Domain": "howlround.com",
-  "Count": 7,
+  "Count": 3,
   "Status": 2
  },
  {
   "Url": "https://www.edweek.org/ew/section/multimedia/map-coronavirus-and-school-closures.html",
   "Domain": "edweek.org",
-  "Count": 6,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -43562,7 +43562,7 @@
  {
   "Url": "https://www.grammy.com/musicares/get-help/covid-19-relief-fund-faq",
   "Domain": "grammy.com",
-  "Count": 7,
+  "Count": 6,
   "Status": 3
  },
  {
@@ -43574,14 +43574,14 @@
  {
   "Url": "https://arttherapy.org/covid-19-resources/",
   "Domain": "arttherapy.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
   "Url": "https://www.artworkarchive.com/blog/financial-relief-resources-for-artists-during-covid-19",
   "Domain": "artworkarchive.com",
-  "Count": 4,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.artworkarchive.com/guides/covid-19-artist-resources",
@@ -43592,7 +43592,7 @@
  {
   "Url": "https://www.billboard.com/articles/business/9337908/coronavirus-resource-guide-music-professionals-help",
   "Domain": "billboard.com",
-  "Count": 8,
+  "Count": 6,
   "Status": 3
  },
  {
@@ -43610,19 +43610,19 @@
  {
   "Url": "https://springboardforthearts.org/coronavirus/",
   "Domain": "springboardforthearts.org",
-  "Count": 10,
+  "Count": 8,
   "Status": 2
  },
  {
   "Url": "https://forecastpublicart.org/innovation-in-the-time-of-covid/",
   "Domain": "forecastpublicart.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
   "Url": "http://nycaieroundtable.org/2020/03/11/covid19/",
   "Domain": "nycaieroundtable.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -43664,13 +43664,13 @@
  {
   "Url": "https://www.cof.org/news/call-action-philanthropys-commitment-during-covid-19",
   "Domain": "cof.org",
-  "Count": 6,
+  "Count": 5,
   "Status": 2
  },
  {
   "Url": "https://www.insidephilanthropy.com/home/2020/3/22/how-can-funders-most-effectively-support-an-arts-sector-decimated-by-covid-19",
   "Domain": "insidephilanthropy.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
@@ -43700,7 +43700,7 @@
  {
   "Url": "https://nonprofitquarterly.org/coronavirus-brings-nonprofits-unexpected-costs-even-at-its-earliest-stages/",
   "Domain": "nonprofitquarterly.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
@@ -43760,7 +43760,7 @@
  {
   "Url": "https://www.theatlantic.com/family/archive/2020/03/coronavirus-what-does-social-distancing-mean/607927/",
   "Domain": "theatlantic.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -43880,7 +43880,7 @@
  {
   "Url": "https://usdac.us/news-long/2020/3/15/community-care-in-the-time-of-coronavirus",
   "Domain": "usdac.us",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -43910,7 +43910,7 @@
  {
   "Url": "https://creative-capital.org/2020/03/13/list-of-arts-resources-during-the-covid-19-outbreak/",
   "Domain": "creative-capital.org",
-  "Count": 13,
+  "Count": 9,
   "Status": 2
  },
  {
@@ -43976,13 +43976,13 @@
  {
   "Url": "https://www.nammfoundation.org/projects/namm-foundation-covid-19-resources",
   "Domain": "nammfoundation.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
   "Url": "https://www.arts.gov/covid-19-resources-artists-and-arts-organizations",
   "Domain": "arts.gov",
-  "Count": 6,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -44018,7 +44018,7 @@
  {
   "Url": "https://teachingartistsguild.org/covid-19-resources/",
   "Domain": "teachingartistsguild.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 3
  },
  {
@@ -44151,55 +44151,55 @@
   "Url": "https://www.asiwny.org/2020/03/13/how-the-wny-arts-and-cultural-sector-can-prepare-for-the-impact-of-the-coronavirus/",
   "Domain": "asiwny.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://culturesource.org/covid-19-response-resource/",
   "Domain": "culturesource.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://cutaway.shift.io/assistance-for-freelancers-and-gig-workers-during-the-coronavirus-pandemic",
   "Domain": "cutaway.shift.io",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.westaf.org/covid-19-resources-information/",
   "Domain": "westaf.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://indyarts.org/covid19",
   "Domain": "indyarts.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://ready.haatx.com/covid-19",
   "Domain": "ready.haatx.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://richmondcultureworks.org/covid19",
   "Domain": "richmondcultureworks.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.kickstarter.com/articles/covid-19-coronavirus-artist-resources",
   "Domain": "kickstarter.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://wiredimpact.com/blog/coronavirus-nonprofits-resources-for-covid-19/",
   "Domain": "wiredimpact.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.wired.com/story/will-empty-bleachers-change-the-psychology-of-sports/",
@@ -44330,7 +44330,7 @@
  {
   "Url": "https://howlround.com/happenings/webinar-artists-time-global-pandemic",
   "Domain": "howlround.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -44402,7 +44402,7 @@
  {
   "Url": "https://www.covid19businesscenter.com/",
   "Domain": "covid19businesscenter.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -44504,7 +44504,7 @@
  {
   "Url": "https://www.sba.gov/funding-programs/loans/coronavirus-relief-options/paycheck-protection-program",
   "Domain": "sba.gov",
-  "Count": 6,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -44528,7 +44528,7 @@
  {
   "Url": "https://www.councilofnonprofits.org/nonprofits-and-coronavirus-covid-19",
   "Domain": "councilofnonprofits.org",
-  "Count": 8,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -44594,7 +44594,7 @@
  {
   "Url": "https://www.irs.gov/coronavirus/get-my-payment",
   "Domain": "irs.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -46784,13 +46784,13 @@
  {
   "Url": "https://www.addtoany.com/add_to/facebook",
   "Domain": "addtoany.com",
-  "Count": 8,
+  "Count": 7,
   "Status": 0
  },
  {
   "Url": "https://www.addtoany.com/add_to/twitter",
   "Domain": "addtoany.com",
-  "Count": 8,
+  "Count": 7,
   "Status": 0
  },
  {
@@ -46802,7 +46802,7 @@
  {
   "Url": "https://www.addtoany.com/add_to/email",
   "Domain": "addtoany.com",
-  "Count": 4,
+  "Count": 3,
   "Status": 0
  },
  {
@@ -49640,7 +49640,7 @@
  {
   "Url": "https://candid.org/explore-issues/coronavirus",
   "Domain": "candid.org",
-  "Count": 7,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -51494,7 +51494,7 @@
  {
   "Url": "https://www.racialequitytools.org/fundamentals/resource-lists/resources-addressing-covid-19-with-racial-equity-lens",
   "Domain": "racialequitytools.org",
-  "Count": 6,
+  "Count": 3,
   "Status": 3
  },
  {
@@ -51950,7 +51950,7 @@
  {
   "Url": "https://www.washingtonpost.com/nation/2020/03/21/how-you-can-help-during-coronavirus/",
   "Domain": "washingtonpost.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 3
  },
  {
@@ -53234,8 +53234,8 @@
  {
   "Url": "https://www.tenpercent.com/coronavirussanityguide",
   "Domain": "tenpercent.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.sciencedirect.com/science/article/abs/pii/S1555415516001732",
@@ -53300,8 +53300,8 @@
  {
   "Url": "https://coronavirus.in.gov/",
   "Domain": "coronavirus.in.gov",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://idph.iowa.gov/emerging-health-issues/novel-coronavirus",
@@ -53780,8 +53780,8 @@
  {
   "Url": "https://www.internetessentials.com/covid19",
   "Domain": "internetessentials.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/donate/who-response-in-countries",
@@ -54428,8 +54428,8 @@
  {
   "Url": "https://www.humana.com/coronavirus",
   "Domain": "humana.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.optum.com/covid-19.html",
@@ -54554,7 +54554,7 @@
  {
   "Url": "https://www.kqed.org/arts/13876893/emergency-funds-for-freelancers-creatives-losing-income-during-coronavirus",
   "Domain": "kqed.org",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -54974,7 +54974,7 @@
  {
   "Url": "https://www.commfoundations.com/blog/2020/3/11/community-foundations-nationwide-launch-efforts-to-help-communities-affected-by-the-coronavirus",
   "Domain": "commfoundations.com",
-  "Count": 6,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -55292,14 +55292,14 @@
  {
   "Url": "https://nonprofitquarterly.org/how-nonprofits-can-utilize-the-new-federal-laws-dealing-with-covid-19/",
   "Domain": "nonprofitquarterly.org",
-  "Count": 5,
+  "Count": 4,
   "Status": 2
  },
  {
   "Url": "https://www.nycon.org/news-events/nonprofit-news/169-nonprofit-insurance-and-covid-19",
   "Domain": "nycon.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.equalrights.org/viewpoints/weekly-covid19-roundup/",
@@ -55352,13 +55352,13 @@
  {
   "Url": "https://blog.gotomeeting.com/coronavirus-disruptions-and-support/",
   "Domain": "blog.gotomeeting.com",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://go.dropbox.com/en-us/covid19-donation-program",
   "Domain": "go.dropbox.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 3
  },
  {
@@ -55682,8 +55682,8 @@
  {
   "Url": "https://www.delcf.org/donations/covid19-fund/",
   "Domain": "delcf.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://charity.gofundme.com/o/en/campaign/milton-de-covid-19-relief",
@@ -55874,8 +55874,8 @@
  {
   "Url": "https://www.cicf.org/covid-resources/",
   "Domain": "cicf.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.monroeunitedway.org/COVID19-Phase1-Recipients",
@@ -56156,14 +56156,14 @@
  {
   "Url": "https://www.capecodfoundation.org/community-response-to-covid-19/",
   "Domain": "capecodfoundation.org",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.cfncm.org/Learn-i-About-CFNCM-i/News/View-Article/ArticleId/142/Community-Foundation-Monitoring-Emerging-Needs-in-COVID-19",
   "Domain": "cfncm.org",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "http://communityfoundation.org/about-the-covid-19-response-fund-for-the-pioneer-valley/",
@@ -56174,8 +56174,8 @@
  {
   "Url": "http://eccf.org/COVID-19ResponseFund",
   "Domain": "eccf.org",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.greaterworcester.org/Giving/Donate-Online",
@@ -56186,8 +56186,8 @@
  {
   "Url": "https://www.macovid19relieffund.org/",
   "Domain": "macovid19relieffund.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.uwwashtenaw.org/covid19apply",
@@ -56528,7 +56528,7 @@
  {
   "Url": "https://www.nycommunitytrust.org/covid19/",
   "Domain": "nycommunitytrust.org",
-  "Count": 7,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -56558,8 +56558,8 @@
  {
   "Url": "https://www.cfhcforever.org/henderson-county-covid-19-response-fund",
   "Domain": "cfhcforever.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://cfwnc.org/about/news/cfwnc-and-dogwood-health-trust-partner-to-respond-to-covid-19",
@@ -57590,8 +57590,8 @@
  {
   "Url": "https://www.uschamber.com/article/state-by-state-business-reopening-guidance",
   "Domain": "uschamber.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.manufacturingsuccess.org/covid-19",
@@ -57806,13 +57806,13 @@
  {
   "Url": "https://www.irs.gov/newsroom/covid-19-related-tax-credits-for-required-paid-leave-provided-by-small-and-midsize-businesses-faqs",
   "Domain": "irs.gov",
-  "Count": 3,
-  "Status": 2
+  "Count": 2,
+  "Status": 0
  },
  {
   "Url": "https://www.irs.gov/newsroom/irs-employee-retention-credit-available-for-many-businesses-financially-impacted-by-covid-19",
   "Domain": "irs.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -57884,7 +57884,7 @@
  {
   "Url": "https://medium.com/@EqualityLabs/digital-resilience-in-the-time-of-coronavirus-d1f733008359",
   "Domain": "medium.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -58184,8 +58184,8 @@
  {
   "Url": "https://www.uschamber.com/co/small-business-coronavirus",
   "Domain": "uschamber.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.lisc.org/covid-19/small-business-assistance/small-business-relief-grants/truist/",
@@ -58202,8 +58202,8 @@
  {
   "Url": "https://wvnpa.org/preparing-coronavirus-covid-19-nonprofit-resources-information/",
   "Domain": "wvnpa.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "http://www.philanthropywv.org/covid-19-and-public-health/",
@@ -58304,8 +58304,8 @@
  {
   "Url": "https://www.chamberofcommerce.org/coronavirus-small-business-guide",
   "Domain": "chamberofcommerce.org",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://dailyyonder.com/commentary-expand-vote-by-mail-to-ensure-ballot-access-during-pandemic/2020/08/12/",
@@ -58778,8 +58778,8 @@
  {
   "Url": "https://www.fisherphillips.com/resources-alerts-comprehensive-faqs-for-employers-on-the-covid",
   "Domain": "fisherphillips.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.ice.gov/news/releases/updated-ice-statement-covid-19",
@@ -58802,7 +58802,7 @@
  {
   "Url": "https://blog.fracturedatlas.org/coronavirus-resources-for-artists-of-color",
   "Domain": "blog.fracturedatlas.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -58814,8 +58814,8 @@
  {
   "Url": "https://actorsfund.org/services-and-programs/covid-19-resource-list",
   "Domain": "actorsfund.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "http://on-the-move.org/news/article/20675/corona-virus-resources-arts-culture-and-cultural/",
@@ -58826,7 +58826,7 @@
  {
   "Url": "https://nff.org/covid-19-tools-and-resources-nonprofits",
   "Domain": "nff.org",
-  "Count": 8,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -58844,19 +58844,19 @@
  {
   "Url": "https://www.artistcommunities.org/news/aac-alert-covid-19-preparedness-residencies",
   "Domain": "artistcommunities.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://howlround.com/ways-gathering-age-covid-19",
   "Domain": "howlround.com",
-  "Count": 9,
+  "Count": 6,
   "Status": 2
  },
  {
   "Url": "https://www.giarts.org/blog/admin/covid-19-coronavirus-and-arts-funding-update-and-action-items",
   "Domain": "giarts.org",
-  "Count": 6,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -58880,7 +58880,7 @@
  {
   "Url": "https://surveys.americansforthearts.org/s3/CoronavirusImpactSurvey",
   "Domain": "surveys.americansforthearts.org",
-  "Count": 6,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -58928,7 +58928,7 @@
  {
   "Url": "https://www.eventbrite.com/e/coping-with-covid-livestreaming-for-artists-tickets-101320263636",
   "Domain": "eventbrite.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -58940,7 +58940,7 @@
  {
   "Url": "https://www.sweetrelief.org/covid-19-fund.html",
   "Domain": "sweetrelief.org",
-  "Count": 7,
+  "Count": 6,
   "Status": 2
  },
  {
@@ -58952,13 +58952,13 @@
  {
   "Url": "https://www.theatrebayarea.org/page/COVID-19relief-fund",
   "Domain": "theatrebayarea.org",
-  "Count": 5,
+  "Count": 3,
   "Status": 3
  },
  {
   "Url": "https://www.seasonofconcern.org/covid",
   "Domain": "seasonofconcern.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -58970,7 +58970,7 @@
  {
   "Url": "https://www.surveygizmo.com/s3/5512939/NYC-Dancers-Relief-Fund-COVID-19",
   "Domain": "surveygizmo.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -58988,13 +58988,13 @@
  {
   "Url": "https://sff.org/for-nonprofits-apply-for-a-grant-from-the-sff-covid-19-emergency-response-fund/",
   "Domain": "sff.org",
-  "Count": 4,
+  "Count": 2,
   "Status": 2
  },
  {
   "Url": "https://artisttrust.submittable.com/submit/162977/covid-19-artist-trust-relief-fund",
   "Domain": "artisttrust.submittable.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -59036,7 +59036,7 @@
  {
   "Url": "https://blog.americansforthearts.org/2020/03/05/arts-and-culture-sector-can-prepare-for-the-coronavirus-in-the-united-states",
   "Domain": "blog.americansforthearts.org",
-  "Count": 8,
+  "Count": 6,
   "Status": 2
  },
  {
@@ -59072,7 +59072,7 @@
  {
   "Url": "https://www.sba.gov/funding-programs/loans/coronavirus-relief-options/economic-injury-disaster-loan-emergency-advance",
   "Domain": "sba.gov",
-  "Count": 6,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -59102,8 +59102,8 @@
  {
   "Url": "http://massnonprofitnet.org/nonprofit-resources/coronavirus-massachusetts-nonprofits/",
   "Domain": "massnonprofitnet.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://massculturalcouncil.org/blog/covid-19-relief-effort-for-organizations/",
@@ -59252,8 +59252,8 @@
  {
   "Url": "https://www.who.int/publications-detail/key-planning-recommendations-for-mass-gatherings-in-the-context-of-the-current-covid-19-outbreak",
   "Domain": "who.int",
-  "Count": 10,
-  "Status": 2
+  "Count": 3,
+  "Status": 0
  },
  {
   "Url": "https://iqconnect.lmhostediq.com/iqextranet/iqClickTrk.aspx",
@@ -60038,8 +60038,8 @@
  {
   "Url": "https://www.ncsl.org/research/health/ncsl-coronavirus-covid-19-resources.aspx",
   "Domain": "ncsl.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://thejournal.com/articles/2020/03/20/resource-state-department-of-education-websites-for-coronavirus.aspx",
@@ -60134,8 +60134,8 @@
  {
   "Url": "https://www.socialworkers.org/Practice/Infectious-Diseases/Coronavirus",
   "Domain": "socialworkers.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://chronicleofsocialchange.org/child-welfare-2/coronavirus-what-child-welfare-systems-need-to-think-about/41220",
@@ -60782,8 +60782,8 @@
  {
   "Url": "https://linkedin.com/shareArticle",
   "Domain": "linkedin.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.who.int/mental_health/emergencies/9781424334445/en",
@@ -60872,14 +60872,14 @@
  {
   "Url": "https://www.healthwellfoundation.org/fund/covid-19-fund/",
   "Domain": "healthwellfoundation.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://foundationforcontemporaryarts.submittable.com/submit/b9feb8b2-3b40-4a12-bee3-b0e71294d17f/fca-emergency-grants-covid-19-fund",
   "Domain": "foundationforcontemporaryarts.submittable.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://mptf.com/covid-19-relief-funds/",
@@ -61040,7 +61040,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/organizations/guidance-community-faith-organizations.html",
   "Domain": "cdc.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -61058,7 +61058,7 @@
  {
   "Url": "https://cerfplus.org/covid-19-response-fund/",
   "Domain": "cerfplus.org",
-  "Count": 4,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -61424,14 +61424,14 @@
  {
   "Url": "https://www.danceusa.org/resources-preparing-potential-impact-coronavirus",
   "Domain": "danceusa.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.danceusa.org/ejournal/2020/03/09/coronavirus-and-your-insurance-program",
   "Domain": "danceusa.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://lesley.edu/students/health-wellness-safety/coronavirus-disease-2019-covid-19-information",
@@ -61598,13 +61598,13 @@
  {
   "Url": "https://www.nonprofitnewyork.org/2020/03/coronavirus-update-lets-stay-healthy-and-be-kind/",
   "Domain": "nonprofitnewyork.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://nonprofitaf.com/2020/03/a-few-things-for-nonprofits-and-foundations-to-consider-in-light-of-the-coronavirus/",
   "Domain": "nonprofitaf.com",
-  "Count": 5,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -61616,8 +61616,8 @@
  {
   "Url": "https://www.operaamerica.org/content/about/covid19.aspx",
   "Domain": "operaamerica.org",
-  "Count": 2,
-  "Status": 3
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.gatesfoundation.org/TheOptimist/coronavirus",
@@ -61658,14 +61658,14 @@
  {
   "Url": "https://www.councilofnonprofits.org/trends-policy-issues/the-nonprofit-community-confronts-the-coronavirus",
   "Domain": "councilofnonprofits.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.minnesotanonprofits.org/about-mcn/news-detail/2020/03/05/preparing-for-covid-19-what-nonprofits-need-to-know",
   "Domain": "minnesotanonprofits.org",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.eventscouncil.org/Industry-Insights/About-coronavirus",
@@ -61742,13 +61742,13 @@
  {
   "Url": "https://aacnetwork.org/2020/03/16/our-response-to-covid-19/",
   "Domain": "aacnetwork.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://artsu.americansforthearts.org/products/arts-and-culture-sector-and-the-coronavirus-what-we-know-and-how-to-move-forward",
   "Domain": "artsu.americansforthearts.org",
-  "Count": 4,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -61940,7 +61940,7 @@
  {
   "Url": "https://charity.gofundme.com/o/en/campaign/artbridge-covid",
   "Domain": "charity.gofundme.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -61952,8 +61952,8 @@
  {
   "Url": "https://www.backstage.com/magazine/article/coronavirus-covid19-actor-performing-arts-news-resources-70497/",
   "Domain": "backstage.com",
-  "Count": 2,
-  "Status": 3
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.everlywell.com/blog/covid-19/coronavirus-statistics/",
@@ -61970,7 +61970,7 @@
  {
   "Url": "https://medium.com/future-of-music-coalition-presents-futurelabs/faq-music-workers-accessing-government-support-relief-during-the-coronavirus-pandemic-199db3149a60",
   "Domain": "medium.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -62096,8 +62096,8 @@
  {
   "Url": "https://www.cnn.com/style/article/coronavirus-recession-wpa-arts-programs-wellness-style/index.html",
   "Domain": "cnn.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://mellon.org/news-blog/articles/message-our-grantees-and-partners-about-covid-19/",
@@ -62114,8 +62114,8 @@
  {
   "Url": "https://nathancummings.org/covid-19-our-commitment-to-grantees/",
   "Domain": "nathancummings.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.ncrp.org/2020/03/my-favorite-funder-responses-so-far-to-covid-19.html",
@@ -62138,8 +62138,8 @@
  {
   "Url": "https://surdna.org/news-insights/a-letter-to-our-grantees-about-covid-19/",
   "Domain": "surdna.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://aapip.org/our-stories/aapip-statement-on-covid-19",
@@ -62162,7 +62162,7 @@
  {
   "Url": "https://www.philanthropy.com/article/Coronavirus-6-Steps-for-Grant/248202",
   "Domain": "philanthropy.com",
-  "Count": 5,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -62180,7 +62180,7 @@
  {
   "Url": "https://disasterphilanthropy.org/event/covid-19-coronavirus-how-philanthropy-can-respond/",
   "Domain": "disasterphilanthropy.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -62222,7 +62222,7 @@
  {
   "Url": "https://www.fsg.org/blog/covid-19-seven-things-philanthropy-can-do",
   "Domain": "fsg.org",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -62240,8 +62240,8 @@
  {
   "Url": "https://ncg.org/resources/guidance-philanthropic-communications-pandemic",
   "Domain": "ncg.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://ncg.org/events/how-philanthropy-can-support-and-enhance-government-response-covid-19",
@@ -62282,7 +62282,7 @@
  {
   "Url": "https://americanorchestras.org/component/content/article.html",
   "Domain": "americanorchestras.org",
-  "Count": 5,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -62300,8 +62300,8 @@
  {
   "Url": "https://philanthropynewyork.org/resources/covid-19-updates-resources",
   "Domain": "philanthropynewyork.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.unitedphilforum.org/resources/coronavirus-resources-psos",
@@ -62588,8 +62588,8 @@
  {
   "Url": "https://ndncollective.org/covid-19/",
   "Domain": "ndncollective.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://campaign.ucsd.edu/impact/coronavirus/",
@@ -62822,7 +62822,7 @@
  {
   "Url": "https://www.washingtonpost.com/opinions/as-coronavirus-spreads-the-bill-for-our-public-health-failures-is-due/2020/03/05/9da09ed6-5f10-11ea-b29b-9db42f7803a7_story.html",
   "Domain": "washingtonpost.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -62840,8 +62840,8 @@
  {
   "Url": "https://www.grammy.com/musicares/get-help/musicares-coronavirus-relief-fund",
   "Domain": "grammy.com",
-  "Count": 3,
-  "Status": 3
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://support.zoom.us/hc/en-us/articles/206476313-Managing-Video-Breakout-Rooms",
@@ -62942,8 +62942,8 @@
  {
   "Url": "https://blogs.scientificamerican.com/observations/preparing-for-coronavirus-to-strike-the-u-s/",
   "Domain": "blogs.scientificamerican.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.univision.com/local/fresno-kftv/donan-30-mil-mascarillas-a-clinicas-comunitarias-de-la-zona-para-enfrentar-crisis-por-coronavirus",
@@ -62972,7 +62972,7 @@
  {
   "Url": "https://calnonprofits.org/publications/article-archive/683-a-few-resources-for-nonprofits",
   "Domain": "calnonprofits.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -63032,7 +63032,7 @@
  {
   "Url": "https://www.addtoany.com/add_to/pinterest",
   "Domain": "addtoany.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -63044,8 +63044,8 @@
  {
   "Url": "https://washingtonnonprofits.org/coronavirus/",
   "Domain": "washingtonnonprofits.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.nytimes.com/2020/03/01/upshot/coronavirus-sick-days-service-workers.html",
@@ -63176,7 +63176,7 @@
  {
   "Url": "https://givingcompass.org/coronavirus-covid19",
   "Domain": "givingcompass.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -63338,8 +63338,8 @@
  {
   "Url": "http://aracouncil.org/small-grant-covid19/",
   "Domain": "aracouncil.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.amplifyarts.org/coronavirus-response",
@@ -63392,20 +63392,20 @@
  {
   "Url": "https://canadacouncil.ca/covid-19-information",
   "Domain": "canadacouncil.ca",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.vlaio.be/nl/subsidies-financiering/subsidiedatabank/overbruggingsrecht-voor-zelfstandigen-coronavirus",
   "Domain": "vlaio.be",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.artscouncil.org.uk/covid19",
   "Domain": "artscouncil.org.uk",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://charity.gofundme.com/o/en/campaign/creative-healing-for-health-care-professionals-in-the-age-of-covid-19",
@@ -63416,38 +63416,38 @@
  {
   "Url": "https://evolvemga.com/coronavirus/",
   "Domain": "evolvemga.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://forecastpublicart.org/pro-bono-consulting-in-response-to-covid-19/",
   "Domain": "forecastpublicart.org",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://artsu.americansforthearts.org/products/covid-19-relief-package-briefing-an-americans-for-the-arts-virtual-check-in",
   "Domain": "artsu.americansforthearts.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.eventbrite.com/e/coping-with-covid-financial-implications-for-creative-individuals-tickets-101321605650",
   "Domain": "eventbrite.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.aam-us.org/event/coronavirus-covid-19-and-museums-impact-innovations-and-planning-for-post-crisis/",
   "Domain": "aam-us.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.eventbrite.com/e/financial-strategies-for-artists-and-freelancers-impacted-by-covid-19-free-tickets-101428190448",
   "Domain": "eventbrite.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.eventbrite.com/e/coping-with-covid-centering-wellness-and-self-care-for-creatives-tickets-102278618100",
@@ -63548,8 +63548,8 @@
  {
   "Url": "https://www.councilofnonprofits.org/trends-policy-issues/initial-analysis-of-the-coronavirus-aid-relief-and-economic-security-act-cares",
   "Domain": "councilofnonprofits.org",
-  "Count": 7,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://theweek.com/speedreads/904182/gop-coronavirus-bill-seemingly-excludes-some-nonprofit-health-care-providers-from-federal-assistance",
@@ -63608,7 +63608,7 @@
  {
   "Url": "https://musiccovidrelief.com/",
   "Domain": "musiccovidrelief.com",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -63686,8 +63686,8 @@
  {
   "Url": "https://www.cigna.com/individuals-families/health-wellness/topic-disaster-resource-center/coronavirus-public-resources",
   "Domain": "cigna.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://gobonfire.com/blog/procurement-during-covid-19-experts-share-their-4-lessons-learned/",
@@ -63776,8 +63776,8 @@
  {
   "Url": "https://www.sba.gov/funding-programs/loans/coronavirus-relief-options/sba-debt-relief",
   "Domain": "sba.gov",
-  "Count": 3,
-  "Status": 2
+  "Count": 2,
+  "Status": 0
  },
  {
   "Url": "https://www.forbes.com/sites/briannegarrett/2020/03/20/small-business-relief-tracker-funding-grants-and-resources-for-business-owners-grappling-with-coronavirus/",
@@ -63830,7 +63830,7 @@
  {
   "Url": "https://blog.techsoup.org/posts/nonprofit-resources-for-remote-work-during-the-covid-19-outbreak",
   "Domain": "blog.techsoup.org",
-  "Count": 6,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -63866,13 +63866,13 @@
  {
   "Url": "https://www.americansforthearts.org/by-topic/disaster-preparedness/the-economic-impact-of-coronavirus-on-the-arts-and-culture-sector",
   "Domain": "americansforthearts.org",
-  "Count": 6,
+  "Count": 2,
   "Status": 2
  },
  {
   "Url": "https://independentsector.org/covid19/",
   "Domain": "independentsector.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -63914,8 +63914,8 @@
  {
   "Url": "https://www.philanthropy.com/article/As-Coronavirus-Threat/248213",
   "Domain": "philanthropy.com",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.philanthropy.com/article/A-New-New-Normal-for/248293",
@@ -64118,14 +64118,14 @@
  {
   "Url": "https://cmxhub.com/a-comprehensive-list-of-tips-tools-and-examples-for-event-organizers-during-the-coronavirus-outbreak/",
   "Domain": "cmxhub.com",
-  "Count": 4,
+  "Count": 2,
   "Status": 2
  },
  {
   "Url": "https://ideas.capacityinteractive.com/digital-marketing-recommendations-for-our-arts-community-during-covid-19-outbreak",
   "Domain": "ideas.capacityinteractive.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://napama.org/Coronavirus_FAQs",
@@ -64148,19 +64148,19 @@
  {
   "Url": "https://www.uschamberfoundation.org/reports/coronavirus-emergency-loans-guide-and-checklist-small-businesses-and-nonprofits",
   "Domain": "uschamberfoundation.org",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://bloomerang.co/blog/digest-essential-covid-19-financial-crisis-fundraising-advice/",
   "Domain": "bloomerang.co",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
   "Url": "https://www.icareifyoulisten.com/2020/03/covid-19-emergency-funding-artist-resources/",
   "Domain": "icareifyoulisten.com",
-  "Count": 4,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -64208,8 +64208,8 @@
  {
   "Url": "https://techspecialistlimited.com/google-microsoft-offer-free-conferencing-tools-due-to-coronavirus/",
   "Domain": "techspecialistlimited.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://resource-media.org/nonprofit-communications-in-the-age-of-the-coronavirus/",
@@ -64238,7 +64238,7 @@
  {
   "Url": "https://www.irs.gov/newsroom/treasury-irs-and-labor-announce-plan-to-implement-coronavirus-related-paid-leave-for-workers-and-tax-credits-for-small-and-midsize-businesses-to-swiftly-recover-the-cost-of-providing-coronavirus",
   "Domain": "irs.gov",
-  "Count": 3,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -64394,7 +64394,7 @@
  {
   "Url": "https://www.dol.gov/agencies/whd/flsa/pandemic",
   "Domain": "dol.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -64478,7 +64478,7 @@
  {
   "Url": "https://isbdc.org/indianacovid19smallbusiness/",
   "Domain": "isbdc.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -64568,7 +64568,7 @@
  {
   "Url": "https://www.mass.gov/info-details/covid-19-guidance-and-directives",
   "Domain": "mass.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -64659,12 +64659,12 @@
   "Url": "https://www.nj.gov/labor/worker-protections/earnedsick/covid.shtml",
   "Domain": "nj.gov",
   "Count": 2,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://faq.business.nj.gov/en/collections/2198378-information-for-nj-businesses-on-the-coronavirus-outbreak",
   "Domain": "faq.business.nj.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -64694,8 +64694,8 @@
  {
   "Url": "https://des.nc.gov/need-help/covid-19-information",
   "Domain": "des.nc.gov",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://covid19.ncdhhs.gov/information",
@@ -64713,7 +64713,7 @@
   "Url": "https://www.ok.gov/oesc/Businesses/Employer_FAQs_about_UI_and_COVID-19/index.html",
   "Domain": "ok.gov",
   "Count": 2,
-  "Status": 3
+  "Status": 0
  },
  {
   "Url": "https://www.oregon.gov/gov/Pages/coronavirus2020.aspx",
@@ -64821,7 +64821,7 @@
   "Url": "https://www.virginia.gov/coronavirus/support-for-businesses/",
   "Domain": "virginia.gov",
   "Count": 2,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://esd.wa.gov/newsroom/covid-19",
@@ -64946,8 +64946,8 @@
  {
   "Url": "https://www.ddcf.org/what-we-fund/performing-arts/important-letter-from-the-arts-program-about-covid-19-response-and-resources/covid-19-resources-for-the-performing-arts/",
   "Domain": "ddcf.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://theartofeducation.edu/coronavirus/",
@@ -65084,8 +65084,8 @@
  {
   "Url": "https://nff.org/blog/covid-19-what-nonprofits-should-do-right-now",
   "Domain": "nff.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://studiopotter.org/news/free-memberships-all-universities-affected-covid-19",
@@ -65684,7 +65684,7 @@
  {
   "Url": "https://www.musichealthalliance.com/covid-19-resources/",
   "Domain": "musichealthalliance.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -65696,8 +65696,8 @@
  {
   "Url": "http://plus1.org/covidrelief",
   "Domain": "plus1.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://members.a2im.org/covid-19/resources/",
@@ -65780,8 +65780,8 @@
  {
   "Url": "https://curtisgroupconsultants.com/covid-19-relief-bill-passed-what-does-it-mean-for-nonprofits/",
   "Domain": "curtisgroupconsultants.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://dealaid.org/do-good/coronavirus-finimpact-tracker/",
@@ -65792,7 +65792,7 @@
  {
   "Url": "http://bit.ly/NP-COVID-19",
   "Domain": "bit.ly",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -65822,14 +65822,14 @@
  {
   "Url": "https://queerideas.co.uk/2020/03/free-resources-for-creating-a-coronavirus-appeal.html",
   "Domain": "queerideas.co.uk",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.moceanic.com/covid-19-cheat-sheet",
   "Domain": "moceanic.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://worklessraisemore.com/coronavirus-e-appeal/",
@@ -65846,8 +65846,8 @@
  {
   "Url": "http://www.care2services.com/care2blog/how-to-continue-fundraising-for-non-pandemic-causes",
   "Domain": "care2services.com",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://wildwomanfundraising.com/event/how-to-message-during-this-covid19-crisis-update-whats-new-and-what-you-can-do-now/",
@@ -65858,8 +65858,8 @@
  {
   "Url": "https://www.pamelagrow.com/12357/lessons-from-motivate-monday-how-nonprofits-can-navigate-covid-19/",
   "Domain": "pamelagrow.com",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.pamelagrow.com/12413/lessons-from-motivate-monday-funding-your-organizations-coronavirus-story-and-talking-to-major-donors-right-now/",
@@ -65888,32 +65888,32 @@
  {
   "Url": "https://www.mrss.com/lab/a-crisis-communications-checklist-for-covid-19/",
   "Domain": "mrss.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://clairification.com/2020/03/22/anatomy-coronavirus-nonprofit-email-thank/",
   "Domain": "clairification.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.thenonprofittimes.com/foundations/cdc-foundation-has-covid-19-guidelines-for-nonprofits/",
   "Domain": "thenonprofittimes.com",
-  "Count": 5,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.gailperry.com/coronavirus-and-fundraising-what-to-expect-and-how-to-prepare/",
   "Domain": "gailperry.com",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.amyeisenstein.com/8-steps-successful-fundraising-during-coronavirus/",
   "Domain": "amyeisenstein.com",
-  "Count": 4,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.donorrelationsguru.com/post/what-you-can-do-for-your-donors-and-others-in-times-of-crisis-covid-19-edition",
@@ -65942,7 +65942,7 @@
  {
   "Url": "https://www.forbes.com/sites/alyssawright/2020/03/11/coronavirus-and-your-2020-fundraising-goals-what-nonprofits-need-to-know/",
   "Domain": "forbes.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -65954,8 +65954,8 @@
  {
   "Url": "https://www.eventmanagerblog.com/coronavirus-law",
   "Domain": "eventmanagerblog.com",
-  "Count": 7,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://justgivingcomms.com/catching-the-news-coronavirus-edition/",
@@ -65984,8 +65984,8 @@
  {
   "Url": "https://blog.boardsource.org/blog/what-nonprofit-board-members-should-be-doing-right-now-to-address-the-covid-19-situation",
   "Domain": "blog.boardsource.org",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.philanthropy.com/article/Nonprofits-Seek-60-Billion/248273/",
@@ -65996,8 +65996,8 @@
  {
   "Url": "https://www.qgiv.com/blog/what-to-do-if-you-have-to-cancel-your-event-because-of-covid-19/",
   "Domain": "qgiv.com",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.pamelagrow.com/12429/should-we-send-our-scheduled-appeal-newsletter-annual-report-in-the-midst-of-covid-19/",
@@ -66074,7 +66074,7 @@
  {
   "Url": "https://www.sba.gov/page/coronavirus-recovery-information-other-languages",
   "Domain": "sba.gov",
-  "Count": 3,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -66086,8 +66086,8 @@
  {
   "Url": "https://firstpersonadvisors.com/firstperson-covid-19-resource-hub/",
   "Domain": "firstpersonadvisors.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.refugeeallianceofcentraliowa.org/covid19-information",
@@ -66278,8 +66278,8 @@
  {
   "Url": "https://prboutiques.com/best-practices-for-communication-management-of-covid-19/",
   "Domain": "prboutiques.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.headspace.com/covid-19",
@@ -66398,3258 +66398,12 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/hcp/guidance-prevent-spread.html",
   "Domain": "cdc.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
   "Url": "https://hbr.org/2006/05/preparing-for-a-pandemic",
   "Domain": "hbr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.sba.gov/funding-programs/loans/coronavirus-relief-options/sba-express-bridge-loans",
-  "Domain": "sba.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.sba.gov/funding-programs/loans/coronavirus-relief-options/",
-  "Domain": "sba.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.empoweringsmallbusiness.org/resources/covid-19-small-business-resources",
-  "Domain": "empoweringsmallbusiness.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.irs.gov/newsroom/covid-19-related-tax-credits-for-paid-sick-and-paid-family-leave-overview",
-  "Domain": "irs.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.irs.gov/newsroom/covid-19-related-tax-credits-how-to-claim-the-credits-faqs",
-  "Domain": "irs.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.irs.gov/newsroom/covid-19-related-tax-credits-determining-the-amount-of-the-tax-credit-for-qualified-sick-leave-wages-faqs",
-  "Domain": "irs.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.irs.gov/newsroom/covid-19-related-tax-credits-determining-the-amount-of-the-tax-credit-for-qualified-family-leave-wages-faqs",
-  "Domain": "irs.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.bostonfed.org/in-the-region/covid-19-resources/paycheck-protection-program.aspx",
-  "Domain": "bostonfed.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.epa.gov/coronavirus/guidance-cleaning-and-disinfecting-public-spaces-workplaces-businesses-schools-and-homes",
-  "Domain": "epa.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.osha.gov/SLTC/respiratoryprotection/",
-  "Domain": "osha.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.americansforthearts.org/by-topic/disaster-preparedness/support-coronavirus-rapid-response-and-recovery-for-the-arts",
-  "Domain": "americansforthearts.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.dga.org/News/Guild-News/2020/April2020/CoronaVirusMessage_032011.aspx",
-  "Domain": "dga.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mptf.com/coronavirus/",
-  "Domain": "mptf.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.iatse.net/coronavirus-update-portal",
-  "Domain": "iatse.net",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://deadline.com/2020/03/netflix-100-million-fund-aid-tv-film-industry-workers-coronavirus-1202888750/",
-  "Domain": "deadline.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://edd.ca.gov/about_edd/coronavirus-2019.htm",
-  "Domain": "edd.ca.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://artisttrust.org/covid-19-resources-list/",
-  "Domain": "artisttrust.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.billboard.com/articles/business/9336193/coronavirus-drive-in-concerts-livestream-raves-artists-fans",
-  "Domain": "billboard.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://covid19.healthdata.org/projections",
-  "Domain": "covid19.healthdata.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://outreach.senate.gov/iqextranet/iqClickTrk.aspx",
-  "Domain": "outreach.senate.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://alaskacf.org/blog/grants/alaska-covid-19-response-fund-rapid-response-grants//",
-  "Domain": "alaskacf.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.coloradononprofits.org/policy-updates/coronavirus-aid-relief-and-economic-security-act%C2%A0cares-act/mar-31-2020",
-  "Domain": "coloradononprofits.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://alaskacf.org/blog/grants/alaska-covid-19-response-fund-rapid-response-grants/",
-  "Domain": "alaskacf.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://aksbdc.org/covid19/",
-  "Domain": "aksbdc.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://actaonline.org/resources-for-traditional-artists-affected-by-covid-19/",
-  "Domain": "actaonline.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.sanjoseca.gov/your-government/departments-offices/cultural-affairs/covid-19-guidance",
-  "Domain": "sanjoseca.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://arts.ca.gov/resources/COVID-19.php",
-  "Domain": "arts.ca.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.edd.ca.gov/about_edd/coronavirus-2019/pandemic-unemployment-assistance.htm",
-  "Domain": "edd.ca.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://cbca.org/2020/03/resources-to-support-the-arts-during-coronavirus/",
-  "Domain": "cbca.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.schatz.senate.gov/coronavirus/small-businesses",
-  "Domain": "schatz.senate.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.schatz.senate.gov/coronavirus/contract-workers",
-  "Domain": "schatz.senate.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.boiseartsandhistory.org/learn/resources-for-boises-cultural-community-during-covid-19/",
-  "Domain": "boiseartsandhistory.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mtcf.org/Montana-COVID-19-Fund",
-  "Domain": "mtcf.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://artsandmuseums.utah.gov/covid-19-cultural-resources/",
-  "Domain": "artsandmuseums.utah.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://fundforthearts.org/covid-19-emergency-support-grants-for-individual-artists/",
-  "Domain": "fundforthearts.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.dancemagazine.com/coronavirus-financial-impact-2645499604.html",
-  "Domain": "dancemagazine.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://namt.org/home/covid-19-resources/",
-  "Domain": "namt.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://cimam.org/resources-publications/precautions-museums-during-covid-19-pandemic/",
-  "Domain": "cimam.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.entrepreneur.com/article/349535",
-  "Domain": "entrepreneur.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://donorbox.org/nonprofit-blog/covid-19-resource-center/",
-  "Domain": "donorbox.org",
-  "Count": 4,
-  "Status": 2
- },
- {
-  "Url": "https://boardsource.org/resources/nonprofit-board-member-respond-covid-19/",
-  "Domain": "boardsource.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.galeriemagazine.com/art-world-sale-covid-relief/",
-  "Domain": "galeriemagazine.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wallacefoundation.org/news-and-media/blog/pages/managing-nonprofit-finances-during-the-coronavirus-crisis.aspx",
-  "Domain": "wallacefoundation.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://nasaa-arts.org/newsletter/2020-nasaa-notes-issues/april-2020-nasaa-notes/sustaining-public-engagement-during-covid-19/",
-  "Domain": "nasaa-arts.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nasaa-arts.org/newsletter/2020-nasaa-notes-issues/april-2020-nasaa-notes/virtual-marketplaces-and-covid-19/",
-  "Domain": "nasaa-arts.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.colleendilen.com/2020/03/18/why-marketing-matters-during-covid-19-closures-key-factors-to-consider-data/",
-  "Domain": "colleendilen.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.politico.com/news/magazine/2020/03/18/states-police-power-coronavirus-135826",
-  "Domain": "politico.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://thehill.com/homenews/senate/488782-senate-closes-in-on-trillion-dollar-coronavirus-stimulus-bill",
-  "Domain": "thehill.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/2020/03/20/world/coronavirus-news-usa-world.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.aha.org/advisory/2020-03-25-senate-white-house-reach-agreement-relief-package-responding-covid-19",
-  "Domain": "aha.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://wgntv.com/news/coronavirus/all-bars-restaurants-to-be-closed-to-dine-in-customers-in-illinois-due-to-covid-19-concerns/",
-  "Domain": "wgntv.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://la.eater.com/2020/3/17/21183590/california-governor-gavin-newsom-shut-down-covid-19-coronavirus-statewide-dine-in-restaurants",
-  "Domain": "la.eater.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.governor.wa.gov/news-media/special-covid-19-message-washington-state-businesses-and-workers-governor-jay-inslee",
-  "Domain": "governor.wa.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.chicagobusiness.com/government/lightfoot-100m-loan-fund-businesses-hit-coronavirus",
-  "Domain": "chicagobusiness.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.gov.ca.gov/2020/03/12/governor-newsom-issues-new-executive-order-further-enhancing-state-and-local-governments-ability-to-respond-to-covid-19-pandemic/",
-  "Domain": "gov.ca.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://online.citi.com/US/JRS/pands/detail.do",
-  "Domain": "online.citi.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://newsroom.wf.com/press-release/corporate-social-responsibility/wells-fargo-donates-625-million-aid-coronavirus",
-  "Domain": "newsroom.wf.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.jpmorganchase.com/corporate/news/pr/jpmc-makes-50mm-philanthropic-investment-to-address-impacts-of-covid-19.htm",
-  "Domain": "jpmorganchase.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.capitalone.com/coronavirus/",
-  "Domain": "capitalone.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.apa.org/research/action/speaking-of-psychology/coronavirus-anxiety",
-  "Domain": "apa.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.theatlantic.com/ideas/archive/2020/03/supply-chains-and-coronavirus/608329/",
-  "Domain": "theatlantic.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hbr.org/2020/02/prepare-your-supply-chain-for-coronavirus",
-  "Domain": "hbr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.usatoday.com/in-depth/news/investigations/2020/03/20/coronavirus-related-unemployment-claims-risk-wiping-out-state-funds/2887707001/",
-  "Domain": "usatoday.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.politico.com/news/magazine/2020/03/19/coronavirus-effect-economy-life-society-analysis-covid-135579",
-  "Domain": "politico.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://fox8.com/news/coronavirus/burger-king-cheesecake-factory-offering-promotions-amid-covid-19-outbreak/",
-  "Domain": "fox8.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.newsweek.com/coronavirus-restaurant-discounts-1493065",
-  "Domain": "newsweek.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.thestranger.com/things-to-do/2020/03/16/43169626/coronavirus-updates-these-seattle-restaurants-are-offering-delivery-and-takeout-specials-and-promotions",
-  "Domain": "thestranger.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://artny.memberclicks.net/coronavirus-resources",
-  "Domain": "artny.memberclicks.net",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.bronxarts.org/opportunities/covid19resources/",
-  "Domain": "bronxarts.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.gallup.com/workplace/288956/covid-teams-working-remotely-guide-leaders.aspx",
-  "Domain": "gallup.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.rsclark.org/blog/2020/3/16/supporting-our-grantee-partners-in-the-era-of-covid-19",
-  "Domain": "rsclark.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ncrp.org/blog/covid-19",
-  "Domain": "ncrp.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropyroundtable.org/home/resources/philanthropy-and-covid-19",
-  "Domain": "philanthropyroundtable.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.unitedphilforum.org/news/how-philanthropy-can-respond-covid-19",
-  "Domain": "unitedphilforum.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.americansforthearts.org/news-room/legislative-news/arts-support-included-in-federal-covid-19-relief-bill",
-  "Domain": "americansforthearts.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.comnetwork.org/resources/coronavirus-crisis-comms-triage-kit/",
-  "Domain": "comnetwork.org",
-  "Count": 4,
-  "Status": 2
- },
- {
-  "Url": "https://www.publictransformation.org/covid-19",
-  "Domain": "publictransformation.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://springboardforthearts.org/coronavirus/health-basic-needs-resources/",
-  "Domain": "springboardforthearts.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hbr.org/2020/03/lessons-from-italys-response-to-coronavirus",
-  "Domain": "hbr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.npr.org/2020/03/14/815778378/coping-with-anxiety-over-covid-19",
-  "Domain": "npr.org",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://www.dance.nyc/programs/funds/CoronavirusDanceReliefFund",
-  "Domain": "dance.nyc",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://wwwnc.cdc.gov/eid/article/19/1/12-0124_article",
-  "Domain": "wwwnc.cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.osha.gov/Publications/influenza_pandemic.html",
-  "Domain": "osha.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.osha.gov/SLTC/covid-19/hazardrecognition.html",
-  "Domain": "osha.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://travel.state.gov/content/travel/en/traveladvisories/COVID-19-Country-Specific-Information.html",
-  "Domain": "travel.state.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.councilofnonprofits.org/article/dol-issues-breathtakingly-cruel-guidance-inflicting-billions-immediate-costs-charitable",
-  "Domain": "councilofnonprofits.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.thestrad.com/news/berlin-study-issues-recommendations-for-orchestral-distancing/10641.article",
-  "Domain": "thestrad.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://weareunlimited.org.uk/links-and-resources-for-disabled-artists-and-freelancers-in-response-to-covid-19-includes-medical-guidance/",
-  "Domain": "weareunlimited.org.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wallacefoundation.org/knowledge-center/pages/navigating-covid-19-for-nonprofits-from-financial-triage-to-scenario-planning.aspx",
-  "Domain": "wallacefoundation.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.sunlighttax.com/covid-help-webinars",
-  "Domain": "sunlighttax.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.apap365.org/Advocacy/COVID19/COVID-19-Webinars",
-  "Domain": "apap365.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/Responding-to-the-Coronavirus/248231/",
-  "Domain": "philanthropy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mpa.org/streaming-live-music-covid-19-what-you-need-to-know/",
-  "Domain": "mpa.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.iadms.org/page/coronavirus",
-  "Domain": "iadms.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.seattleshakespeare.org/covid-19-information/",
-  "Domain": "seattleshakespeare.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.yalerep.org/productions-and-programs/covid-19-cancelations",
-  "Domain": "yalerep.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://michiganopera.org/mots-coronavirus-covid-19-precautions/",
-  "Domain": "michiganopera.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://artisnaples.org/coronavirus",
-  "Domain": "artisnaples.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.jazz.org/blog/covid-19-cancellations/",
-  "Domain": "jazz.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://riskalts.com/what-your-nonprofit-can-do-now-to-reduce-risks-relating-to-covid-19-coronavirus/",
-  "Domain": "riskalts.com",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.pcma.org/coronavirus-business-events-professionals-need-to-know-faq/",
-  "Domain": "pcma.org",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://riskalts.com/coronavirus-nonprofit-risk-page/",
-  "Domain": "riskalts.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://conseildesarts.ca:443/information-covid-19",
-  "Domain": "conseildesarts.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.canada.ca/en/canadian-heritage/services/funding/information-covid-19/emergency-support-fund.html",
-  "Domain": "canada.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.canada.ca/en/canadian-heritage/services/funding/information-covid-19.html",
-  "Domain": "canada.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://abcnews.go.com/Politics/cyberattack-hhs-meant-slow-coronavirus-response-sources/story",
-  "Domain": "abcnews.go.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://techcrunch.com/2020/03/13/princess-cruises-coronavirus-breach/",
-  "Domain": "techcrunch.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://icom.museum/en/news/webinar-coronavirus-covid-19-and-museums-impact-innovations-and-planning-for-post-crisis/",
-  "Domain": "icom.museum",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nonprofitcovid19.org/",
-  "Domain": "nonprofitcovid19.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.shrm.org/resourcesandtools/legal-and-compliance/employment-law/pages/coronavirus-information-and-faqs.aspx",
-  "Domain": "shrm.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.nc211.org/coronavirus-covid-19",
-  "Domain": "nc211.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://nonprofitrisk.org/resources/e-news/covid-19-five-things-to-know-and-do/",
-  "Domain": "nonprofitrisk.org",
-  "Count": 6,
-  "Status": 2
- },
- {
-  "Url": "http://www.graniteuw.org/news-events/Granite-United-Ways-Response-to-COVID-19",
-  "Domain": "graniteuw.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://unitedwaynashua.org/home/our-work/covid-19-response/covid-19-emergent-needs-response-fund/",
-  "Domain": "unitedwaynashua.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.uwgs.org/covid-19-family-support-fund/",
-  "Domain": "uwgs.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.muw.org/covid-19-relief-fund",
-  "Domain": "muw.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.artworkarchive.com/blog/emergency-funding-for-museums-and-arts-nonprofits-during-covid-19",
-  "Domain": "artworkarchive.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://bloomerang.co/blog/5-covid-19-coronavirus-fundraising-and-donor-relations-tactics/",
-  "Domain": "bloomerang.co",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://ssir.org/articles/entry/fundraising_in_tough_times",
-  "Domain": "ssir.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://nonprofitquarterly.org/sustainability-to-survivability-nonprofit-finance-must-dos-in-the-time-of-covid/",
-  "Domain": "nonprofitquarterly.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.pamelagrow.com/12409/during-covid-19-the-supporter-experience-is-more-important-than-ever/",
-  "Domain": "pamelagrow.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://bloomerang.co/blog/10-important-donor-types-to-communicate-to-during-the-coronavirus-outbreak/",
-  "Domain": "bloomerang.co",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://bloomerang.co/blog/video-donor-love-and-vulnerability-in-the-era-of-covid-19/",
-  "Domain": "bloomerang.co",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://bloomerang.co/blog/video-donor-communication-in-the-wake-of-covid-19/",
-  "Domain": "bloomerang.co",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.councilofnonprofits.org/trends-policy-issues/what-the-families-first-coronavirus-response-act-means-nonprofits",
-  "Domain": "councilofnonprofits.org",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://www.ncnonprofits.org/resources/pandemicresources",
-  "Domain": "ncnonprofits.org",
-  "Count": 3,
-  "Status": 2
- },
- {
-  "Url": "https://www.ncdor.gov/home/ncdor-actions-covid-19",
-  "Domain": "ncdor.gov",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://price.house.gov/covid-19-resources",
-  "Domain": "price.house.gov",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://hbr.org/2020/02/lead-your-business-through-the-coronavirus-crisis",
-  "Domain": "hbr.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://hbr.org/2020/04/10-questions-to-guide-boards-through-the-pandemic",
-  "Domain": "hbr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://careynieuwhof.com/how-to-lead-through-rapid-unexpected-change-responding-to-covid-19/",
-  "Domain": "careynieuwhof.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mailchi.mp/communities-rise.org/legal-alert-recommendations-for-employers-response-to-coronavirus",
-  "Domain": "mailchi.mp",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://www.bain.com/insights/ceo-plan-for-coronavirus-actions-to-take-now/",
-  "Domain": "bain.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://gretchenrubin.com/2020/03/coping-with-covid-19-podcasts-for-anxiety",
-  "Domain": "gretchenrubin.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.tenpercent.com/meditationweeklyblog/meditation-and-coronavirus",
-  "Domain": "tenpercent.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hbr.org/podcast/2020/03/managing-the-stress-and-uncertainty-of-coronavirus",
-  "Domain": "hbr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.rickhanson.net/being-well-podcast-fear-in-the-time-of-coronavirus/",
-  "Domain": "rickhanson.net",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://thriveglobal.com/stories/compassion-and-the-coronavirus-pandemic/",
-  "Domain": "thriveglobal.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/2020/03/12/opinion/pandemic-coronavirus-compassion.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mindful.org/covid-anxiety-is-also-contagious-heres-how-to-calm-down-america/",
-  "Domain": "mindful.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.loom.com/blog/coronavirus-response",
-  "Domain": "loom.com",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://teamheller.com/resources/blog/more-technology-resources-for-nonprofits-during-the-covid-19-crisis",
-  "Domain": "teamheller.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cbs19news.com/story/41948123/donorbox-cares-donorbox-reduces-platform-fee-for-nonprofits-directly-aiding-in-covid19-pandemic",
-  "Domain": "cbs19news.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/Experts-Urge-Charities-to-Talk/248259/",
-  "Domain": "philanthropy.com",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.mooredmgroup.com/coronavirus-and-economic-challenges/",
-  "Domain": "mooredmgroup.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://afpglobal.org/covid19resourceguide",
-  "Domain": "afpglobal.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.qgiv.com/blog/covid-19-nonprofit-resource-library/",
-  "Domain": "qgiv.com",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://mcahalane.com/fundraising-in-a-time-of-pandemic/",
-  "Domain": "mcahalane.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.biztechmagazine.com/article/2016/02/25-must-read-nonprofit-it-blogs-2016",
-  "Domain": "biztechmagazine.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/article/coronavirus-how-to-help-donations-charities.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.usatoday.com/story/news/nation/2020/03/13/mr-fred-rogers-find-helpers-quote-coronavirus-how-help-neighbors-kindness/5041005002/",
-  "Domain": "usatoday.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cnn.com/2020/03/13/us/how-to-help-coronavirus-pandemic-iyw-trnd/index.html",
-  "Domain": "cnn.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cbsnews.com/video/how-to-help-your-community-amid-coronavirus-pandemic/",
-  "Domain": "cbsnews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.goodmorningamerica.com/living/story/virtual-volunteering-ways-volunteer-home-time-coronavirus-69741410",
-  "Domain": "goodmorningamerica.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.pbs.org/newshour/health/how-uninsured-patients-can-get-help-during-covid-19-pandemic",
-  "Domain": "pbs.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://time.com/5809221/coronavirus-how-to-help/",
-  "Domain": "time.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.vogue.com/article/how-to-donate-coronavirus-2020",
-  "Domain": "vogue.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.papermag.com/help-incarcerated-people-during-coronavirus-2645577881.html",
-  "Domain": "papermag.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.sfchronicle.com/local-politics/article/Last-man-standing-Bay-Area-nonprofits-that-15130487.php",
-  "Domain": "sfchronicle.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mercurynews.com/2020/03/19/how-to-help-during-the-coronavirus-crisis/",
-  "Domain": "mercurynews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.chicagotribune.com/coronavirus/ct-help-from-financial-services-companies-coronavirus-crisis-20200326-vgu3rsutpjec5aluk3touulo5q-story.html",
-  "Domain": "chicagotribune.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.houstonchronicle.com/life/food/article/How-to-help-Houston-s-hungry-even-from-home-15159461.php",
-  "Domain": "houstonchronicle.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.seattletimes.com/seattle-news/want-to-donate-to-coronavirus-causes-in-seattle-heres-how-to-help/",
-  "Domain": "seattletimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.inquirer.com/health/coronavirus/a/coronavirus-philadelphia-new-jersey-how-to-help-where-to-get-help-food-money-care-volunteering-20200319.html",
-  "Domain": "inquirer.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.atlantamagazine.com/news-culture-articles/covid-19-how-you-can-help-those-in-need-in-atlanta/",
-  "Domain": "atlantamagazine.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.miaminewtimes.com/news/how-to-donate-and-volunteer-in-miami-during-coronavirus-crisis-11600173",
-  "Domain": "miaminewtimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mprnews.org/story/2020/03/16/here-are-some-ways-to-help-others-during-the-pandemic",
-  "Domain": "mprnews.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nj.com/coronavirus/2020/03/how-to-volunteer-and-donate-in-new-jersey-during-the-coronavirus-outbreak-032420.html",
-  "Domain": "nj.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://lbpost.com/news/how-to-help-those-most-impacted-by-coronavirus-first-stop-hoarding",
-  "Domain": "lbpost.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://slate.com/human-interest/2020/03/coronavirus-pandemic-how-to-help-donations-volunteering.html",
-  "Domain": "slate.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.vox.com/2020/3/21/21187530/coronavirus-covid-19-donations-how-to-help-rent-assistance-food-banks",
-  "Domain": "vox.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wired.com/story/covid-19-charities-nonprofits-companies-helping/",
-  "Domain": "wired.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.dosomething.org/us/articles/coronavirus-whats-happening-and-what-you-can-do",
-  "Domain": "dosomething.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.fatherly.com/love-money/coronavirus-nonprofits-helping-now/",
-  "Domain": "fatherly.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.elitedaily.com/p/heres-how-to-help-laid-off-shift-gig-workers-during-the-coronavirus-pandemic-22648355",
-  "Domain": "elitedaily.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.thehandbook.com/how-to-help-your-community-during-the-coronavirus-crisis/",
-  "Domain": "thehandbook.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://ribbonforcovid19.com",
-  "Domain": "ribbonforcovid19.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://f1.microsoftautomation.com/project-management/digest-essential-covid-19-financial-crisis-fundraising-advice/",
-  "Domain": "f1.microsoftautomation.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://themodernnonprofit.com/how-to-fundraise-for-nonprofits-during-coronavirus-covid-19/",
-  "Domain": "themodernnonprofit.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://lukesweetser.wordpress.com/2020/04/23/fundraising-tips-during-the-coronavirus/",
-  "Domain": "lukesweetser.wordpress.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.imaginewaterworks.org/free-resources-for-coronavirus-response-what-does-this-mean-for-climate-justice/",
-  "Domain": "imaginewaterworks.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://haassr.org/blog/community-health-during-covid-19/",
-  "Domain": "haassr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nten.org/ntc/at-the-ntc/statement-about-the-coronavirus/",
-  "Domain": "nten.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.skillman.org/blog/our-response-to-coronavirus-cov-19-concerns/",
-  "Domain": "skillman.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.coloradohealth.org/news/coronavirus-updated-health-and-safety-guidelines",
-  "Domain": "coloradohealth.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.eventbrite.co.uk/e/what-will-the-economy-look-like-after-covid-19-registration-113363711914",
-  "Domain": "eventbrite.co.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.eventbrite.sg/e/global-public-private-law-approaches-to-covid-19-tickets-105903121086",
-  "Domain": "eventbrite.sg",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://later.com/blog/social-media-covid-19/",
-  "Domain": "later.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://actiongraphicsnj.com/blog/coronavirus-impact-fundraising/",
-  "Domain": "actiongraphicsnj.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.charityhowto.com/nonprofit-webinar/covid-19-and-what-you-need-to-know-about-postponing-and-cancelling-events",
-  "Domain": "charityhowto.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nonprofitmarketingguide.com/blog/2020/03/04/communicating-about-the-coronavirus-and-your-upcoming-events/",
-  "Domain": "nonprofitmarketingguide.com",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.wbur.org/cognoscenti/2020/03/13/coronavirus-social-distancing-work-from-home-julie-morgenstern",
-  "Domain": "wbur.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.bustle.com/p/how-to-use-zoom-video-conferencing-during-coronavirus-social-distancing-22624123",
-  "Domain": "bustle.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://uk.reuters.com/article/uk-china-health-insurance-cancellations-idUKKBN2071O2",
-  "Domain": "uk.reuters.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.bakermckenzie.com/en/insight/publications/2020/02/coronavirus-crisis-management-force-majeure",
-  "Domain": "bakermckenzie.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://gowlingwlg.com/en/insights-resources/articles/2018/negotiating-governing-law-and-jurisdiction-clauses/",
-  "Domain": "gowlingwlg.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.forakergroup.org/information-for-alaskas-nonprofits-on-covid-19-the-coronavirus/",
-  "Domain": "forakergroup.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.coloradononprofits.org/covid-19-coronavirus-resources",
-  "Domain": "coloradononprofits.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://delawarenonprofit.org/covid-19/",
-  "Domain": "delawarenonprofit.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.flnonprofits.org/page/Coronavirus",
-  "Domain": "flnonprofits.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nonprofitmaine.org/blog/what-maine-nonprofits-can-do-to-prepare-for-coronavirus-covid-19/",
-  "Domain": "nonprofitmaine.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.marylandnonprofits.org/covid-19-what-nonprofits-need-to-know-about-coronavirus/",
-  "Domain": "marylandnonprofits.org",
-  "Count": 3,
-  "Status": 2
- },
- {
-  "Url": "https://providers.org/coronavirus/",
-  "Domain": "providers.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mailchi.mp/mtnonprofit/covid19resources",
-  "Domain": "mailchi.mp",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.njnonprofits.org/blog/2020/03/06/coronavirus-non-profits-and-general-health/",
-  "Domain": "njnonprofits.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "http://nmthrives.org/coronavirus",
-  "Domain": "nmthrives.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nonprofitoregon.org/news/covid-19-resources",
-  "Domain": "nonprofitoregon.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://commongoodvt.org/advocacy/coronavirus-covid-19-nonprofit-resources-information/",
-  "Domain": "commongoodvt.org",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://us1.mailchimp.com/mctx/clicks",
-  "Domain": "us1.mailchimp.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mcf.org/coronavirus-webinar-and-slides",
-  "Domain": "mcf.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.aclu.org/news/privacy-technology/what-you-need-to-know-about-the-coronavirus-outbreak-a-civil-liberties-perspective/",
-  "Domain": "aclu.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.latimes.com/california/story/2020-02-03/fear-panic-around-the-coronavirus-fuels-racist-sentiment",
-  "Domain": "latimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wired.com/story/how-to-clean-your-smartphone-keyboard-mouse-safely/",
-  "Domain": "wired.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ncchamber.com/coronavirus-resource-guide-nc-business/",
-  "Domain": "ncchamber.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mma.marshmma.com/covid-mma-employee-resource-guide",
-  "Domain": "mma.marshmma.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.irs.gov/newsroom/new-credits-fund-employers-for-coronavirus-related-paid-leave",
-  "Domain": "irs.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.sba.gov/page/coronavirus-covid-19-orientacion-y-recursos-de-prestamos-para-pequenas-empresas",
-  "Domain": "sba.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://des.nc.gov/need-help/covid-19-information/federal-unemployment-assistance/pandemic-unemployment-assistance",
-  "Domain": "des.nc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nc.gov/covid-19/staying-ahead-curve/phase-2-extension-faqs",
-  "Domain": "nc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://brookspierce.com/news-insights/preparing-your-business-post-covid-19-world",
-  "Domain": "brookspierce.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nonprofitquarterly.org/covid-19-using-a-racial-justice-lens-now-to-transform-our-future/",
-  "Domain": "nonprofitquarterly.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nonprofitrisk.org/resources/e-news/are-we-covered-your-nonprofits-insurance-policies-and-covid-19-claims/",
-  "Domain": "nonprofitrisk.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mma.marshmma.com/ccoecoronavirusupdate",
-  "Domain": "mma.marshmma.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mma.marshmma.com/COVID-19_EmployersGuide",
-  "Domain": "mma.marshmma.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.pcma.org/covid19-coronavirus-is-your-business-event-covered/",
-  "Domain": "pcma.org",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.nc.gov/agencies/pandemic-recovery-info-nonprofits",
-  "Domain": "nc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ncdps.gov/our-organization/emergency-management/disaster-recovery/covid-19-public-assistance",
-  "Domain": "ncdps.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://cfwnc.org/initiatives/covid-19-pandemic-response/emergency-and-disaster-response-fund-grants",
-  "Domain": "cfwnc.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.fftc.org/COVID-19",
-  "Domain": "fftc.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://app.mobilecause.com/vf/COVID19Forsyth",
-  "Domain": "app.mobilecause.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nccdd.org/news-media/blog/89-ada-blog/945-nccdd-opens-covid-19-coronavirus-mini-grant.html",
-  "Domain": "nccdd.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mountainbizworks.org/small-business-loans-financing-sba/nc-covid-19-rapid-re-loan/",
-  "Domain": "mountainbizworks.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://capdev.com/development-campaign-consulting-news-detail.php",
-  "Domain": "capdev.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.highspeedinternet.net/covid-internet-assistance/",
-  "Domain": "highspeedinternet.net",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://go.dropbox.com/en-us/covid19-donation-program",
-  "Domain": "go.dropbox.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://slack.com/resources/using-slack/covid-help",
-  "Domain": "slack.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cnbc.com/2020/02/28/who-raises-risk-assessment-of-coronavirus-to-very-high-at-global-level.html",
-  "Domain": "cnbc.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ustravel.org/toolkit/emergency-preparedness-and-response-coronavirus-covid-19",
-  "Domain": "ustravel.org",
-  "Count": 3,
-  "Status": 2
- },
- {
-  "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/",
-  "Domain": "who.int",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://marylandnonprofits.force.com/nplnlb/s/article/Administrative-Policies-Maryland",
-  "Domain": "marylandnonprofits.force.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nhchc.org/webinars/coronavirus-and-the-hch-community-status-updates-available-guidance-local-preparations-and-outstanding-issues/",
-  "Domain": "nhchc.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.venable.com/insights/events/2020/03/covid19-what-your-nonprofit-needs-to-know",
-  "Domain": "venable.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://events.eventzilla.net/e/how-to-recognize-and-treat-your-compassion-fatigue-during-covid19-2138796496",
-  "Domain": "events.eventzilla.net",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.foxnews.com/opinion/william-haseltine-social-workers-coronavirus",
-  "Domain": "foxnews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/2020/04/18/us/coronavirus-women-essential-workers.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://naswcanews.org/from-the-nrha-rural-child-social-workers-offer-pandemic-perspective/",
-  "Domain": "naswcanews.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/communication/toolkits/domestic-travelers.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-nCoV/",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/travelers/transportation-toolkit.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.idsnews.com/article/2020/05/coronavirus-indiana-holcomb-to-reopen-bars-restaurants-economy",
-  "Domain": "idsnews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ibj.com/articles/governors-roadmap-to-reopening-culminates-with-end-of-restrictions-on-july-4",
-  "Domain": "ibj.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://coronavirus.medium.com/",
-  "Domain": "coronavirus.medium.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.arthouseconvergence.org/index.php/2020/03/11/pandemic-preparedness-resources/",
-  "Domain": "arthouseconvergence.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://beyondcovid.podbean.com/e/use-a-crisis-journal-to-track-key-decisions-you-make-as-information-changes",
-  "Domain": "beyondcovid.podbean.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.greaterfortwayneinc.com/chamber/covid-19-response-center/lets-get-ready-to-reopen-safely",
-  "Domain": "greaterfortwayneinc.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://beyondcovid.podbean.com/e/the-complications-of-moving-your-staff-back-to-the-office",
-  "Domain": "beyondcovid.podbean.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ehstoday.com/covid19/article/21130406/what-employers-need-to-do-to-reopen-postcovid19",
-  "Domain": "ehstoday.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.marsh.com/us/insights/research/reopening-for-business-in-a-post-coronavirus-world.html",
-  "Domain": "marsh.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://blooloop.com/features/safety-precautions-after-covid-19-reopening-attractions/",
-  "Domain": "blooloop.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.asaecenter.org/resources/articles/an_plus/2020/may/how-to-boost-authenticity-in-your-marketing-and-communications-efforts",
-  "Domain": "asaecenter.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.entrepreneur.com/article/349208",
-  "Domain": "entrepreneur.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.fastcompany.com/90502230/8-critical-lessons-leaders-need-to-emerge-from-the-covid-19-crisis-and-one-that-will-surprise-you",
-  "Domain": "fastcompany.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://prosper-strategies.com/covid-fundraising-appeals-covid",
-  "Domain": "prosper-strategies.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://bloomerang.co/resources/covid19/",
-  "Domain": "bloomerang.co",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.medallia.com/blog/helping-nonprofits-during-covid-19-with-free-crowdsourcing-tool/",
-  "Domain": "medallia.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.indy.gov/topic/covid",
-  "Domain": "indy.gov",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.coronavirus.in.gov/2496.htm",
-  "Domain": "coronavirus.in.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.coronavirus.in.gov",
-  "Domain": "coronavirus.in.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ibj.com/articles/city-indy-chamber-annouce-10-million-rapid-loan-fund-for-small-businesses",
-  "Domain": "ibj.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.forbes.com/sites/tonymarks/2020/03/30/cares-act-to-the-rescue-phase-3-coronavirus-bill-cares-about-small-and-midsize-businesses-franchisors-and-franchisees/",
-  "Domain": "forbes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.terraamericanart.org/2020/04/29/terra-foundation-announces-an-8m-covid-19-relief-fund-for-visual-arts-organizations-engaging-with-art-of-the-united-states/",
-  "Domain": "terraamericanart.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.eventbrite.com/blog/create-promote-gofundme-fundraiser-response-covid-19",
-  "Domain": "eventbrite.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://time.com/5851312/pandemic-art-galleries/",
-  "Domain": "time.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/2020/03/20/arts/arts-loss-coronavirus.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cnn.com/style/article/theaters-uk-pandemic-diversity/index.html",
-  "Domain": "cnn.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.artnews.com/art-news/news/artists-galleries-legal-rights-coronavirus-1202687028/",
-  "Domain": "artnews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.thenation.com/article/society/coronavirus-artists-culture-impact/",
-  "Domain": "thenation.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.indystar.com/story/entertainment/arts/2020/05/08/coronavirus-indiana-performing-arts-venues-have-hurdles-reopen/3044734001/",
-  "Domain": "indystar.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.indystar.com/story/entertainment/arts/2020/05/06/how-indianapolis-museums-plan-safe-reopenings-during-coronavirus-childrens-museum-newfields/3042229001/",
-  "Domain": "indystar.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/2020/05/04/arts/design/artists-relief-coronavirus.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.vanityfair.com/style/2020/04/performing-arts-in-the-covid-19-shutdown",
-  "Domain": "vanityfair.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ibj.com/articles/arts-play-an-essential-role-in-challenging-times",
-  "Domain": "ibj.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.pbs.org/newshour/show/why-pandemic-represents-existential-crisis-for-performing-artists",
-  "Domain": "pbs.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.artnews.com/art-news/news/new-deal-federal-art-project-support-arts-coronavirus-1202684330/",
-  "Domain": "artnews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.dancemagazine.com/radically-reimagine-dance-post-coronavirus-2645704373.html",
-  "Domain": "dancemagazine.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hyperallergic.com/551598/how-small-arts-nonprofits-in-the-us-are-responding-to-the-existentialist-threat-of-covid-19",
-  "Domain": "hyperallergic.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://thehill.com/homesnews/coronavirus-report/492301-arts-struggling-to-survive-pandemic-face-a-longer-road-to-recovery",
-  "Domain": "thehill.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.booooooom.com/2020/03/20/covid-19-resources-for-artists/",
-  "Domain": "booooooom.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://creative-capital.org/2020/03/13/list-of-arts-resources-during-the-covid-19-outbreak",
-  "Domain": "creative-capital.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://211.org/services/covid19",
-  "Domain": "211.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://beltmag.com/coronavirus-covid-19-mutual-aid-rust-belt/",
-  "Domain": "beltmag.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://kheprw.org/pandemic",
-  "Domain": "kheprw.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://bankable.org/bankable-response-to-coronavirus-covid-19/",
-  "Domain": "bankable.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.lisc.org/indianapolis/regional-stories/small-business-resources-covid19-challenges",
-  "Domain": "lisc.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.lisc.org/indianapolis/covid-19/indianapolis-small-business-recovery-grant-for-minority-immigrant-and-women-owned-businesses/",
-  "Domain": "lisc.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.curbed.com/2020/3/18/21185463/coronavirus-mortgage-tips-lenders-servicers-covid-19",
-  "Domain": "curbed.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.npr.org/2020/03/19/818343720/homeowners-hurt-financially-by-the-coronavirus-may-get-a-mortgage-break",
-  "Domain": "npr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nextcity.org/daily/entry/how-borrowers-can-get-flexibility-from-lenders-to-cope-with-covid-19-crisis",
-  "Domain": "nextcity.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://projects.propublica.org/covid-evictions/",
-  "Domain": "projects.propublica.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://usbgfoundation.networkforgood.com/projects/95524-covid-19-relief-campaign",
-  "Domain": "usbgfoundation.networkforgood.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.artnews.com/art-in-america/features/teaching-art-online-covid-19-professors-strategies-1202684147/",
-  "Domain": "artnews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://diymusician.cdbaby.com/musician-tips/covid-19-resources/",
-  "Domain": "diymusician.cdbaby.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://aristake.com/post/coronavirus",
-  "Domain": "aristake.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://pandemiclicense.com/",
-  "Domain": "pandemiclicense.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://marionhealth.org/homeslider/coronavirus-faqs/",
-  "Domain": "marionhealth.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.lighthopelife.org/covid19-response",
-  "Domain": "lighthopelife.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.aflac.com/individuals/advisories/covid-19.aspx",
-  "Domain": "aflac.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.anthem.com/coronavirus/",
-  "Domain": "anthem.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.bestlife.com/covid19_update.html",
-  "Domain": "bestlife.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.deltadental.com/us/en/about-us/press-center/2020-press-releases/delta-dental-covid-19-notice.html",
-  "Domain": "deltadental.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://go.discoverybenefits.com/covid-19",
-  "Domain": "go.discoverybenefits.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.guardianlife.com/covid-19/helping-brokers-employers-understand-covid-19-coronavirus",
-  "Domain": "guardianlife.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.guardianlife.com/coronavirus/FFCRA-FAQs",
-  "Domain": "guardianlife.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.thehartford.com/coronavirus/employee-benefits",
-  "Domain": "thehartford.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.meritain.com/important-information-regarding-the-covid-19-virus",
-  "Domain": "meritain.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oneamerica.com/misc/oneamerica-coronavirus-covid-19-information",
-  "Domain": "oneamerica.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.principal.com/insurance-coverage-and-covid-19",
-  "Domain": "principal.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.prudential.com/covid",
-  "Domain": "prudential.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.reliancestandard.com/Our-Response-to-Coronavirus-COVID-19/3233/",
-  "Domain": "reliancestandard.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.sunlife.com/us/COVID-19",
-  "Domain": "sunlife.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.symetra.com/admin-pages/covid-19-updates/",
-  "Domain": "symetra.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.standard.com/covid-19",
-  "Domain": "standard.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.uhcprovider.com/en/resource-library/news/Novel-Coronavirus-COVID-19.html",
-  "Domain": "uhcprovider.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.insideindianabusiness.com/story/41905647/how-to-work-at-home-during-coronavirus-outbreak",
-  "Domain": "insideindianabusiness.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.natlawreview.com/article/coronavirus-national-emergency-declaration-permits-employers-to-offer-tax-favored",
-  "Domain": "natlawreview.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.indy.gov/topic/covidesp",
-  "Domain": "indy.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://chalkbeat.org/posts/in/2020/03/30/map-where-indianapolis-children-can-get-free-meals-during-coronavirus-shutdowns/",
-  "Domain": "chalkbeat.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mlkcenterindy.org/covid/",
-  "Domain": "mlkcenterindy.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://workoneindy.com/resources/covid-19/",
-  "Domain": "workoneindy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.indystar.com/",
-  "Domain": "indystar.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/travel-advice",
-  "Domain": "who.int",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/2020/02/27/podcasts/the-daily/coronavirus.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nais.org/articles/pages/understanding-coronavirus-what-schools-need-to-know",
-  "Domain": "nais.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.advisory.com/daily-briefing/2020/01/29/coronavirus-preparedness",
-  "Domain": "advisory.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://chiefexecutive.net/coronavirus-and-ceos-the-case-for-calm/",
-  "Domain": "chiefexecutive.net",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nejm.org/doi/full/10.1056/NEJMp2003762",
-  "Domain": "nejm.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.vice.com/en_us/article/884d35/er-doctor-healthcare-workers-coronavirus",
-  "Domain": "vice.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.amazon.com/Soul-People-Writers-Uncovers-Depression-dp-0470403802/dp/0470403802/ref=mt_hardcover",
-  "Domain": "amazon.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.loc.gov/collections/slave-narratives-from-the-federal-writers-project-1936-to-1938/articles-and-essays/introduction-to-the-wpa-slave-narratives/wpa-and-the-slave-narrative-collection/",
-  "Domain": "loc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.artforum.com/news/getty-trust-launches-10-million-covid-19-relief-fund-82666",
-  "Domain": "artforum.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://arts.ufl.edu/sites/creating-healthy-communities/covid-19-arts-response/arts-covid-19-response/",
-  "Domain": "arts.ufl.edu",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.richmondstoryhouse.org/life-in-the-time-of-covid-19",
-  "Domain": "richmondstoryhouse.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cfrichmond.org/Leadership-Impact/Central-Virginia-COVID-19-Response-Fund",
-  "Domain": "cfrichmond.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.dominionenergy.com/Covid19ReliefGrants",
-  "Domain": "dominionenergy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://blog.libro.fm/9-ways-to-support-your-independent-bookstore-during-coronavirus/",
-  "Domain": "blog.libro.fm",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cnn.com/2020/03/14/health/coronavirus-fears-mental-health-wellness-trnd/index.html",
-  "Domain": "cnn.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.canada.ca/en/public-health/services/diseases/2019-novel-coronavirus-infection/health-professionals/mass-gatherings-risk-assesment.html",
-  "Domain": "canada.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.lcwlegal.com/news/faqs-for-non-profit-employers-on-responding-to-the-coronavirus-covid-19-outbreak",
-  "Domain": "lcwlegal.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nonprofithr.com/covid19/",
-  "Domain": "nonprofithr.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.perlmanandperlman.com/doctors-orders-get-organization-prepared-handling-covid-19-workplace/",
-  "Domain": "perlmanandperlman.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.missionbox.com/article/2999/nonprofit-planning-for-the-coronavirus-challenge",
-  "Domain": "missionbox.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.nonprofitlawblog.com/nonprofit-governance-coronavirus-and-covid-19/",
-  "Domain": "nonprofitlawblog.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.yournpp.org/updates-events/blog.html/article/2020/03/09/coronavirus-best-practices-for-protecting-your-people-and-maintaining-their-confidence-in-your-organization",
-  "Domain": "yournpp.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.causevox.com/blog/nonprofits-coronavirus/",
-  "Domain": "causevox.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://npengage.com/arts-cultural/resources-to-guide-arts-and-cultural-organizations-during-the-covid-19-pandemic/",
-  "Domain": "npengage.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.nonprofitlawblog.com/tips-for-nonprofits-during-the-covid-19-pandemic/",
-  "Domain": "nonprofitlawblog.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.signify.solutions/blog/coronavirus-resources-for-nonprofits-and-social-impact-companies",
-  "Domain": "signify.solutions",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nlctb.org/resources/covid-19-nonprofit-resource-hub/",
-  "Domain": "nlctb.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.probonopartner.org/covid-19-resources/",
-  "Domain": "probonopartner.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nonprofitpro.com/article/ensuring-nonprofit-grant-compliance-under-the-stimulus-package/",
-  "Domain": "nonprofitpro.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ssir.org/articles/entry/covid_19s_impact_on_nonprofits_revenues_digitization_and_mergers",
-  "Domain": "ssir.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wildapricot.com/blogs/newsblog/2020/06/25/covid-19-funding-for-nonprofits",
-  "Domain": "wildapricot.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nonprofitpro.com/article/a-guide-to-reopening-your-nonprofit-workplace-in-the-new-normal/",
-  "Domain": "nonprofitpro.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://20degs.com/coronavirus-advice-for-nonprofit-leaders/",
-  "Domain": "20degs.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ssir.org/articles/entry/ssir_guide_to_resilient_leadership_during_the_covid_19_crisis",
-  "Domain": "ssir.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.spokesfornonprofits.org/rethinking-your-nonprofits-future-in-the-face-of-covid-19/",
-  "Domain": "spokesfornonprofits.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/Ask-an-Expert-Starting-the/249002",
-  "Domain": "philanthropy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ssir.org/articles/entry/making_strategic_decisions_in_the_context_of_covid_19",
-  "Domain": "ssir.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://npengage.com/nonprofit-management/executive-insights-on-nonprofit-resiliency-during-covid-19/",
-  "Domain": "npengage.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://vqstrategies.com/pandemic/",
-  "Domain": "vqstrategies.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://npengage.com/nonprofit-marketing/virtual-volunteer-mobilization-strategies-that-can-solve-nonprofits-challenges-during-covid-19/",
-  "Domain": "npengage.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://generocity.org/philly/2020/04/02/will-covid-19-end-white-professional-nonprofit-culture/",
-  "Domain": "generocity.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://blog.techsoup.org/posts/how-covid-19-is-changing-the-technology-needs-of-nonprofits",
-  "Domain": "blog.techsoup.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://madlinblog.wordpress.com/2020/03/03/coronavirus-comms-for-charities/",
-  "Domain": "madlinblog.wordpress.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://grassfedmediadc.com/2020/03/communications-in-the-time-of-coronavirus/",
-  "Domain": "grassfedmediadc.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://charitydigital.org.uk/topics/coronavirus-comms-for-charities-7135",
-  "Domain": "charitydigital.org.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://go.forrester.com/blogs/responding-to-coronavirus-playbook-for-marketing-communications/",
-  "Domain": "go.forrester.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://weinsteinpr.com/10-best-practices-for-communication-management-of-covid-19/",
-  "Domain": "weinsteinpr.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nonprofitmarketingguide.com/blog/2020/03/12/communicating-about-coronavirus-and-your-events-part-2/",
-  "Domain": "nonprofitmarketingguide.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://thenextweb.com/growth-quarters/2020/03/12/10-tips-to-help-your-business-communicate-throughout-the-coronavirus-crisis/",
-  "Domain": "thenextweb.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.socialmediatoday.com/news/twitter-offers-advice-for-brand-communications-amid-coronavirus-outbreak/573958/",
-  "Domain": "socialmediatoday.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.seerinteractive.com/blog/coronavirus-impact-analytics/",
-  "Domain": "seerinteractive.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://101fundraising.org/2020/03/coronavirus-ngos-sharing-social-isolation/",
-  "Domain": "101fundraising.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://neilpatel.com/blog/covid-19-marketing/",
-  "Domain": "neilpatel.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.thenonprofittimes.com/marketing/marketers-adjusting-to-covid-19-using-creative-messages/",
-  "Domain": "thenonprofittimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://blog.techsoup.org/posts/communications-during-covid-19-and-other-disasters",
-  "Domain": "blog.techsoup.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.classy.org/blog/email-marketing-during-a-pandemic-coronavirus/",
-  "Domain": "classy.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://bloomerang.co/blog/best-and-worst-nonprofit-coronavirus-crisis-communication-strategies/",
-  "Domain": "bloomerang.co",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nptechforgood.com/2020/07/13/how-water-org-adapted-their-social-media-content-strategy-in-response-to-covid-19/",
-  "Domain": "nptechforgood.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.classy.org/blog/covid-19-marketing-lessons/",
-  "Domain": "classy.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://liverfoundation.org/alf-statement-on-covid-19-coronavirus/",
-  "Domain": "liverfoundation.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.hemophiliafed.org/news-stories/2020/03/coronavirus-covid-19-what-hfa-is-doing/",
-  "Domain": "hemophiliafed.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://fphnyc.org/coronavirus-new-york/",
-  "Domain": "fphnyc.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mcevoyarts.org/a-message-about-the-coronavirus/",
-  "Domain": "mcevoyarts.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mos.org/coronavirus",
-  "Domain": "mos.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.osfashland.org/en/tickets-and-calendar/covid-prep.aspx",
-  "Domain": "osfashland.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hispanicfederation.org/resources/Resources_for_Non-Profits_During_COVID-19_Emergency/",
-  "Domain": "hispanicfederation.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.specialolympicsga.org/statement-on-covid-19/",
-  "Domain": "specialolympicsga.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://familypromise.org/the-latest/press-releases/covid-19-ceo-message/",
-  "Domain": "familypromise.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://2-harvest.org/covid19/",
-  "Domain": "2-harvest.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.girlscoutsrv.org/en/about-girl-scouts/news/coronavirus-updates.html",
-  "Domain": "girlscoutsrv.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.jewishinseattle.org/your-federations-response-to-covid-19/",
-  "Domain": "jewishinseattle.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.worldvision.org/disaster-relief-news-stories/prayers-people-affected-new-coronavirus",
-  "Domain": "worldvision.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://afyafoundation.org/campaigns/coronavirus-response/",
-  "Domain": "afyafoundation.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.macfound.org/pages/coronavirus-guidance/",
-  "Domain": "macfound.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://cfsem.org/potential-needs-in-southeast-michigan-related-to-covid-19/",
-  "Domain": "cfsem.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.climateworks.org/blog/statement-on-coronavirus/",
-  "Domain": "climateworks.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.massaudubon.org/get-outdoors/covid-19-response",
-  "Domain": "massaudubon.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://keepaustinbeautiful.org/news/covid-19-update/",
-  "Domain": "keepaustinbeautiful.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://fontenelleforest.org/coronavirus/",
-  "Domain": "fontenelleforest.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://eventscouncil.org/Industry-Insights/About-coronavirus",
-  "Domain": "eventscouncil.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.donordrive.com/resources/blog/the-coronavirus-concern-what-nonprofits-need-to-know/",
-  "Domain": "donordrive.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://medium.com/@heatherwhitestrategies/5-strategies-for-nonprofits-navigating-event-cancellations-due-to-coronavirus-f09aea8312fe",
-  "Domain": "medium.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://thriveglobal.com/stories/resilience-during-coronavirus-cancellations/",
-  "Domain": "thriveglobal.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.fundraisingregulator.org.uk/more-from-us/news/covid-19-fundraising-events-advice",
-  "Domain": "fundraisingregulator.org.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://npengage.com/nonprofit-fundraising/maintain-fundraising-momentum-amidst-covid-19/",
-  "Domain": "npengage.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://npengage.com/nonprofit-fundraising/virtual-gala-covid19/",
-  "Domain": "npengage.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://jcsocialmarketing.com/2020/03/5-tips-25-ideas-3-tools-to-take-your-nonprofit-events-virtual-in-the-age-of-coronavirus-npcovid19/",
-  "Domain": "jcsocialmarketing.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.futurefundraisingnow.com/future-fundraising/2020/03/the-way-covid-19-will-destroy-your-fundraising-if-you-let-it.html",
-  "Domain": "futurefundraisingnow.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.institute-of-fundraising.org.uk/news/information-for-fundraisers-about-coronavirus/",
-  "Domain": "institute-of-fundraising.org.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://michaelrosensays.wordpress.com/2020/03/06/how-will-coronavirus-affect-your-fundraising-efforts/",
-  "Domain": "michaelrosensays.wordpress.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://blog.twbfundraising.com/coronavirus-and-fundraising",
-  "Domain": "blog.twbfundraising.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://frontrangesource.com/a-time-for-heroes-fundraising-in-the-time-of-coronavirus/",
-  "Domain": "frontrangesource.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ipmadvancement.com/fundraising-in-a-global-pandemic-five-ways-nonprofits-can-weather-the-impact-of-covid-19-novel-coronavirus/",
-  "Domain": "ipmadvancement.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.soapboxengage.com/blog/1864-protect-donation-levels-during-coronavirus",
-  "Domain": "soapboxengage.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.vitreogroup.ca/the-provocateur-blog/fundraising-in-the-time-of-covid-19-what-to-do-now",
-  "Domain": "vitreogroup.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.pamelagrow.com/12375/fundraising-from-home-during-covid-19-nine-tips/",
-  "Domain": "pamelagrow.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://charity.gofundme.com/c/blog/coronavirus-relief-fund-for-nonprofit-employees",
-  "Domain": "charity.gofundme.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ccsfundraising.com/fundraisers-guide-to-self-management-during-the-covid-19-pandemic/",
-  "Domain": "ccsfundraising.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://charity.gofundme.com/c/blog/nonprofits-raising-money-coronavirus-causes",
-  "Domain": "charity.gofundme.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.care2services.com/care2blog/whos-raising-money-in-the-pandemic-and-how",
-  "Domain": "care2services.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://clairification.com/2020/05/18/philanthropy-trends-nonprofit-needs-know-mid-pandemic/",
-  "Domain": "clairification.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nptechforgood.com/2020/06/06/10-must-know-stats-about-covid-19-donors/",
-  "Domain": "nptechforgood.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://bloomerang.co/blog/nonprofit-grant-seeking-engaging-funders-during-a-pandemic/",
-  "Domain": "bloomerang.co",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.fundersnetwork.org/resources-and-responses-from-the-philanthropic-sector-on-covid-19/",
-  "Domain": "fundersnetwork.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://blog.candid.org/post/funders-respond-to-coronavirus-covid-19/",
-  "Domain": "blog.candid.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/New-Grant-Commitments-for/248647",
-  "Domain": "philanthropy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://grantstation.com/covid-19-related-funding",
-  "Domain": "grantstation.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nff.org/blog/how-foundations-can-help-grantees-respond-covid-19",
-  "Domain": "nff.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://bigduck.com/insights/covid19-and-philanthropy-principles-of-fundraising-in-uncertain-times/",
-  "Domain": "bigduck.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nonprofitpro.com/post/3-ways-to-ask-your-supporters-for-help-during-covid-19/",
-  "Domain": "nonprofitpro.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.linkedin.com/pulse/supporting-nonprofits-igos-during-covid-19-justin-spelhaug",
-  "Domain": "linkedin.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.loom.com/covid-19",
-  "Domain": "loom.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://blog.linkedin.com/2020/march/10/staying-informed-and-connected-resources-to-help-navigate-work-and-coronavirus",
-  "Domain": "blog.linkedin.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.causevox.com/blog/coronavirus-relief-nonprofits/",
-  "Domain": "causevox.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.lightful.com/blog/digital/free-coronavirus-resources-for-charities/",
-  "Domain": "lightful.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://techsoup.course.tc/catalog/track/coronavirus-mitigation-track",
-  "Domain": "techsoup.course.tc",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nten.org/article/digital-divide-resources-during-the-pandemic/",
-  "Domain": "nten.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nonprofitquarterly.org/nonprofits-who-cant-cancel-the-ones-that-serve-those-at-greater-risk-of-covid-19/",
-  "Domain": "nonprofitquarterly.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.startribune.com/minnesota-nonprofits-foundations-prep-for-possible-coronavirus-outbreak/568506912/",
-  "Domain": "startribune.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.sanjoseinside.com/2020/03/11/op-ed-nonprofits-need-extra-support-to-survive-this-pandemic/",
-  "Domain": "sanjoseinside.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.houstoniamag.com/news-and-city-life/2020/03/interfaith-ministries-feeding-seniors-covid-19-crisis",
-  "Domain": "houstoniamag.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.therenewalproject.com/as-coronavirus-spreads-consider-donating-to-the-nonprofits-that-serve-the-most-vulnerable-in-your-community/",
-  "Domain": "therenewalproject.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wtnh.com/news/health/coronavirus/fairfield-nonprofit-tells-employees-to-work-from-home-friday-in-preparation-for-potential-coronavirus-outbreak/",
-  "Domain": "wtnh.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://technical.ly/philly/2020/03/09/covid19-coronavirus-sxsw-amplify-philly/",
-  "Domain": "technical.ly",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.theguardian.com/education/2020/mar/09/charities-feed-children-if-coronavirus-shuts-uk-schools",
-  "Domain": "theguardian.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.theguardian.com/world/2020/mar/06/coronavirus-charities-rally-to-help-older-people-in-self-isolation",
-  "Domain": "theguardian.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.esquire.com/lifestyle/money/a31467983/coronavirus-outbreak-donation-nonprofits-list/",
-  "Domain": "esquire.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://santamariatimes.com/news/local/coronavirus-in-santa-barbara-county-foodbank-gearing-up-for-covid/article_5f41fcdb-2734-52f5-8dfa-ff0c695870ae.html",
-  "Domain": "santamariatimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.theaterjones.com/ntx/news/20200313071929/2020-03-13/How-COVID-19-is-Affecting-the-Arts",
-  "Domain": "theaterjones.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.heraldmailmedia.com/news/special/coronavirus/postponed-day-at-the-races-a-big-hit-to-nonprofit/article_5b2e1bae-1166-584b-93a0-78b3c52b72cb.html",
-  "Domain": "heraldmailmedia.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/How-One-Group-That-Serves-the/248258",
-  "Domain": "philanthropy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/Coronavirus-Threatens/248283",
-  "Domain": "philanthropy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://abcnews.go.com/GMA/Living/virtual-volunteering-ways-volunteer-home-time-coronavirus/story",
-  "Domain": "abcnews.go.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/What-Nonprofits-Should-Know/248386",
-  "Domain": "philanthropy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nonprofitquarterly.org/museums-struggle-for-survival-in-pandemic-shutdown/",
-  "Domain": "nonprofitquarterly.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://biztimes.com/milwaukee-nonprofits-turn-to-virtual-galas-amid-covid-19-pandemic/",
-  "Domain": "biztimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.owensborotimes.com/news/2020/04/nonprofit-using-technology-to-keep-seniors-engaged-during-covid-19/",
-  "Domain": "owensborotimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ktuu.com/content/news/The-unique-stuggles-of-non-profits-during-COVID-19-569372531.html",
-  "Domain": "ktuu.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://sbj.net/stories/nonprofits-pivot-in-wake-of-covid-19,68372",
-  "Domain": "sbj.net",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/Community-Groups-Step-Up-to/248638",
-  "Domain": "philanthropy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ssir.org/articles/entry/how_one_national_nonprofit_is_adapting_to_covid_19",
-  "Domain": "ssir.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.philanthropy.com/article/13-Percent-of-Nonprofits-in-a/248805",
-  "Domain": "philanthropy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mountainx.com/arts/local-arts-nonprofits-continue-toward-their-missions-amid-covid-19-challenges/",
-  "Domain": "mountainx.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://patch.com/california/san-diego/two-local-nonprofits-launch-san-diego-covid-19-volunteer-hub",
-  "Domain": "patch.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.tpr.org/post/nonprofits-face-challenge-surviving-while-serving-during-covid-19",
-  "Domain": "tpr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.startribune.com/minnesota-nonprofits-rework-volunteering-during-covid-19/570724252/",
-  "Domain": "startribune.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.thenonprofittimes.com/hr/fundraising-personnel-being-repurposed-during-pandemic/",
-  "Domain": "thenonprofittimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://independentsector.org/news-post/covid-19-survey-mid-size-nonprofits-release/",
-  "Domain": "independentsector.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.hartfordbusiness.com/article/covid-19-crisis-streamlines-nonprofit-funding-process",
-  "Domain": "hartfordbusiness.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.forbes.com/sites/elizabethfazzare/2020/06/28/women-led-non-profit-covid-19-affected-families-los-angeles/",
-  "Domain": "forbes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.npr.org/sections/coronavirus-live-updates/2020/07/11/890000877/arizona-non-profit-provides-housing-the-homeless-who-test-positive-for-coronavir",
-  "Domain": "npr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://chi.streetsblog.org/2020/07/14/how-nonprofit-community-bike-shops-are-coping-in-a-covid-19-world/",
-  "Domain": "chi.streetsblog.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/2020/07/24/business/economy/nonprofits-coronavirus-economy.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://massnonprofit.org/news/general-news/nonprofits-unlike-for-profits-cut-marketing-due-to-covid-19",
-  "Domain": "massnonprofit.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://shelterforce.org/2020/07/28/faced-with-overwhelming-need-nonprofits-that-serve-immigrants-adapt-to-covid/",
-  "Domain": "shelterforce.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.coloradononprofits.org/news/covid-19-coronavirus-resources-colorado-nonprofits",
-  "Domain": "coloradononprofits.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cnjg.org/coronavirus-response",
-  "Domain": "cnjg.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.gcn.org/articles/Emergency-planning-for-nonprofits-Coronavirus-and-beyond",
-  "Domain": "gcn.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hano-hawaii.org/covid-19/",
-  "Domain": "hano-hawaii.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nhnonprofits.org/page/coronavirus-covid-19-resources-nonprofits",
-  "Domain": "nhnonprofits.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://nonprofitctr.org/covid-19/",
-  "Domain": "nonprofitctr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://theonn.ca/nonprofits-on-the-front-lines-of-covid-19/",
-  "Domain": "theonn.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://pano.org/covid-19-resources/",
-  "Domain": "pano.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://wynonprofit.org/COVID-19",
-  "Domain": "wynonprofit.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://myemail.constantcontact.com/COVID-19-Nonprofit-Update--The-CARES-Act-and-Survey-Results.html",
-  "Domain": "myemail.constantcontact.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.instrumentl.com/covid-19-grants",
-  "Domain": "instrumentl.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.berkshiretaconic.org/Home/COVID-19Response.aspx",
-  "Domain": "berkshiretaconic.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.tbf.org/what-we-do/special-funds/covid-19-response-fund",
-  "Domain": "tbf.org",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "http://cambridgecf.org/two-new-funds-launched-in-response-to-covid-19/",
-  "Domain": "cambridgecf.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.greaterworcester.org/About-Us/News/All-News/foundation-announces-gwcf-covid19-response-fund",
-  "Domain": "greaterworcester.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://mwhealth.org/stories/covid-19-emergency-grants",
-  "Domain": "mwhealth.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://openroadalliance.org/covid-19/",
-  "Domain": "openroadalliance.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.covidreliefcoalition.com/en/Forms/Intake-Form-for-Non-Profits",
-  "Domain": "covidreliefcoalition.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.covidreliefcoalition.com/en/sources-of-relief",
-  "Domain": "covidreliefcoalition.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://unitedwaycm.org/2020/03/16/the-we-care-fund-covid-19-response/",
-  "Domain": "unitedwaycm.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://unitedwayofgnb.org/coronavirus/",
-  "Domain": "unitedwayofgnb.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://unitedwaymassbay.org/get-involved/covid-19-family-fund/",
-  "Domain": "unitedwaymassbay.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://myemail.constantcontact.com/COVID-19-Nonprofit-Update--Interim-Final-Rule-Issued-on-Paycheck-Protection-Program-Loans.html",
-  "Domain": "myemail.constantcontact.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mass.gov/resource/information-on-unemployment-and-coronavirus-covid-19",
-  "Domain": "mass.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wanonprofitinstitute.org/event-planning-covid-19/",
-  "Domain": "wanonprofitinstitute.org",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://corporate.comcast.com/covid-19",
-  "Domain": "corporate.comcast.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.insureon.com/blog/coronavirus-covid19-special-event-insurance-coverage",
-  "Domain": "insureon.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hembar.com/news_resources/managing-contractual-relationships-during-the-covid-19-crisis-force-majeure-clauses-and-other-approaches",
-  "Domain": "hembar.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://unitedwaymassbay.org/blog/remote-work-resources-for-nonprofits/",
-  "Domain": "unitedwaymassbay.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.littler.com/publication-press/publication/coronavirus-employer-action-items",
-  "Domain": "littler.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://kingcounty.gov/depts/health/communicable-diseases/disease-control/novel-coronavirus/~/media/depts/health/communicable-diseases/documents/coronavirus-and-stigma.ashx",
-  "Domain": "kingcounty.gov",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://wwwnc.cdc.gov/travel/notices/warning/coronavirus-europe",
-  "Domain": "wwwnc.cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mass.gov/info-details/covid-19-guidance-and-recommendations",
-  "Domain": "mass.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.berrydunn.com/blog/covid-19-faqs-for-nonprofits",
-  "Domain": "berrydunn.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hembar.com/news_resources/annual-meetings-during-the-covid-19-pandemic-proxy-voting-and-use-of-communications-equipment",
-  "Domain": "hembar.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.berkshireunitedway.org/berkshirecountycovid19fund",
-  "Domain": "berkshireunitedway.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://communityfoundation.org/coronavirus-donations",
-  "Domain": "communityfoundation.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://glcfoundation.org/2020/03/13/new-fund-established-to-help-vulnerable-communities-with-covid-19/",
-  "Domain": "glcfoundation.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://philanthropynw.org/news/philanthropy-northwests-response-covid-19-outbreak",
-  "Domain": "philanthropynw.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://kingcounty.gov/depts/health/communicable-diseases/disease-control/novel-coronavirus/anti-stigma.aspx",
-  "Domain": "kingcounty.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.humanities.org/blog/coronavirus-reading-list-philosophy-humanities/",
-  "Domain": "humanities.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://coronavirus.wa.gov/",
-  "Domain": "coronavirus.wa.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://generocity.org/philly/2020/03/09/nonprofit-af-a-few-things-for-nonprofits-and-foundations-to-consider-in-light-of-the-coronavirus/",
-  "Domain": "generocity.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://joiningvisionandaction.com/can-nonprofits-prepare-covid-19/",
-  "Domain": "joiningvisionandaction.com",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://rdiinc.org/rural-resources-and-strategies-for-covid-19/",
-  "Domain": "rdiinc.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://murdocktrust.org/2020/03/how-we-are-responding-to-covid-19/",
-  "Domain": "murdocktrust.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://themodernnonprofit.com/coronavirus-covid-19-resources-for-nonprofits-by-state-a-z-list/",
-  "Domain": "themodernnonprofit.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://unitedwaysem.org/covid-19-help/",
-  "Domain": "unitedwaysem.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.delcf.org/2020/03/immediate-grants-available-to-delaware-nonprofits-affected-by-covid-19/",
-  "Domain": "delcf.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.delcf.org/2020/03/longwood-foundation-donates-1-million-to-dcf-covid-19-strategic-response-fund/",
-  "Domain": "delcf.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://covid19.nj.gov/faqs/nj-information/general-public/governor-murphy-announces-statewide-stay-at-home-order-closure-of-all-non-essential-retail-businesses",
-  "Domain": "covid19.nj.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nj.gov/health/cd/topics/covid2019_dashboard.shtml",
-  "Domain": "nj.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://thecommunity.nonprofitnewyork.org/s/article/Business-Continuity-and-Disaster-Recovery-Plan-Template",
-  "Domain": "thecommunity.nonprofitnewyork.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.washingtonpost.com/lifestyle/2020/03/03/coronavirus-prevention-face-touch/",
-  "Domain": "washingtonpost.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://faq.business.nj.gov/en/articles/3799035-how-do-executive-orders-no-107-and-108-on-closures-and-social-distancing-affect-my-business",
-  "Domain": "faq.business.nj.gov",
   "Count": 1,
   "Status": 0
  }

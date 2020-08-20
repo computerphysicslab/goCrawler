@@ -887,7 +887,37 @@ func doNextLink() bool {
 	return true
 }
 
-func yamlInit() {
+func yamlInitGeneral() {
+	viper.SetConfigName("crawler") // name of config file (without extension)
+	viper.AddConfigPath(".")       // look for config in the working directory
+	err := viper.ReadInConfig()    // Find and read the config file
+	if err != nil {                // Handle errors reading the config file
+		panic(fmt.Errorf("Fatal error config file: %s", err))
+	}
+	regexBannedDomains = viper.GetString("regexBannedDomains")
+	regexLinkBannedTokens = viper.GetString("regexLinkBannedTokens")
+	engStopWordsWOthe = viper.GetString("engStopWordsWOthe")
+	engStopWords = `the|` + engStopWordsWOthe
+	engLowRelevancyWords = `|` + viper.GetString("engLowRelevancyWords")
+	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + viper.GetString("specialStopwords") + `)\W`
+	proxyHost = viper.GetString("proxyHost")
+	proxyUser = viper.GetString("proxyUser")
+	proxyPass = viper.GetString("proxyPass")
+	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
+
+	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
+	fmt.Printf("\n\nregexLinkBannedTokens: %s", regexLinkBannedTokens)
+	fmt.Printf("\n\nengStopWordsWOthe: %s", engStopWordsWOthe)
+	fmt.Printf("\n\nengStopWords: %s", engStopWords)
+	fmt.Printf("\n\nengLowRelevancyWords: %s", engLowRelevancyWords)
+	fmt.Printf("\n\nregexStopwords: %s", regexStopwords)
+	fmt.Printf("\n\nproxyHost: %s", proxyHost)
+	fmt.Printf("\n\nproxyUser: %s", proxyUser)
+	fmt.Printf("\n\nproxyPass: %s", proxyPass)
+	fmt.Printf("\n\ndownloadTimeout: %+v", downloadTimeout)
+}
+
+func yamlInitSpecific() {
 	argsWithoutProg := os.Args[1:]
 	viper.SetConfigName(argsWithoutProg[0]) // name of config file (without extension)
 	viper.AddConfigPath(".")                // look for config in the working directory
@@ -895,41 +925,22 @@ func yamlInit() {
 	if err != nil {                         // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
-	regexBannedDomains = viper.GetString("regexBannedDomains")
-	regexLinkBannedTokens = viper.GetString("regexLinkBannedTokens")
 	curatedDomains = viper.GetString("curatedDomains")
 	regexLinkOk = `(?i)^https*://.*(` + viper.GetString("linkOk") + `|` + curatedDomains + `)`
-	engStopWordsWOthe = viper.GetString("engStopWordsWOthe")
-	engStopWords = `the|` + engStopWordsWOthe
-	engLowRelevancyWords = `|` + viper.GetString("engLowRelevancyWords")
-	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + viper.GetString("specialStopwords") + `)\W`
 	regexRankingKeywords = viper.GetString("regexRankingKeywords")
-	proxyHost = viper.GetString("proxyHost")
-	proxyUser = viper.GetString("proxyUser")
-	proxyPass = viper.GetString("proxyPass")
-	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
 	bootstrapingLinks = viper.GetStringSlice("bootstrapingLinks")
 
 	fmt.Printf("\n\nargsWithoutProg: %+v", argsWithoutProg)
-	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
-	fmt.Printf("\n\nregexLinkBannedTokens: %s", regexLinkBannedTokens)
 	fmt.Printf("\n\ncuratedDomains: %s", curatedDomains)
 	fmt.Printf("\n\nregexLinkOk: %s", regexLinkOk)
-	fmt.Printf("\n\nengStopWordsWOthe: %s", engStopWordsWOthe)
-	fmt.Printf("\n\nengStopWords: %s", engStopWords)
-	fmt.Printf("\n\nengLowRelevancyWords: %s", engLowRelevancyWords)
-	fmt.Printf("\n\nregexStopwords: %s", regexStopwords)
 	fmt.Printf("\n\nregexRankingKeywords: %s", regexRankingKeywords)
-	fmt.Printf("\n\nproxyHost: %s", proxyHost)
-	fmt.Printf("\n\nproxyUser: %s", proxyUser)
-	fmt.Printf("\n\nproxyPass: %s", proxyPass)
-	fmt.Printf("\n\ndownloadTimeout: %+v", downloadTimeout)
 	fmt.Printf("\n\nbootstrapingLinks: %+v", bootstrapingLinks)
 }
 
 func main() {
 	fmt.Println("* Loading YAML config ...")
-	yamlInit()
+	yamlInitGeneral()
+	yamlInitSpecific()
 
 	fmt.Println("* Init English corpus ...")
 	goCorpusFreqLib.Init()

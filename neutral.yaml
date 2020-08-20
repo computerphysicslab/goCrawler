@@ -1,0 +1,14 @@
+# To create a non-specific english contemporaneous corpus
+
+curatedDomains: |
+  en\.wikipedia\.org|arxiv\.org|wired\.com|washingtonpost\.com|nytimes\.com
+
+linkOk: |
+  fulltext|article|news
+
+regexRankingKeywords: |
+  (?i)\W(the|of|and|for|english|2020|international)\W
+
+# // Pages w/ great links
+bootstrapingLinks:
+- "https://www.nytimes.com/"
