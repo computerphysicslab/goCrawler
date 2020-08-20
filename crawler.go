@@ -28,6 +28,8 @@ import (
 	"jaytaylor.com/html2text"
 
 	"github.com/computerphysicslab/goPackages/goDebug"
+
+	goCorpusFreqLib "goCrawler/goCorpusFreqLib"
 )
 
 /******************************************************************************/
@@ -50,13 +52,13 @@ var curatedDomains string = `en\.wikipedia\.org|cureus|cochrane|biomedcentral|na
 var regexLinkOk string = `(?i)^https*://.*(fulltext|article|covid|coronavirus|nCoV|sars|pandemic|epidemiology|immunology|immunity|immunization|vaccine|hydroxychloroquine|lockdown|asymptomatic|serological` +
 	`|infection|respiratory|disease|` + curatedDomains + `)`
 
-var engStopWords string = `a|and|be|have|i|in|of|that|the|to|with|from|is|on|up|for|should|even|why|by|during|we|could|but|about|as|or|this|at|not|all|other` +
+var engStopWords string = `a|and|be|have|i|in|of|that|t_h_e|to|with|from|is|on|up|for|should|even|why|by|during|we|could|but|about|as|or|this|at|not|all|other` +
 	`|if|can|how|may|who|an|no|our|what|use|get|will|has|their|was|than|which|these|also|been|when|through|were|under|there|those|out|after|such|any|before` +
 	`|here|only|some|its|where|into|like|would|against|between|most|so|over|because|now|while|since|however|non|without|among|both|another|still|just|way|very` +
-	`|good|around|every|each|his|her|then|much|less|few|same|within|per|whether`
+	`|good|around|every|each|his|her|then|much|less|few|same|within|per|whether|cannot`
 
 var engLowRelevancyWords string = `|articles*|publications*|questions*|times|data|source|people|information|news*|search|content|home|sites*|best|well|pdf|files` +
-	`|uploads|programs*|support|help|default|files*|available|please|including|website|related|work|number|days*|using|two|ref|first|daily|public|cases*|high|possible` +
+	`|uploads|programs*|support|help|default|files*|available|please|including|websites*|related|work|number|days*|using|two|ref|first|daily|public|cases*|high|possible` +
 	`|system|review|based|provide|results|additional|include|current|important|week|group|full|different|person|take|continue|national|needs*|millions*|requiremets*|working` +
 	`|you|your|more|says|read|make|made|see|does|due|she|one|said|being|had|need|them|many|used|must|do|they|it|he|are|twitter|facebook|date|time|pages*|topics*|example` +
 	`|things|real|wiki|early|year|currently|higher|specific|state|resources|social|study|guidance|local|leave`
@@ -880,6 +882,36 @@ func doNextLink() bool {
 		g := rSortFreq(f)
 		fmt.Println("\n\nCorpus frequencies: ", g[:100])
 
+		// substracting english words frequencies
+		corpusFreqsWithoutEnglish := make(freq) // specific corpus token frequencies w/o english baseline
+
+		var intercorpusScaleFactor float64
+		intercorpusContrast := 4.0
+		if g[0].Key == "the" {
+			intercorpusScaleFactor = float64(1+goCorpusFreqLib.Freq("the")) / float64(g[0].Value)
+		} else {
+			panic("Error: stopword \"the\" not found!")
+		}
+
+		// keyValue={Key:the Value:5498} [eng: 6187267] [corpusFreqsWithoutEnglish: 0]
+		// keyValue={Key:covid Value:1867} [eng: 0] [corpusFreqsWithoutEnglish: 1867]
+		// keyValue={Key:patients Value:1247} [eng: 17330] [corpusFreqsWithoutEnglish: 0]
+		// keyValue={Key:fda Value:604} [eng: 23] [corpusFreqsWithoutEnglish: 25]
+		// keyValue={Key:disease Value:504} [eng: 8905] [corpusFreqsWithoutEnglish: 0]
+		// keyValue={Key:test Value:436} [eng: 9663] [corpusFreqsWithoutEnglish: 0]
+		// keyValue={Key:sars Value:430} [eng: 17] [corpusFreqsWithoutEnglish: 23]
+		// keyValue={Key:cov Value:389} [eng: 30] [corpusFreqsWithoutEnglish: 12]
+		// keyValue={Key:tests Value:388} [eng: 4681] [corpusFreqsWithoutEnglish: 0]
+		for _, keyValue := range g {
+			// By division:
+			// corpusFreqsWithoutEnglish[keyValue.Key] = int(intercorpusScaleFactor * float64(keyValue.Value) / float64(1+goCorpusFreqLib.Freq(keyValue.Key)))
+			// By substraction:
+			corpusFreqsWithoutEnglish[keyValue.Key] = keyValue.Value - int(intercorpusContrast*float64(1+goCorpusFreqLib.Freq(keyValue.Key))/intercorpusScaleFactor)
+			// fmt.Printf("\nkeyValue=%+v [eng: %d] [corpusFreqsWithoutEnglish: %d]", keyValue, goCorpusFreqLib.Freq(keyValue.Key), corpusFreqsWithoutEnglish[keyValue.Key])
+		}
+		corpusFreqsWithoutEnglishSorted := rSortFreq(corpusFreqsWithoutEnglish)
+		fmt.Println("\n\nCorpus frequencies w/o Eng.: ", corpusFreqsWithoutEnglishSorted[:100])
+
 		// LPool dump to file
 		LPoolDump()
 		domainCounterDump()
@@ -906,6 +938,9 @@ func doNextLink() bool {
 }
 
 func main() {
+	fmt.Println("* Init English corpus ...")
+	goCorpusFreqLib.Init()
+
 	// Allow go interfaces be expanded into custom structs of our cache implementation
 	gob.Register(CachedData{}) // For some reason, this declaration must be written on main function
 
@@ -916,7 +951,7 @@ func main() {
 	linkBootstraping()
 
 	// Tokenizer frequencies
-	f = make(freq)
+	f = make(freq) // specific corpus token frequencies
 	// var dataCSV = [][]string{{}}
 	// file, err := os.Create("maxFreq-numWords-URL.csv")
 	file, err := os.Create("ranking-URL.csv")

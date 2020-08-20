@@ -86,6 +86,13 @@ func Init() {
 	fmt.Printf("\n\nlen(corpusFreqs) = %d\n", len(corpusFreqs))
 }
 
+func Freq(token string) (numTotal int) {
+	numTotal = corpusFreqs[token].numTotal
+
+	return
+}
+
 func Test() {
-	fmt.Printf("\n\nShakespeare: %+v\n", corpusFreqs["shakespeare"])
+	// fmt.Printf("\n\nShakespeare: %+v\n", corpusFreqs["shakespeare"])
+	fmt.Printf("\n\nShakespeare: %d\n", Freq("shakespeare"))
 }
