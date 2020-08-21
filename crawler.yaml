@@ -6,7 +6,7 @@ engStopWordsWOthe: |
   a|and|be|have|i|in|of|that|to|with|from|is|on|up|for|should|even|why|by|during|we|could|but|about|as|or|this|at|not|all|other
   |if|can|how|may|who|an|no|our|what|use|get|will|has|their|was|than|which|these|also|been|when|through|were|under|there|those|out|after|such|any|before
   |here|only|some|its|where|into|like|would|against|between|most|so|over|because|now|while|since|however|non|without|among|both|another|still|just|way|very
-  |good|around|every|each|his|her|then|much|less|few|same|within|per|whether|cannot|doesn|isn|aren|across|ongoing|pre|anti
+  |good|around|every|each|his|her|then|much|less|few|same|within|per|whether|cannot|doesn|isn|aren|across|ongoing|pre|anti|onset
 
 engLowRelevancyWords: |
   articles*|publications*|questions*|times|data|source|people|information|news*|search|content|home|sites*|best|well|pdf|files
@@ -14,7 +14,7 @@ engLowRelevancyWords: |
   |system|review|based|provide|results|additional|include|current|important|week|group|full|different|person|take|continue|national|needs*|millions*|requiremets*|working
   |you|your|more|says|read|make|made|see|does|due|she|one|said|being|had|need|them|many|used|must|do|they|it|he|are|twitter|facebook|date|time|pages*|topics*|example
   |things|real|wiki|early|year|currently|higher|specific|state|resources*|social|study|guidance|local|leave|online|centers*|email|blog|don|according|updates*d*|world
-  |cookies|javascript|google|internet|webinar|color|challenges*|click|faqs*
+  |cookies|javascript|google|internet|webinar|color|challenges*|click|faqs*|fig|cite|preprints*
 
 specialStopwords: |
   https*|www|php|aspx|index|en|html
