@@ -1,14 +1,19 @@
 # To create a non-specific english contemporaneous corpus
 
 curatedDomains: |
-  en\.wikipedia\.org|arxiv\.org|wired\.com|washingtonpost\.com|nytimes\.com
+  en\.wikipedia\.org|arxiv\.org|wired\.com|nytimes\.com
 
 linkOk: |
-  fulltext|article|news
+  fulltext|article|news|aws|amazon|storage|customers|solutions|cloud|analytics|serverless|workloads|efs|applications|tech|learning|kubernetes|create|build|guardduty|video|instances|console|fargate|developers|component|text|privacy|domain|registry|services|stack|advertising|registrant|applicable|web|dow|collect|registration|overflow|microsoft|cookie|browser|opt|cds|yahoo|apps|mobile|arbitration|notice|verizon|device|account|analytics|agree|ads|tucows|aug|tracking|wordpress|providers|barron|app|wsj|affiliates|settings|vox|registered|submit|dispute|license|accordance|strikingly|trump|cxense|previews|media|browsing|artwork|biden|bankrate|address|woocommerce|hosting|delete|brands|rel|cbs|personalized|marketing|learn|registrar|whatsapp|proprietary|apy|request|pursuant|provider|icann|network|fdic|disputes|newsletter|lazyload|equity|posted|notices|browsers|automattic|acknowledge|download|disclose|digital|collected|technologies|subscription|fees|com
 
 regexRankingKeywords: |
-  (?i)\W(the|of|and|for|english|2020|international)\W
+  (?i)\W(the|of|and|for|english|2020|international|aws|amazon|storage|customers|solutions|cloud|analytics|serverless|workloads|efs|applications|tech|learning|kubernetes|create|build|guardduty|video|instances|console|fargate|developers|component|text|privacy|domain|registry|services|stack|advertising|registrant|applicable|web|dow|collect|registration|overflow|microsoft|cookie|browser|opt|cds|yahoo|apps|mobile|arbitration|notice|verizon|device|account|analytics|agree|ads|tucows|aug|tracking|wordpress|providers|barron|app|wsj|affiliates|settings|vox|registered|submit|dispute|license|accordance|strikingly|trump|cxense|previews|media|browsing|artwork|biden|bankrate|address|woocommerce|hosting|delete|brands|rel|cbs|personalized|marketing|learn|registrar|whatsapp|proprietary|apy|request|pursuant|provider|icann|network|fdic|disputes|newsletter|lazyload|equity|posted|notices|browsers|automattic|acknowledge|download|disclose|digital|collected|technologies|subscription|fees)\W
+
+minDocLen: 0
+maxDocLen: 100000
 
 # // Pages w/ great links
 bootstrapingLinks:
-- "https://www.nytimes.com/"
+- "https://moz.com/top500"
+- "https://www.similarweb.com/top-websites/"
+- "https://en.wikipedia.org/wiki/List_of_most_popular_websites"

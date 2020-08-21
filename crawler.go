@@ -39,20 +39,12 @@ import (
 /******************************************************************************/
 /******************************************************************************/
 
-var regexBannedDomains string
-var regexLinkBannedTokens string
-var curatedDomains string
-var regexLinkOk string
-var engStopWordsWOthe string
-var engStopWords string
-var engLowRelevancyWords string
-var regexStopwords string
-var regexRankingKeywords string
-var proxyHost string
-var proxyUser string
-var proxyPass string
+var regexBannedDomains, regexLinkBannedTokens, curatedDomains, regexLinkOk string
+var engStopWordsWOthe, engStopWords, engLowRelevancyWords, regexStopwords string
+var regexRankingKeywords, proxyHost, proxyUser, proxyPass string
 var downloadTimeout time.Duration
 var bootstrapingLinks []string
+var minDocLen, maxDocLen int
 
 /******************************************************************************/
 /******************************************************************************/
@@ -287,6 +279,12 @@ func getDomain(link string) string {
 	return mainDomain
 }
 
+func stringRmNewLines(t string) string {
+	var re = regexp.MustCompile(`(\n+)`)
+	t = re.ReplaceAllString(t, "")
+
+	return t
+}
 func getSecondLevelDomain(link string) string {
 	u, err := url.Parse(link)
 	if err != nil {
@@ -322,7 +320,6 @@ func isBanned(link string, domain string) bool {
 }
 
 func linkSeemsOk(l string) bool {
-	// fmt.Printf("\n\nlinkSeemsOk(%s)", l)
 	if len(l) > 300 {
 		return false
 	}
@@ -330,18 +327,31 @@ func linkSeemsOk(l string) bool {
 	r, _ := regexp.Compile(regexLinkOk)
 	if len(r.FindStringSubmatch(l)) > 0 {
 		return true
+	} else {
+		// fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
 	}
+
 	return false
 }
 
 func getNextLink() (int, string) {
-	// maxCount := 0
 	maxi := 0
 	lasti := 0
 	maxUrl := ""
-	// minDomainCounter := 0
 	var priority, maxPriority float64
+
+	// fmt.Printf("* getNextLink() %d links on the pool\n", len(LPool))
+
 	for i, l := range LPool {
+		if l.Status == 4 { // bootstrapping url
+			fmt.Printf("\n\nFound bootstrapping url: %+v", l)
+			// Set this item directly as next candidate
+			maxi = i
+			maxUrl = l.Url
+			maxPriority = 0
+			break
+		}
+
 		// fmt.Printf("\n\ni,l = %d, %+v", i, l)
 		priority = float64(l.Count) * float64(l.Count) / (float64(domainCounter[l.Domain]) + 1.0)
 
@@ -356,29 +366,29 @@ func getNextLink() (int, string) {
 		}
 		lasti = i
 	}
-	fmt.Sprintf("* getNextLink() %d links on the pool. Found best link at %d position. Priority: %.03f\n", lasti, maxi, priority)
+	fmt.Printf("* getNextLink() %d links on the pool. Found best link at %d position. Priority: %.03f\n", lasti, maxi, priority)
 
 	increaseDomainCounter(LPool[maxi].Domain)
 
 	return maxi, maxUrl
 }
 
-func addLink(link string, avoidFilters bool) {
+func addLink(link string, avoidFilters bool) bool {
 	// fmt.Printf("\n\naddLink(%s, %+v)", link, avoidFilters)
 	domain := getDomain(link)
 	if !avoidFilters {
 		if domain == "" { // Avoid null and local urls
-			return
+			return false
 		}
 
 		if isBanned(link, domain) { // Avoid banned domains
 			// fmt.Println("***** Banned domain: ", link)
-			return
+			return false
 		}
 
 		if !linkSeemsOk(link) { // Avoid links that do not pass keyword filter
 			// fmt.Println("***** Link seems not ok: ", link)
-			return
+			return false
 		}
 
 		// into canonical link by removing cgi parameters
@@ -395,12 +405,18 @@ func addLink(link string, avoidFilters bool) {
 	for i, l := range LPool {
 		if l.Url == link {
 			LPool[i].Count++
-			return
+			return true
 		}
 	}
 
 	// Link is new
-	LPool = append(LPool, ALink{Url: link, Domain: domain, Count: 1, Status: 0})
+	if avoidFilters {
+		LPool = append(LPool, ALink{Url: link, Domain: domain, Count: 1, Status: 4})
+	} else {
+		LPool = append(LPool, ALink{Url: link, Domain: domain, Count: 1, Status: 0})
+	}
+
+	return true
 }
 
 func linkBootstraping() {
@@ -418,7 +434,18 @@ func LPoolDump() {
 	}
 	// fmt.Println(string(jdata))
 	jsonFile, err := os.Create("./LPool.json")
+	if err != nil {
+		log.Println(err)
+	}
 	jsonFile.Write(jdata)
+}
+
+func string2file(text string, filename string) {
+	aFile, err := os.Create(filename)
+	if err != nil {
+		log.Println(err)
+	}
+	aFile.Write([]byte(text))
 }
 
 func domainCounterDump() {
@@ -683,6 +710,25 @@ func bestParagraph(paragraphs []string) (bp string) {
 	return
 }
 
+func addLinksOf(nextLink string, links []string) {
+	linksAdded := 0
+	// add links to pool
+	for _, link := range links {
+		// fmt.Printf("\nfor _, link := range links ... =>  %s", link)
+		if strings.Contains(getDomain(link), getSecondLevelDomain(nextLink)) {
+			// fmt.Printf("\nSite link ignored: %s", link)
+		} else {
+			if addLink(link, false) {
+				linksAdded++
+			}
+			if strings.Contains(link, "wikipedia") {
+				fmt.Printf("\n*************************************** %s [%s:%s]", link, getDomain(link), getSecondLevelDomain(nextLink))
+			}
+		}
+	}
+	fmt.Printf(" %d links found (%d added)", len(links), linksAdded)
+}
+
 func doNextLink() bool {
 	maxi, nextLink := getNextLink()
 	if nextLink == "" {
@@ -690,6 +736,7 @@ func doNextLink() bool {
 		fmt.Println(maxi)
 		return false // meaning there are no more links to explore
 	}
+	prevState := LPool[maxi].Status
 	LPool[maxi].Status = 1
 	fmt.Printf("\n* Downloading url: %s", nextLink)
 
@@ -700,6 +747,11 @@ func doNextLink() bool {
 		fmt.Println("\nDownload error: ", err)
 	} else {
 		LPool[maxi].Status = 2
+	}
+
+	// Adding links of bootstrapping before filters
+	if prevState == 4 && LPool[maxi].Status == 2 {
+		addLinksOf(nextLink, links)
 	}
 
 	// Tokenizer url keywords frequencies
@@ -729,18 +781,22 @@ func doNextLink() bool {
 		regex3 := `(?i)\W([^ \t\n]{80,})\W`
 		r3 := regexp.MustCompile(regex3)
 		p4 := r3.ReplaceAllString(p3, " ")
-		// fmt.Printf("\n\n%s", paragraphs[i])
+		// fmt.Printf("\n\n%s", p4)
 
-		numStopWords := stopWordsCount(p4)
-		numTotalWords := len(tokenize(p4))
+		regex4 := `(?i)\W(div|img|alt|class|nofollow)\W`
+		r4 := regexp.MustCompile(regex4)
+		p5 := r4.ReplaceAllString(p4, " ")
+		// fmt.Printf("\n\n%s", p5)
+
+		numStopWords := stopWordsCount(p5)
+		numTotalWords := len(tokenize(p5))
 		ratioStopWords := float64(numStopWords) / float64(numTotalWords+1)
+		// fmt.Printf("\n\nratioStopWords: %f: %s", ratioStopWords, paragraphs[i])
 		if ratioStopWords < 0.1 {
 			paragraphs[i] = ""
 		} else {
-			paragraphs[i] = p4
+			paragraphs[i] = p5
 		}
-		//fmt.Printf("\n\n%s", paragraphs[i])
-		//panic(1)
 	}
 
 	bParagraphs[nextLink] = bestParagraph(paragraphs)
@@ -763,19 +819,19 @@ func doNextLink() bool {
 		curatedContent = curatedContent + "\n" + p
 	}
 
-	// fmt.Printf("\n\n%s", curatedContent)
+	// fmt.Printf("\n\ncuratedContent: %s", curatedContent)
 
 	// Doc length
 	docLen := len(tokenize(curatedContent))
 
-	// Cut values on numWords 1k - 10k
-	if docLen > 100000 || docLen < 200 {
-		// if docLen < 200 {
-		// 	fmt.Printf("\n*** docLen < 1000 : %d %s", docLen, curatedContent)
-		// }
-		if docLen > 100000 {
-			fmt.Printf("\n*** docLen > 100000 : %d %s", docLen, curatedContent[:1000])
-		}
+	// Cut filter on curated numWords
+	if docLen > maxDocLen {
+		fmt.Printf("\n*** docLen > %d : %d %s", maxDocLen, docLen, curatedContent[:1000])
+		return true
+	}
+
+	if docLen < minDocLen {
+		fmt.Printf("\n*** docLen < %d : %d %s", minDocLen, docLen, curatedContent)
 		return true
 	}
 
@@ -832,6 +888,13 @@ func doNextLink() bool {
 		g := rSortFreq(f)
 		fmt.Println("\n\nCorpus frequencies: ", g[:100])
 
+		// Saving corpus frequencies in format all.num from British National Corpus
+		output := ""
+		for _, gg := range g {
+			output = output + fmt.Sprintf("\n%d %s %s %d", gg.Value, gg.Key, "none", 0)
+		}
+		string2file(output, "./corpusFrequencies.txt")
+
 		// substracting english words frequencies
 		corpusFreqsWithoutEnglish := make(freq) // specific corpus token frequencies w/o english baseline
 
@@ -870,19 +933,10 @@ func doNextLink() bool {
 	// push content into persitent ddbb
 	// save(curatedContent, l.Url)
 
-	// add links to pool
-	for _, link := range links {
-		// fmt.Printf("\nfor _, link := range links ... =>  %s", link)
-		if strings.Contains(getDomain(link), getSecondLevelDomain(nextLink)) {
-			// fmt.Printf("\nSite link ignored: %s", link)
-		} else {
-			addLink(link, false)
-			if strings.Contains(link, "wikipedia") {
-				fmt.Printf("\n*************************************** %s [%s:%s]", link, getDomain(link), getSecondLevelDomain(nextLink))
-			}
-		}
+	// Adding links of urls passing filters
+	if prevState == 0 && LPool[maxi].Status == 2 {
+		addLinksOf(nextLink, links)
 	}
-	fmt.Printf(" %d links found", len(links))
 
 	return true
 }
@@ -894,12 +948,12 @@ func yamlInitGeneral() {
 	if err != nil {                // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
-	regexBannedDomains = viper.GetString("regexBannedDomains")
-	regexLinkBannedTokens = viper.GetString("regexLinkBannedTokens")
-	engStopWordsWOthe = viper.GetString("engStopWordsWOthe")
+	regexBannedDomains = stringRmNewLines(viper.GetString("regexBannedDomains"))
+	regexLinkBannedTokens = stringRmNewLines(viper.GetString("regexLinkBannedTokens"))
+	engStopWordsWOthe = stringRmNewLines(viper.GetString("engStopWordsWOthe"))
 	engStopWords = `the|` + engStopWordsWOthe
-	engLowRelevancyWords = `|` + viper.GetString("engLowRelevancyWords")
-	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + viper.GetString("specialStopwords") + `)\W`
+	engLowRelevancyWords = `|` + stringRmNewLines(viper.GetString("engLowRelevancyWords"))
+	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + stringRmNewLines(viper.GetString("specialStopwords")) + `)\W`
 	proxyHost = viper.GetString("proxyHost")
 	proxyUser = viper.GetString("proxyUser")
 	proxyPass = viper.GetString("proxyPass")
@@ -925,10 +979,12 @@ func yamlInitSpecific() {
 	if err != nil {                         // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
-	curatedDomains = viper.GetString("curatedDomains")
-	regexLinkOk = `(?i)^https*://.*(` + viper.GetString("linkOk") + `|` + curatedDomains + `)`
-	regexRankingKeywords = viper.GetString("regexRankingKeywords")
+	curatedDomains = stringRmNewLines(viper.GetString("curatedDomains"))
+	regexLinkOk = `(?i)^https*://.*(` + stringRmNewLines(viper.GetString("linkOk")) + `|` + curatedDomains + `)`
+	regexRankingKeywords = stringRmNewLines(viper.GetString("regexRankingKeywords"))
 	bootstrapingLinks = viper.GetStringSlice("bootstrapingLinks")
+	minDocLen = viper.GetInt("minDocLen")
+	maxDocLen = viper.GetInt("maxDocLen")
 
 	fmt.Printf("\n\nargsWithoutProg: %+v", argsWithoutProg)
 	fmt.Printf("\n\ncuratedDomains: %s", curatedDomains)
@@ -938,6 +994,18 @@ func yamlInitSpecific() {
 }
 
 func main() {
+
+	// l := "https://vip.wordpress.com/"
+	// regexLinkOk = `(?i)^https*://.*(fulltext|article|news|com|en\.wikipedia\.org|arxiv\.org|wired\.com|washingtonpost\.com|nytimes\.com)`
+	// // regexLinkOk = `(?i)^https*://.*(fulltext|article|news|news|com|en\.wikipedia\.org)`
+	// r0, _ := regexp.Compile(regexLinkOk)
+	// if len(r0.FindStringSubmatch(l)) > 0 {
+	// 	fmt.Printf("\n\nOK!!!")
+	// } else {
+	// 	fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
+	// }
+	// panic(1)
+
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
 	yamlInitSpecific()

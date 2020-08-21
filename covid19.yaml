@@ -17,6 +17,9 @@ regexRankingKeywords: |
   |impacts|employees|clinical|wuhan|challenges|prior|app|ppp|click|lockdown|medicare|hydroxychloroquine|paycheck|eligibility|hospitalized|prevention|closures
   |viruses|medicaid|med|infections|authorized|eua|asymptomatic|respirators|osha|statewide|ace2|coverings|transmission|epidemic)\W
 
+minDocLen: 200
+maxDocLen: 100000
+
 # // Pages w/ great links
 bootstrapingLinks:
 - "https://asm.org/COVID/COVID-19-Research-Registry/Home"
