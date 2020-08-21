@@ -448,6 +448,17 @@ func string2file(text string, filename string) {
 	aFile.Write([]byte(text))
 }
 
+func string2fileAppend(text string, filename string) {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(text + "\n"); err != nil {
+		log.Println(err)
+	}
+}
+
 func domainCounterDump() {
 	jdata, err := json.MarshalIndent(domainCounter, "", " ")
 	if err != nil {
@@ -819,6 +830,7 @@ func doNextLink() bool {
 		curatedContent = curatedContent + "\n" + p
 	}
 
+	string2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
 	// fmt.Printf("\n\ncuratedContent: %s", curatedContent)
 
 	// Doc length
@@ -916,7 +928,8 @@ func doNextLink() bool {
 		// keyValue={Key:cov Value:389} [eng: 30] [corpusFreqsWithoutEnglish: 12]
 		// keyValue={Key:tests Value:388} [eng: 4681] [corpusFreqsWithoutEnglish: 0]
 		for _, keyValue := range g {
-			// By division:
+			// By divignatu
+		on:
 			// corpusFreqsWithoutEnglish[keyValue.Key] = int(intercorpusScaleFactor * float64(keyValue.Value) / float64(1+goCorpusFreqLib.Freq(keyValue.Key)))
 			// By substraction:
 			corpusFreqsWithoutEnglish[keyValue.Key] = keyValue.Value - int(intercorpusContrast*float64(1+goCorpusFreqLib.Freq(keyValue.Key))/intercorpusScaleFactor)
