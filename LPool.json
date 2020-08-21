@@ -272,7 +272,7 @@
  {
   "Url": "https://www.linkedin.com/shareArticle",
   "Domain": "linkedin.com",
-  "Count": 99,
+  "Count": 100,
   "Status": 2
  },
  {
@@ -308,7 +308,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/symptoms-testing/symptoms.html",
   "Domain": "cdc.gov",
-  "Count": 38,
+  "Count": 39,
   "Status": 2
  },
  {
@@ -2948,7 +2948,7 @@
  {
   "Url": "https://www.nature.com/articles/s41591-020-0869-5",
   "Domain": "nature.com",
-  "Count": 8,
+  "Count": 9,
   "Status": 2
  },
  {
@@ -2966,7 +2966,7 @@
  {
   "Url": "http://www.linkedin.com/shareArticle",
   "Domain": "linkedin.com",
-  "Count": 40,
+  "Count": 41,
   "Status": 2
  },
  {
@@ -7238,7 +7238,7 @@
  {
   "Url": "https://journals.plos.org/plosone/article",
   "Domain": "journals.plos.org",
-  "Count": 10,
+  "Count": 11,
   "Status": 2
  },
  {
@@ -8594,8 +8594,8 @@
  {
   "Url": "https://journals.plos.org/plospathogens/article",
   "Domain": "journals.plos.org",
-  "Count": 1,
-  "Status": 0
+  "Count": 3,
+  "Status": 2
  },
  {
   "Url": "https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30287-5/fulltext",
@@ -8648,7 +8648,7 @@
  {
   "Url": "https://science.sciencemag.org/content/early/2020/04/14/science.abb5793",
   "Domain": "science.sciencemag.org",
-  "Count": 3,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -10395,7 +10395,7 @@
   "Url": "http://www.cidrap.umn.edu/news-perspective/2020/03/commentary-covid-19-transmission-messages-should-hinge-science",
   "Domain": "cidrap.umn.edu",
   "Count": 2,
-  "Status": 3
+  "Status": 2
  },
  {
   "Url": "https://www.acc.org/latest-in-cardiology/articles/2020/04/17/14/42/thrombosis-and-coronavirus-disease-2019-covid-19-faqs-for-current-practice",
@@ -11450,7 +11450,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/infection-control/control-recommendations.html",
   "Domain": "cdc.gov",
-  "Count": 17,
+  "Count": 18,
   "Status": 2
  },
  {
@@ -11630,7 +11630,7 @@
  {
   "Url": "https://sccm.org/Blog/March-2020/United-States-Resource-Availability-for-COVID-19",
   "Domain": "sccm.org",
-  "Count": 2,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -15650,7 +15650,7 @@
  {
   "Url": "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi",
   "Domain": "ncbi.nlm.nih.gov",
-  "Count": 1030,
+  "Count": 1043,
   "Status": 2
  },
  {
@@ -16850,7 +16850,7 @@
  {
   "Url": "https://doi.org/10.1016%2FS0140-6736%2803%2913412-5",
   "Domain": "doi.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -18824,7 +18824,7 @@
  {
   "Url": "https://doi.org/10.1186/s12879-019-3707-y",
   "Domain": "doi.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -19052,7 +19052,7 @@
  {
   "Url": "https://science.sciencemag.org/content/early/2020/04/09/science.abb6936",
   "Domain": "science.sciencemag.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -19484,7 +19484,7 @@
  {
   "Url": "https://www.medrxiv.org/content/10.1101/2020.03.09.20033217v2",
   "Domain": "medrxiv.org",
-  "Count": 4,
+  "Count": 5,
   "Status": 2
  },
  {
@@ -20552,7 +20552,7 @@
  {
   "Url": "https://share.flipboard.com/bookmarklet/popout",
   "Domain": "share.flipboard.com",
-  "Count": 15,
+  "Count": 16,
   "Status": 0
  },
  {
@@ -24044,7 +24044,7 @@
  {
   "Url": "https://www.springernature.com/ccpa",
   "Domain": "springernature.com",
-  "Count": 29,
+  "Count": 30,
   "Status": 2
  },
  {
@@ -25460,7 +25460,7 @@
  {
   "Url": "https://clinicaltrials.gov/ct2/results",
   "Domain": "clinicaltrials.gov",
-  "Count": 75,
+  "Count": 76,
   "Status": 0
  },
  {
@@ -25808,7 +25808,7 @@
  {
   "Url": "https://doi.org/10.1186%2Fs12916-015-0450-0",
   "Domain": "doi.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -25862,7 +25862,7 @@
  {
   "Url": "https://doi.org/10.1371%2Fjournal.ppat.1003205",
   "Domain": "doi.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -25898,7 +25898,7 @@
  {
   "Url": "https://doi.org/10.1056%2FNEJMoa031349",
   "Domain": "doi.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -26018,31 +26018,31 @@
  {
   "Url": "https://authorservices.springernature.com/go/10BMC",
   "Domain": "authorservices.springernature.com",
-  "Count": 18,
+  "Count": 19,
   "Status": 2
  },
  {
   "Url": "http://authorservices.springernature.com/scientific-editing/",
   "Domain": "authorservices.springernature.com",
-  "Count": 20,
+  "Count": 21,
   "Status": 2
  },
  {
   "Url": "https://biomedcentral.typeform.com/to/VLXboo",
   "Domain": "biomedcentral.typeform.com",
-  "Count": 20,
+  "Count": 21,
   "Status": 2
  },
  {
   "Url": "http://www.weibo.com/biomedcentral",
   "Domain": "weibo.com",
-  "Count": 18,
+  "Count": 19,
   "Status": 2
  },
  {
   "Url": "https://www.springernature.com",
   "Domain": "springernature.com",
-  "Count": 20,
+  "Count": 21,
   "Status": 2
  },
  {
@@ -27842,7 +27842,7 @@
  {
   "Url": "https://doi.org/10.1038/s41422-020-0282-0",
   "Domain": "doi.org",
-  "Count": 8,
+  "Count": 9,
   "Status": 3
  },
  {
@@ -29378,7 +29378,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/index.html",
   "Domain": "cdc.gov",
-  "Count": 13,
+  "Count": 14,
   "Status": 2
  },
  {
@@ -29666,7 +29666,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/about/transmission.html",
   "Domain": "cdc.gov",
-  "Count": 20,
+  "Count": 21,
   "Status": 2
  },
  {
@@ -31166,7 +31166,7 @@
  {
   "Url": "https://doi.org/10.5582/bst.2020.01047",
   "Domain": "doi.org",
-  "Count": 4,
+  "Count": 5,
   "Status": 0
  },
  {
@@ -31184,7 +31184,7 @@
  {
   "Url": "https://doi.org/10.1016/j.ijantimicag.2020.105949",
   "Domain": "doi.org",
-  "Count": 3,
+  "Count": 4,
   "Status": 0
  },
  {
@@ -31304,7 +31304,7 @@
  {
   "Url": "https://doi.org/10.1016/S0140-6736(20)31180-6",
   "Domain": "doi.org",
-  "Count": 2,
+  "Count": 3,
   "Status": 0
  },
  {
@@ -31322,7 +31322,7 @@
  {
   "Url": "https://www.nature.com/articles/d41586-020-01599-9",
   "Domain": "nature.com",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -31874,7 +31874,7 @@
  {
   "Url": "https://doi.org/10.1186/1743-422X-2-69",
   "Domain": "doi.org",
-  "Count": 3,
+  "Count": 4,
   "Status": 0
  },
  {
@@ -31940,7 +31940,7 @@
  {
   "Url": "https://doi.org/10.1093/cid/ciaa237",
   "Domain": "doi.org",
-  "Count": 3,
+  "Count": 4,
   "Status": 0
  },
  {
@@ -37040,7 +37040,7 @@
  {
   "Url": "https://wwwnc.cdc.gov/eid/article/26/6/20-0357_article",
   "Domain": "wwwnc.cdc.gov",
-  "Count": 3,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -38805,7 +38805,7 @@
   "Url": "https://covid.joinzoe.com/us-post/loss-of-smell-or-taste-is-a-key-symptom-of-covid-19",
   "Domain": "covid.joinzoe.com",
   "Count": 1,
-  "Status": 3
+  "Status": 2
  },
  {
   "Url": "https://blogs.bmj.com/bmj/2020/03/20/sharon-cox-risky-smoking-practices-and-the-coronavirus-a-deadly-mix-for-our-most-vulnerable-smokers/",
@@ -43784,7 +43784,7 @@
  {
   "Url": "https://scienceintegritydigest.com/2020/03/24/thoughts-on-the-gautret-et-al-paper-about-hydroxychloroquine-and-azithromycin-treatment-of-covid-19-infections/",
   "Domain": "scienceintegritydigest.com",
-  "Count": 16,
+  "Count": 17,
   "Status": 2
  },
  {
@@ -45104,8 +45104,122 @@
  {
   "Url": "https://www.cambridge.org/core/journals/disaster-medicine-and-public-health-preparedness/article/testing-the-efficacy-of-homemade-masks-would-they-protect-in-an-influenza-pandemic/0921A05A69A9419C862FA2F35F819D55",
   "Domain": "cambridge.org",
+  "Count": 2,
+  "Status": 2
+ },
+ {
+  "Url": "https://www.cdc.gov/infectioncontrol/guidelines/isolation/",
+  "Domain": "cdc.gov",
   "Count": 1,
   "Status": 0
+ },
+ {
+  "Url": "https://www.who.int/publications-detail/advice-on-the-use-of-masks-in-the-community-during-home-care-and-in-healthcare-settings-in-the-context-of-the-novel-coronavirus-(2019-ncov)-outbreak",
+  "Domain": "who.int",
+  "Count": 2,
+  "Status": 0
+ },
+ {
+  "Url": "https://apps.who.int/iris/handle/10665/174652",
+  "Domain": "apps.who.int",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.cdc.gov/infectioncontrol/spread/",
+  "Domain": "cdc.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://iris.wpro.who.int/handle/10665.1/14482",
+  "Domain": "iris.wpro.who.int",
+  "Count": 1,
+  "Status": 2
+ },
+ {
+  "Url": "https://www.journalofinfection.com/article/S0163-4453(10)00347-6/fulltext",
+  "Domain": "journalofinfection.com",
+  "Count": 1,
+  "Status": 3
+ },
+ {
+  "Url": "https://academic.oup.com/cid/article/54/11/1569/321689",
+  "Domain": "academic.oup.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://academic.oup.com/cid/article/48/4/438/283890",
+  "Domain": "academic.oup.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.medrxiv.org/content/10.1101/2020.03.05.20030502v1",
+  "Domain": "medrxiv.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.ajicjournal.org/article/S0196-6553(12)00812-7/fulltext",
+  "Domain": "ajicjournal.org",
+  "Count": 1,
+  "Status": 3
+ },
+ {
+  "Url": "https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(18)30102-6/fulltext",
+  "Domain": "thelancet.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.clinicalmicrobiologyandinfection.com/article/S1198-743X(18)30494-4/fulltext",
+  "Domain": "clinicalmicrobiologyandinfection.com",
+  "Count": 1,
+  "Status": 3
+ },
+ {
+  "Url": "https://bmcinfectdis.biomedcentral.com/articles/10.1186/s12879-019-3707-y",
+  "Domain": "bmcinfectdis.biomedcentral.com",
+  "Count": 1,
+  "Status": 2
+ },
+ {
+  "Url": "https://www.nature.com/articles/ncomms2922",
+  "Domain": "nature.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.sciencedirect.com/science/article/pii/S0021850212001036",
+  "Domain": "sciencedirect.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.sciencedirect.com/science/article/pii/S0021850217302239",
+  "Domain": "sciencedirect.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.cambridge.org/core/journals/infection-control-and-hospital-epidemiology/article/protecting-chinese-healthcare-workers-while-combating-the-2019-novel-coronavirus/03DEB8D3BF68A674ADAB3FC4EF245E40",
+  "Domain": "cambridge.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.14745/ccdr.v45i01a02",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://insights.ovid.com/article/00043764-201505000-00004",
+  "Domain": "insights.ovid.com",
+  "Count": 1,
+  "Status": 2
  },
  {
   "Url": "http://www.ncbi.nlm.nih.gov/nuccore/",
@@ -51315,7 +51429,7 @@
   "Url": "https://www.aemps.gob.es/informa/notasinformativas/medicamentosusohumano-3/2020-medicamentosusohumano-3/la-aemps-toma-medidas-con-respecto-a-los-ensayos-clinicos-para-la-covid-19-con-hidroxicloroquina/",
   "Domain": "aemps.gob.es",
   "Count": 1,
-  "Status": 3
+  "Status": 2
  },
  {
   "Url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7267110/",
@@ -56420,7 +56534,7 @@
  {
   "Url": "https://wwwnc.cdc.gov/eid/article/26/7/20-0282_article",
   "Domain": "wwwnc.cdc.gov",
-  "Count": 2,
+  "Count": 3,
   "Status": 0
  },
  {
@@ -61683,7 +61797,7 @@
   "Url": "https://altanrobotech.com/ultra-violet-light-as-a-means-of-preventing-the-spread-of-the-corona-virus-sponsored-by-uvfreshr-a-series-of-uvc-lights-for-disinfection-of-air-and-surfaces/",
   "Domain": "altanrobotech.com",
   "Count": 1,
-  "Status": 3
+  "Status": 2
  },
  {
   "Url": "https://fortune.com/2020/02/07/coronavirus-mwc-ericsson-lg-europe/",
@@ -64082,7 +64196,7 @@
  {
   "Url": "https://forbetterscience.com/2020/03/26/chloroquine-genius-didier-raoult-to-save-the-world-from-covid-19/",
   "Domain": "forbetterscience.com",
-  "Count": 10,
+  "Count": 13,
   "Status": 2
  },
  {
@@ -64280,8 +64394,8 @@
  {
   "Url": "https://science.sciencemag.org/content/335/6072/1033",
   "Domain": "science.sciencemag.org",
-  "Count": 2,
-  "Status": 0
+  "Count": 3,
+  "Status": 2
  },
  {
   "Url": "https://science.sciencemag.org/content/336/6078/155.2",
@@ -64394,13 +64508,13 @@
  {
   "Url": "https://www.medrxiv.org/content/10.1101/2020.03.24.20042366v1",
   "Domain": "medrxiv.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
   "Url": "https://www.medrxiv.org/content/10.1101/2020.03.22.20040949v1",
   "Domain": "medrxiv.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -64443,13 +64557,13 @@
   "Url": "https://ladeviation.com/agiter/coronavirus-chloroqueen/",
   "Domain": "ladeviation.com",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "http://chacoalhando.com/2020/04/11/covid-19-e-cloroquina-didier-raoult-quando-o-passado-condena/",
   "Domain": "chacoalhando.com",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://sciencebasedmedicine.org/miracle-cure-testimonials-aside-azithromycin-and-hydroxychloroquine-probably-do-not-work-against-covid-19/",
@@ -64461,13 +64575,13 @@
   "Url": "https://panel.conectimed.com/es-cierto-que-la-azitromicina-y-otros-antibioticos-macrolidos-pueden-ser-la-cura-para-covid-19-que-dice-la-evidencia/",
   "Domain": "panel.conectimed.com",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://comitepara.be/2020/04/25/se-depecher-mais-sans-precipitation-les-dossiers-covid-1-traduction-dun-billet-de-james-heaters/",
   "Domain": "comitepara.be",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://sciencebasedmedicine.org/hydroxychloroquine-ebm-sbm/",
@@ -64503,13 +64617,13 @@
   "Url": "https://www.evscienceconsultant.com/blog/covid-19-and-bad-science",
   "Domain": "evscienceconsultant.com",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://francis.naukas.com/2020/06/08/el-culebron-de-la-hidroxicloroquina-para-la-covid-19/",
   "Domain": "francis.naukas.com",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.evscienceconsultant.com/nl/blog/hoe-weet-je-of-een-covid-19-artikel-gebaseerd-is-op-slecht-onderzoek",
@@ -64545,25 +64659,25 @@
   "Url": "https://www.scientias.nl/het-coronavirus-blijft-tot-zeker-drie-dagen-besmettelijk-op-plastic-oppervlakken/",
   "Domain": "scientias.nl",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.ntvg.nl/artikelen/de-rol-van-kinderen-de-transmissie-van-sars-cov-2",
   "Domain": "ntvg.nl",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.mja.com.au/journal/2020/covid-19-children-and-schools-overlooked-and-risk",
   "Domain": "mja.com.au",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://inspanje.nl/spanje/13400/wetenschap-spanje-komt-met-antwoord-over-overdracht-covid-19-via-water/",
   "Domain": "inspanje.nl",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.biospace.com/article/mutated-covid-19-viral-strain-in-us-and-europe-much-more-contagious/",
@@ -64581,7 +64695,7 @@
   "Url": "https://www.rtlnieuws.nl/nieuws/artikel/5092941/sanquin-bloed-donoren-immuun-corona-coronavirus-covid-19-test-antistoffen",
   "Domain": "rtlnieuws.nl",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.sciencedirect.com/science/article/pii/S1876034120304676",
@@ -64623,19 +64737,19 @@
   "Url": "https://www.nursing.nl/magazine-artikelen/nursing-challenge-covid-19/",
   "Domain": "nursing.nl",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.volkskrant.nl/nieuws-achtergrond/hoe-lang-ben-je-ziek-van-het-coronavirus~ba6f85ab/",
   "Domain": "volkskrant.nl",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.euronews.com/2020/05/16/coronavirus-what-is-kawasaki-disease-and-its-possible-link-with-covid-19-in-children",
   "Domain": "euronews.com",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.nrc.nl/nieuws/2020/04/17/we-hebben-een-neus-voor-dit-nieuwe-coronavirus-a3997072",
@@ -64646,7 +64760,7 @@
  {
   "Url": "https://www.statnews.com/2020/04/20/everything-we-know-about-coronavirus-immunity-and-antibodies-and-plenty-we-still-dont/",
   "Domain": "statnews.com",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -64665,7 +64779,7 @@
   "Url": "https://ncase.me/covid-19/",
   "Domain": "ncase.me",
   "Count": 1,
-  "Status": 0
+  "Status": 2
  },
  {
   "Url": "https://www.businessinsider.nl/coronavirus-south-korean-reactivated-cases-not-reinfected-experts-2020-4",
@@ -64682,7 +64796,7 @@
  {
   "Url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2851497/",
   "Domain": "ncbi.nlm.nih.gov",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -67255,12 +67369,6 @@
  },
  {
   "Url": "https://www.who.int/ru/emergencies/diseases/novel-coronavirus-2019/advice-for-public/when-and-how-to-use-masks",
-  "Domain": "who.int",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.who.int/publications-detail/advice-on-the-use-of-masks-in-the-community-during-home-care-and-in-healthcare-settings-in-the-context-of-the-novel-coronavirus-(2019-ncov)-outbreak",
   "Domain": "who.int",
   "Count": 1,
   "Status": 0
@@ -83898,6 +84006,396 @@
   "Status": 0
  },
  {
+  "Url": "https://www.researchsquare.com/browse",
+  "Domain": "researchsquare.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.cdc.gov/coronavirus/mers/infection-prevention-control.html",
+  "Domain": "cdc.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1093%2Fcid%2Fciw239",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "http://www.ncbi.nlm.nih.gov/pmc/articles/PMC4358015",
+  "Domain": "ncbi.nlm.nih.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2FS0196-6553%2898%2970046-X",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1126%2Fscience.1213362",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1093%2Foxfordjournals.aje.a112781",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2Fj.jhin.2006.05.022",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1111%2Fj.1600-0668.2007.00469.x",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1111%2Fj.1600-0668.2006.00445.x",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1111%2Fina.12314",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.4061%2F2011%2F124064",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1080%2F15298669291359564",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.14219%2Fjada.archive.2004.0207",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2Fj.ajic.2016.06.003",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1056%2FNEJMp048051",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1046%2Fj.1442-200X.2003.01746.x",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2Fj.jhin.2005.05.017",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1093%2Foxfordjournals.aje.a112560",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1001%2Fjama.1985.03350350068022",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1371%2Fjournal.pmed.0050188",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1111%2Fj.1749-6632.1980.tb18901.x",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1093%2Finfdis%2F161.2.286",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1056%2FNEJM199604113341501",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1371%2Fjournal.pmed.1000043",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2427800",
+  "Domain": "ncbi.nlm.nih.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1056%2FNEJMoa032867",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1097%2FMCP.0000000000000046",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1097%2FQCO.0000000000000089",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2FS0140-6736%2813%2960982-4",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2Fj.ijid.2013.07.001",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2Fj.jcv.2014.07.002",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1093%2Finfdis%2Fjiu292",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1128%2FJVI.02994-15",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.3201%2Feid1211.060426",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2843947",
+  "Domain": "ncbi.nlm.nih.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1093%2Fcid%2Fcis240",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1038%2Fncomms2922",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.3181%2F00379727-122-31255",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2843949",
+  "Domain": "ncbi.nlm.nih.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.cdc.gov/flu/professionals/infectioncontrol/maskguidance.htm",
+  "Domain": "cdc.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "http://doi.org/10.1093/cid/cix535",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1371%2Fjournal.pone.0002691",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1002%2Fjmv.21556",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1080%2F15459624.2014.973113",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1111%2Firv.12390",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1098%2Frsif.2010.0686",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1093%2Finfdis%2Fjis773",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1371%2Fjournal.pone.0107338",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1371%2Fjournal.pone.0103560",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1371%2Fjournal.pone.0033118",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1097%2F00006454-200010001-00002",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.3201%2Feid0702.010220",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2FS1473-3099%2802%2900221-9",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1086%2F378292",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1086%2F519433",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.7326%2F0003-4819-93-1-49",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016%2FS0140-6736%2895%2992841-3",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1038/srep00811",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1177%2F0300985812469636",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1128%2FJVI.03361-12",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1128%2FCVI.00467-09",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1128%2FJVI.78.8.4330-4341.2004",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1056%2FNEJMoa1411677",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1001%2Fjama.1997.03550050061035",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
   "Url": "https://blogs.bmj.com/bmj/2020/04/20/chaand-nagpaul-the-disproportionate-impact-of-covid-19-on-ethnic-minority-healthcare-workers/",
   "Domain": "blogs.bmj.com",
   "Count": 1,
@@ -91040,7 +91538,7 @@
  {
   "Url": "https://wwwnc.cdc.gov/eid/article/26/8/20-1274_article",
   "Domain": "wwwnc.cdc.gov",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -91550,7 +92048,7 @@
  {
   "Url": "https://science.sciencemag.org/content/early/2020/05/12/science.abc3517",
   "Domain": "science.sciencemag.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -92804,7 +93302,7 @@
  {
   "Url": "https://doi.org/10.1038/s41421-020-0156-0",
   "Domain": "doi.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -93404,7 +93902,7 @@
  {
   "Url": "https://www.sciencemag.org/news/2020/06/three-big-studies-dim-hopes-hydroxychloroquine-can-treat-or-prevent-covid-19",
   "Domain": "sciencemag.org",
-  "Count": 1,
+  "Count": 2,
   "Status": 0
  },
  {
@@ -93560,6 +94058,378 @@
  {
   "Url": "https://www.bloomberg.com/news/articles/2020-03-17/mnuchin-to-ask-congress-for-850-billion-virus-stimulus-package",
   "Domain": "bloomberg.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.lemonde.fr/idees/article/2020/03/25/didier-raoult-le-medecin-peut-et-doit-reflechir-comme-un-medecin-et-non-pas-comme-un-methodologiste_6034436_3232.html",
+  "Domain": "lemonde.fr",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.lemonde.fr/planete/article/2020/03/24/francoise-barre-sinoussi-ne-donnons-pas-de-faux-espoirs-c-est-une-question-d-ethique_6034231_3244.html",
+  "Domain": "lemonde.fr",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "http://www.medrxiv.org",
+  "Domain": "medrxiv.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://observablehq.com/@ismms-himc/covid-19-sars-cov-2-preprints-from-medrxiv-and-biorxiv",
+  "Domain": "observablehq.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.nature.com/articles/d41586-020-01363-z",
+  "Domain": "nature.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://scienceintegritydigest.com/2020/03/27/post-publication-reviews-on-covid-19-papers/",
+  "Domain": "scienceintegritydigest.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.cnbc.com/2020/05/18/trump-says-he-takes-hydroxychloroquine-to-prevent-coronavirus-infection.html",
+  "Domain": "cnbc.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://forbetterscience.com/2020/06/05/would-lancet-and-nejm-retractions-happen-if-not-for-covid-19-and-chloroquine/",
+  "Domain": "forbetterscience.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.elconfidencial.com/tecnologia/ciencia/2020-06-06/covid-19-hidroxicloroquina-verdadera-o-falsa_2626776/",
+  "Domain": "elconfidencial.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1038/d41586-020-01695-w",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://greenelab.github.io/covid19-review/",
+  "Domain": "greenelab.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.leparisien.fr/societe/coronavirus-pour-macron-raoult-est-un-grand-scientifique-et-sa-bi-therapie-doit-etre-testee-15-04-2020-8299788.php",
+  "Domain": "leparisien.fr",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016/S1473-3099(03)00806-5",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1021/jm0601856",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1101/2020.03.16.20037135",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1101/2020.04.10.20060699",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1056/NEJMoa2012410",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1001/jama.2020.8630",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1016/S0140-6736(20)31324-6",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1056/NEJMoa2007621",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1093/aje/kwaa093",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "http://www.adicciones.es/index.php/adicciones/article/view/22",
+  "Domain": "adicciones.es",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://doi.org/10.1371/journal.pmed.0020124",
+  "Domain": "doi.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://vrruiz.github.io/covid-19",
+  "Domain": "vrruiz.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://catheu.tech/covid-19/",
+  "Domain": "catheu.tech",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://leonardoalcantara.github.io/covid-19-pt-br/",
+  "Domain": "leonardoalcantara.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://tquev.github.io/covid-19/",
+  "Domain": "tquev.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://harisont.github.io/covid-19/",
+  "Domain": "harisont.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://jusplathemus.github.io/covid-19/",
+  "Domain": "jusplathemus.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://covid19-next.coddk.org/",
+  "Domain": "covid19-next.coddk.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://dcz-self.github.io/covid-19/",
+  "Domain": "dcz-self.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://saskaaloric.github.io/covid-19/",
+  "Domain": "saskaaloric.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://mehdi-mostafavi.github.io/covid-19/",
+  "Domain": "mehdi-mostafavi.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://xmac11.github.io/covid-19/",
+  "Domain": "xmac11.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://asherbarak.github.io/covid-19/",
+  "Domain": "asherbarak.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://benbennben.github.io/covid-19/",
+  "Domain": "benbennben.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://eed3si9n.github.io/covid-19/",
+  "Domain": "eed3si9n.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://fuhsuann.github.io/covid-19/",
+  "Domain": "fuhsuann.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://brodafly.github.io/covid-19/",
+  "Domain": "brodafly.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://m0stik.github.io/covid-19/",
+  "Domain": "m0stik.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://notdotteam.github.io/covid-19/",
+  "Domain": "notdotteam.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://github.com/ncase/covid-19",
+  "Domain": "github.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "http://www.imperial.ac.uk/mrc-global-infectious-disease-analysis/covid-19/report-9-impact-of-npis-on-covid-19/",
+  "Domain": "imperial.ac.uk",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.americanprogress.org/issues/healthcare/news/2020/04/03/482613/national-state-plan-end-coronavirus-crisis/",
+  "Domain": "americanprogress.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.aei.org/research-products/report/national-coronavirus-response-a-road-map-to-reopening/",
+  "Domain": "aei.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://ethics.harvard.edu/covid-roadmap",
+  "Domain": "ethics.harvard.edu",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://link.springer.com/article/10.1007/s11427-020-1661-4",
+  "Domain": "link.springer.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://bmcinfectdis.biomedcentral.com/articles/10.1186/1471-2334-14-480",
+  "Domain": "bmcinfectdis.biomedcentral.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7001239/",
+  "Domain": "ncbi.nlm.nih.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.statista.com/statistics/1105420/covid-icu-admission-rates-us-by-age-group/",
+  "Domain": "statista.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://news.iu.edu/stories/2020/05/iupui/releases/13-preliminary-findings-impact-covid-19-indiana-coronavirus.html",
+  "Domain": "news.iu.edu",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.theatlantic.com/health/archive/2020/03/coronavirus-pandemic-herd-immunity-uk-boris-johnson/608065/",
+  "Domain": "theatlantic.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://cmmid.github.io/topics/covid19/comix-impact-of-physical-distance-measures-on-transmission-in-the-UK.html",
+  "Domain": "cmmid.github.io",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://annals.org/AIM/FULLARTICLE/2762808/INCUBATION-PERIOD-CORONAVIRUS-DISEASE-2019-COVID-19-FROM-PUBLICLY-REPORTED",
+  "Domain": "annals.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6152989/",
+  "Domain": "ncbi.nlm.nih.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.apple.com/ca/newsroom/2020/04/apple-and-google-partner-on-covid-19-contact-tracing-technology/",
+  "Domain": "apple.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://science.sciencemag.org/content/early/2020/04/09/science.abb6936/tab-figures-data",
+  "Domain": "science.sciencemag.org",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.sciencedirect.com/science/article/pii/S0196655307007742",
+  "Domain": "sciencedirect.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3591312/",
+  "Domain": "ncbi.nlm.nih.gov",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.nature.com/articles/d41586-020-01063-8",
+  "Domain": "nature.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.nature.com/articles/d41586-020-00751-9",
+  "Domain": "nature.com",
+  "Count": 1,
+  "Status": 0
+ },
+ {
+  "Url": "https://www.statnews.com/2020/04/01/navigating-covid-19-pandemic/",
+  "Domain": "statnews.com",
   "Count": 1,
   "Status": 0
  }
