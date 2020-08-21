@@ -891,7 +891,7 @@ func doNextLink() bool {
 		// Saving corpus frequencies in format all.num from British National Corpus
 		output := ""
 		for _, gg := range g {
-			output = output + fmt.Sprintf("\n%d %s %s %d", gg.Value, gg.Key, "none", 0)
+			output = output + fmt.Sprintf("%d %s %s %d\n", gg.Value, gg.Key, "none", 0)
 		}
 		string2file(output, "./corpusFrequencies.txt")
 

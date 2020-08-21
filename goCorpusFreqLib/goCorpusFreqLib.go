@@ -32,7 +32,9 @@ type WordInfo struct {
 // 	"is":             {998389, "vbz", 4097},
 // }
 
-var corpusFreqs = map[string]WordInfo{}
+var corpusFreqs = map[string]WordInfo{}     // English corpus (classical + contenmporary)
+var corpusFreqsEng = map[string]WordInfo{}  // Classical English
+var corpusFreqsCont = map[string]WordInfo{} // Contenmporary English
 
 // fileExists checks if a file exists and is not a directory before we try using it to prevent further errors.
 // https://golangcode.com/check-if-a-file-exists/
@@ -44,18 +46,21 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func Init() {
-	if !fileExists("./goCorpusFreqLib/all.num") {
-		fmt.Printf("\nError: Corpus data not found on ./goCorpusFreqLib/all.num" + "\nDownload all.num file like this:" + "\n\nmkdir goCorpusFreqLib\ncd goCorpusFreqLib\nwget \"http://www.kilgarriff.co.uk/BNClists/all.num.gz\"\ngunzip all.num.gz\ncd..\n\n")
+func loadCorpus(filename string) map[string]WordInfo {
+	if !fileExists(filename) {
+		fmt.Printf("\nError: Corpus data not found on %s", filename)
+		if filename == "./goCorpusFreqLib/all.num" {
+			fmt.Printf("\nDownload all.num file like this:" + "\n\nmkdir goCorpusFreqLib\ncd goCorpusFreqLib\nwget \"http://www.kilgarriff.co.uk/BNClists/all.num.gz\"\ngunzip all.num.gz\ncd..\n\n")
+		}
 		os.Exit(1)
 	}
-	file, err := os.Open("./goCorpusFreqLib/all.num")
+	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
 
-	corpusFreqs = make(map[string]WordInfo)
+	var corpusFreqs = make(map[string]WordInfo)
 
 	numLine := 0
 	var l string
@@ -65,6 +70,7 @@ func Init() {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
+
 	for scanner.Scan() {
 		l = scanner.Text()
 		// fmt.Println(l)
@@ -79,11 +85,32 @@ func Init() {
 		}
 
 		if corpusFreqs[word].numTotal == 0 {
-			// 	fmt.Printf("\n"+`"%s": {%d, "%s", %d},`, word, numTotal, POStagging, numDocs)
+			// fmt.Printf("\n"+`"%s": {%d, "%s", %d},`, word, numTotal, POStagging, numDocs)
 			corpusFreqs[word] = WordInfo{numTotal, POStagging, numDocs}
 		}
 	}
 	fmt.Printf("\n\nlen(corpusFreqs) = %d\n", len(corpusFreqs))
+
+	return corpusFreqs
+}
+
+func Init() {
+	corpusFreqsEng = loadCorpus("./goCorpusFreqLib/all.num")
+	corpusFreqsCont = loadCorpus("./goCorpusFreqLib/contemporaryEnglish.txt")
+
+	// both copora have in common the word "the" as a metric to perform a normalization
+	ContFactor := float64(corpusFreqsEng["the"].numTotal) / float64(corpusFreqsCont["the"].numTotal) // normalization factor for contemporary english corpus
+	fmt.Printf("\n\nContFactor: %f", ContFactor)
+
+	// merging both corpora into an integrated one
+	corpusFreqs = corpusFreqsEng
+	Test()
+
+	for token, item := range corpusFreqsCont {
+		corpusFreqs[token] = WordInfo{corpusFreqsEng[token].numTotal + int(ContFactor*float64(item.numTotal)), item.POStagging, 0}
+	}
+
+	Test()
 }
 
 func Freq(token string) (numTotal int) {
@@ -93,6 +120,10 @@ func Freq(token string) (numTotal int) {
 }
 
 func Test() {
-	// fmt.Printf("\n\nShakespeare: %+v\n", corpusFreqs["shakespeare"])
-	fmt.Printf("\n\nShakespeare: %d\n", Freq("shakespeare"))
+	fmt.Printf("\n\n")
+	fmt.Printf("THE: %d\n", Freq("the"))
+	fmt.Printf("Shakespeare: %d\n", Freq("shakespeare"))
+	fmt.Printf("Covid: %d\n", Freq("covid"))
+	fmt.Printf("Blockchain: %d\n", Freq("blockchain"))
+	fmt.Printf("Services: %d\n", Freq("services"))
 }
