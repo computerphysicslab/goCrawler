@@ -46,11 +46,83 @@ var downloadTimeout time.Duration
 var bootstrapingLinks []string
 var minDocLen, maxDocLen int
 
-/******************************************************************************/
-/******************************************************************************/
-/*********************** FUNCTIONS ********************************************/
-/******************************************************************************/
-/******************************************************************************/
+/***************************************************************************************************************
+****************************************************************************************************************
+* I/O functions ************************************************************************************************
+****************************************************************************************************************
+****************************************************************************************************************/
+
+// copyFileContents copies the contents of the file named src to the file named
+// by dst. The file will be created if it does not already exist. If the
+// destination file exists, all it's contents will be replaced by the contents
+// of the source file.
+func copyFileContents(src, dst string) (err error) {
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
+}
+
+func string2file(text string, filename string) {
+	aFile, err := os.Create(filename)
+	if err != nil {
+		log.Println(err)
+	}
+	aFile.Write([]byte(text))
+}
+
+func string2fileAppend(text string, filename string) {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(text + "\n"); err != nil {
+		log.Println(err)
+	}
+}
+
+/***************************************************************************************************************
+****************************************************************************************************************
+* String functions *********************************************************************************************
+****************************************************************************************************************
+****************************************************************************************************************/
+
+func stringRmNewLines(t string) string {
+	var re = regexp.MustCompile(`(\n+)`)
+	t = re.ReplaceAllString(t, "")
+
+	return t
+}
+
+func isNumeric(s string) bool {
+	_, err := strconv.ParseFloat(s, 64)
+	return err == nil
+}
+
+/***************************************************************************************************************
+****************************************************************************************************************
+* LINKS, DOWNLOAD AND CACHE FUNCTIONS **************************************************************************
+****************************************************************************************************************
+****************************************************************************************************************/
+
+/**** TYPES ****/
 
 type ALink struct {
 	Url    string
@@ -88,33 +160,6 @@ func cacheInit() {
 	}
 
 	myCache = cache.NewFrom(5*time.Minute, 10*time.Minute, decodedMap)
-}
-
-// copyFileContents copies the contents of the file named src to the file named
-// by dst. The file will be created if it does not already exist. If the
-// destination file exists, all it's contents will be replaced by the contents
-// of the source file.
-func copyFileContents(src, dst string) (err error) {
-	in, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer in.Close()
-	out, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer func() {
-		cerr := out.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-	if _, err = io.Copy(out, in); err != nil {
-		return
-	}
-	err = out.Sync()
-	return
 }
 
 var saveBackupCount int // to static...
@@ -279,12 +324,6 @@ func getDomain(link string) string {
 	return mainDomain
 }
 
-func stringRmNewLines(t string) string {
-	var re = regexp.MustCompile(`(\n+)`)
-	t = re.ReplaceAllString(t, "")
-
-	return t
-}
 func getSecondLevelDomain(link string) string {
 	u, err := url.Parse(link)
 	if err != nil {
@@ -440,25 +479,6 @@ func LPoolDump() {
 	jsonFile.Write(jdata)
 }
 
-func string2file(text string, filename string) {
-	aFile, err := os.Create(filename)
-	if err != nil {
-		log.Println(err)
-	}
-	aFile.Write([]byte(text))
-}
-
-func string2fileAppend(text string, filename string) {
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	if _, err := f.WriteString(text + "\n"); err != nil {
-		log.Println(err)
-	}
-}
-
 func domainCounterDump() {
 	jdata, err := json.MarshalIndent(domainCounter, "", " ")
 	if err != nil {
@@ -572,11 +592,6 @@ func lowercaseFilter(tokens []string) []string {
 		r[i] = strings.ToLower(token)
 	}
 	return r
-}
-
-func isNumeric(s string) bool {
-	_, err := strconv.ParseFloat(s, 64)
-	return err == nil
 }
 
 func stopWordsCount(text string) int {
@@ -776,28 +791,29 @@ func doNextLink() bool {
 
 	// Remove urls, imgs, long words and low stopwords paragraphs from text
 	for i, p := range paragraphs {
-		// text = "* Commentary: China’s Ad5 vectored COVID-19 vaccine safe and induces immune response – News Medical ( https://www.news-medical.net/news/20200720/Chinas-Ad5-vectored-COVID-19-vaccine-safe-and-induces-immune-response.aspx ) AND CanSino COVID-19 vaccine generates immune response in 90% of patients – UPI ( https://www.upi.com/Health_News/2020/07/20/CanSino-COVID-19-vaccine-generates-immune-response-in-90-of-patients/5701595253844/ )"
-		//p = "* Health ( )"
-		// fmt.Printf("\n\n%s", p)
 		regex1 := `(?i)\W([^ \t]*/[^ \t]*)\W`
 		r1 := regexp.MustCompile(regex1)
 		p2 := r1.ReplaceAllString(p, " ")
 		//fmt.Printf("\n\n%s", p2)
 
-		regex2 := `(?i)(<img[^>]+src=["'][^>]*["'][^>]*>)`
+		regex2 := `(?i)(<(p|img|div)[^>]*>)`
 		r2 := regexp.MustCompile(regex2)
 		p3 := r2.ReplaceAllString(p2, " ")
-		// fmt.Printf("\n\n%s", p3)
+		if p2 != p3 {
+			// fmt.Printf("\n\n***** p2 != p3: \n%s\n%s\n", p2, p3)
+		}
 
 		regex3 := `(?i)\W([^ \t\n]{80,})\W`
 		r3 := regexp.MustCompile(regex3)
 		p4 := r3.ReplaceAllString(p3, " ")
 		// fmt.Printf("\n\n%s", p4)
 
-		regex4 := `(?i)\W(div|img|alt|class|nofollow)\W`
+		regex4 := `(?i)\W(div|img|nofollow|(alt|class|style|width|height|onclick)="[^"]*")\W`
 		r4 := regexp.MustCompile(regex4)
 		p5 := r4.ReplaceAllString(p4, " ")
-		// fmt.Printf("\n\n%s", p5)
+		if p4 != p5 {
+			// fmt.Printf("\n\n***** p4 != p5: \n%s\n%s\n", p4, p5)
+		}
 
 		numStopWords := stopWordsCount(p5)
 		numTotalWords := len(tokenize(p5))
@@ -896,7 +912,7 @@ func doNextLink() bool {
 
 	// Once in a while...
 	loopCount++
-	if loopCount%10 == 0 {
+	if loopCount%50 == 0 {
 		g := rSortFreq(f)
 		fmt.Println("\n\nCorpus frequencies: ", g[:100])
 
@@ -928,7 +944,7 @@ func doNextLink() bool {
 		// keyValue={Key:cov Value:389} [eng: 30] [corpusFreqsWithoutEnglish: 12]
 		// keyValue={Key:tests Value:388} [eng: 4681] [corpusFreqsWithoutEnglish: 0]
 		for _, keyValue := range g {
-			// By divignatuon:
+			// By division:
 			// corpusFreqsWithoutEnglish[keyValue.Key] = int(intercorpusScaleFactor * float64(keyValue.Value) / float64(1+goCorpusFreqLib.Freq(keyValue.Key)))
 			// By substraction:
 			corpusFreqsWithoutEnglish[keyValue.Key] = keyValue.Value - int(intercorpusContrast*float64(1+goCorpusFreqLib.Freq(keyValue.Key))/intercorpusScaleFactor)
@@ -936,6 +952,13 @@ func doNextLink() bool {
 		}
 		corpusFreqsWithoutEnglishSorted := rSortFreq(corpusFreqsWithoutEnglish)
 		fmt.Println("\n\nCorpus frequencies w/o Eng.: ", corpusFreqsWithoutEnglishSorted[:100])
+
+		// Saving corpus w/o English frequencies in basic format
+		output = ""
+		for _, gg := range corpusFreqsWithoutEnglishSorted {
+			output = output + fmt.Sprintf("%d %s\n", gg.Value, gg.Key)
+		}
+		string2file(output, "./corpusNoEngFrequencies.txt")
 
 		// LPool dump to file
 		LPoolDump()
@@ -1006,18 +1029,6 @@ func yamlInitSpecific() {
 }
 
 func main() {
-
-	// l := "https://vip.wordpress.com/"
-	// regexLinkOk = `(?i)^https*://.*(fulltext|article|news|com|en\.wikipedia\.org|arxiv\.org|wired\.com|washingtonpost\.com|nytimes\.com)`
-	// // regexLinkOk = `(?i)^https*://.*(fulltext|article|news|news|com|en\.wikipedia\.org)`
-	// r0, _ := regexp.Compile(regexLinkOk)
-	// if len(r0.FindStringSubmatch(l)) > 0 {
-	// 	fmt.Printf("\n\nOK!!!")
-	// } else {
-	// 	fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
-	// }
-	// panic(1)
-
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
 	yamlInitSpecific()
