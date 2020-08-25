@@ -23,6 +23,7 @@ import (
 	"unicode"
 
 	"github.com/jackdanger/collectlinks"
+	"github.com/jdkato/prose/v2"
 	snowballeng "github.com/kljensen/snowball/english"
 	"github.com/patrickmn/go-cache"
 	"github.com/spf13/viper"
@@ -98,6 +99,20 @@ func string2fileAppend(text string, filename string) {
 	}
 }
 
+func file2string(filename string) string {
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Println(err)
+	}
+	defer file.Close()
+	b, err2 := ioutil.ReadAll(file)
+	if err2 != nil {
+		log.Println(err)
+	}
+
+	return string(b[:])
+}
+
 /***************************************************************************************************************
 ****************************************************************************************************************
 * String functions *********************************************************************************************
@@ -118,6 +133,28 @@ func isNumeric(s string) bool {
 
 /***************************************************************************************************************
 ****************************************************************************************************************
+* CSV FUNCTIONS ************************************************************************************************
+****************************************************************************************************************
+****************************************************************************************************************/
+
+var csvWriter *csv.Writer
+
+func csvInit() {
+	// var dataCSV = [][]string{{}}
+	// file, err := os.Create("maxFreq-numWords-URL.csv")
+	file, err := os.Create("ranking-URL.csv")
+	if err != nil {
+		log.Fatal("Cannot create file: ", err)
+	}
+	// defer file.Close()
+
+	csvWriter = csv.NewWriter(file)
+	csvWriter.Comma = '\t'
+	// defer csvWriter.Flush()
+}
+
+/***************************************************************************************************************
+****************************************************************************************************************
 * LINKS, DOWNLOAD AND CACHE FUNCTIONS **************************************************************************
 ****************************************************************************************************************
 ****************************************************************************************************************/
@@ -128,7 +165,7 @@ type ALink struct {
 	Url    string
 	Domain string
 	Count  int
-	Status int // 0 = pending, 1 = crawling, 2 = downloaded, 3 = failed
+	Status int // 0 = pending, 1 = crawling, 2 = downloaded, 3 = failed, 4 = bootstrapping
 }
 
 var LPool []ALink
@@ -554,12 +591,12 @@ func rankingByKeywords(text string) float64 {
 	r, _ := regexp.Compile(regexRankingKeywords)
 	rr := r.FindAllStringSubmatch(text, -1)
 
-	logRanking.Printf("\nlen(r.FindAllStringSubmatch(text, -1)): %d", len(r.FindAllStringSubmatch(text, -1)))
-	logRanking.Printf("\n1+len(tokenize(text)): %d", 1+len(tokenize(text)))
-	logRanking.Printf("\nrr: %+v", rr)
-	if len(text) > 1000 {
-		logRanking.Printf("\n%s", text[:1000])
-	}
+	// logRanking.Printf("\nlen(r.FindAllStringSubmatch(text, -1)): %d", len(r.FindAllStringSubmatch(text, -1)))
+	// logRanking.Printf("\n1+len(tokenize(text)): %d", 1+len(tokenize(text)))
+	// logRanking.Printf("\nrr: %+v", rr)
+	// if len(text) > 1000 {
+	// 	logRanking.Printf("\n%s", text[:1000])
+	// }
 
 	var uniqueK = make(map[string]int)
 
@@ -571,7 +608,7 @@ func rankingByKeywords(text string) float64 {
 		uniqueK[strings.ToLower(k[1])]++
 	}
 
-	logRanking.Printf("\nuniqueK: %+v", uniqueK)
+	// logRanking.Printf("\nuniqueK: %+v", uniqueK)
 
 	var ks []string
 	for kk := range uniqueK {
@@ -581,9 +618,27 @@ func rankingByKeywords(text string) float64 {
 	// return 100.0 * float64(len(r.FindAllStringSubmatch(text, -1))) / math.Sqrt(float64(1+len(tokenize(text))))
 	rank := 100.0 * float64(len(ks)) / math.Sqrt(float64(1+len(tokenize(text))))
 
-	logRanking.Printf("\nRank: %f", rank)
+	// logRanking.Printf("\nRank: %f", rank)
 
 	return rank
+}
+
+func bestParagraph(paragraphs []string) (bp string) {
+	maxScore := 0.0
+	s := 0.0
+	for _, p := range paragraphs {
+		s = rankingByKeywords(p)
+		if s > maxScore {
+			maxScore = s
+			bp = p
+		}
+	}
+
+	if len(bp) > 2000 {
+		bp = bp[:1996] + " ..."
+	}
+
+	return
 }
 
 func lowercaseFilter(tokens []string) []string {
@@ -701,10 +756,10 @@ var (
 	logDownload = log.New(outfile, "", 0)
 )
 
-var (
-	outfile2, _ = os.Create("./logs/ranking.log")
-	logRanking  = log.New(outfile2, "", 0)
-)
+// var (
+// 	outfile2, _ = os.Create("./logs/ranking.log")
+// 	logRanking  = log.New(outfile2, "", 0)
+// )
 
 var (
 	outfile3, _ = os.Create("./logs/cgi.log")
@@ -712,29 +767,7 @@ var (
 )
 
 var uniqueSignature = make(map[string]string)
-
-var loopCount int
-var writer *csv.Writer
-var f freq
-var bParagraphs = make(map[string]string)
-
-func bestParagraph(paragraphs []string) (bp string) {
-	maxScore := 0.0
-	s := 0.0
-	for _, p := range paragraphs {
-		s = rankingByKeywords(p)
-		if s > maxScore {
-			maxScore = s
-			bp = p
-		}
-	}
-
-	if len(bp) > 2000 {
-		bp = bp[:1996] + " ..."
-	}
-
-	return
-}
+var corpusFreqs freq = make(freq)
 
 func addLinksOf(nextLink string, links []string) {
 	linksAdded := 0
@@ -755,7 +788,7 @@ func addLinksOf(nextLink string, links []string) {
 	fmt.Printf(" %d links found (%d added)", len(links), linksAdded)
 }
 
-func doNextLink() bool {
+func doNextLink(numLinksProcessed int) bool {
 	maxi, nextLink := getNextLink()
 	if nextLink == "" {
 		fmt.Println("* No more links available in the pool")
@@ -826,7 +859,7 @@ func doNextLink() bool {
 		}
 	}
 
-	bParagraphs[nextLink] = bestParagraph(paragraphs)
+	bParagraph := bestParagraph(paragraphs)
 
 	curatedContent := ""
 	for _, p := range paragraphs {
@@ -893,13 +926,28 @@ func doNextLink() bool {
 		return true
 	}
 
-	// err = writer.Write([]string{gDoc[0].Key, fmt.Sprintf("%d", gDoc[0].Value), fmt.Sprintf("%d", docLen), fmt.Sprintf("%.03f", float64(gDoc[0].Value)/float64(1+docLen)), nextLink})
-	err = writer.Write([]string{fmt.Sprintf("%.02f", rankingByKeywords(curatedContent)), fmt.Sprintf("%d", docLen), gDocSignature, nextLink, bParagraphs[nextLink]})
+	// // nameEntityExtraction
+	// doc, _ := prose.NewDocument(curatedContent)
+	// entityFreq := make(freq)
+	// for _, ent := range doc.Entities() {
+	// 	entityFreq[ent.Text+" :: "+ent.Label]++
+	// 	// fmt.Println(ent.Text, ent.Label)
+	// }
+	// entityFreqSorted := rSortFreq(entityFreq)
+	// for counterEntityFreq, anEntityFreq := range entityFreqSorted {
+	// 	fmt.Println(anEntityFreq.Key, anEntityFreq.Value)
+	// 	if counterEntityFreq > 10 {
+	// 		break
+	// 	}
+	// }
 
+	// Append CSV row
+	// err = csvWriter.Write([]string{gDoc[0].Key, fmt.Sprintf("%d", gDoc[0].Value), fmt.Sprintf("%d", docLen), fmt.Sprintf("%.03f", float64(gDoc[0].Value)/float64(1+docLen)), nextLink})
+	err = csvWriter.Write([]string{fmt.Sprintf("%.02f", rankingByKeywords(curatedContent)), fmt.Sprintf("%d", docLen), gDocSignature, nextLink, bParagraph})
 	if err != nil {
 		log.Fatal("Cannot write to file", err)
 	}
-	writer.Flush()
+	csvWriter.Flush()
 
 	// Cut values on maxFreq/numWords ratio 0.1 - 0.005
 	if float64(gDoc[0].Value)/float64(1+docLen) > 0.1 || float64(gDoc[0].Value)/float64(1+docLen) < 0.005 {
@@ -908,17 +956,18 @@ func doNextLink() bool {
 	}
 
 	// Tokenizer text token frequencies
-	f.add(curatedContent)
+	corpusFreqs.add(curatedContent)
 
 	// Once in a while...
-	loopCount++
-	if loopCount%50 == 0 {
-		g := rSortFreq(f)
-		fmt.Println("\n\nCorpus frequencies: ", g[:100])
+	if numLinksProcessed%50 == 0 {
+		fmt.Printf("\n\nnumLinksProcessed: %d", numLinksProcessed)
+
+		corpusFreqsSorted := rSortFreq(corpusFreqs)
+		fmt.Println("\n\nCorpus frequencies: ", corpusFreqsSorted[:100])
 
 		// Saving corpus frequencies in format all.num from British National Corpus
 		output := ""
-		for _, gg := range g {
+		for _, gg := range corpusFreqsSorted {
 			output = output + fmt.Sprintf("%d %s %s %d\n", gg.Value, gg.Key, "none", 0)
 		}
 		string2file(output, "./corpusFrequencies.txt")
@@ -928,8 +977,8 @@ func doNextLink() bool {
 
 		var intercorpusScaleFactor float64
 		intercorpusContrast := 20.0
-		if g[0].Key == "the" {
-			intercorpusScaleFactor = float64(1+goCorpusFreqLib.Freq("the")) / float64(g[0].Value)
+		if corpusFreqsSorted[0].Key == "the" {
+			intercorpusScaleFactor = float64(1+goCorpusFreqLib.Freq("the")) / float64(corpusFreqsSorted[0].Value)
 		} else {
 			panic("Error: stopword \"the\" not found!")
 		}
@@ -943,7 +992,7 @@ func doNextLink() bool {
 		// keyValue={Key:sars Value:430} [eng: 17] [corpusFreqsWithoutEnglish: 23]
 		// keyValue={Key:cov Value:389} [eng: 30] [corpusFreqsWithoutEnglish: 12]
 		// keyValue={Key:tests Value:388} [eng: 4681] [corpusFreqsWithoutEnglish: 0]
-		for _, keyValue := range g {
+		for _, keyValue := range corpusFreqsSorted {
 			// By division:
 			// corpusFreqsWithoutEnglish[keyValue.Key] = int(intercorpusScaleFactor * float64(keyValue.Value) / float64(1+goCorpusFreqLib.Freq(keyValue.Key)))
 			// By substraction:
@@ -963,6 +1012,23 @@ func doNextLink() bool {
 		// LPool dump to file
 		LPoolDump()
 		domainCounterDump()
+
+		// Entities for global curated corpus
+		corpusCuratedText := file2string("./logs/corpusCuratedText.log")
+		doc, _ := prose.NewDocument(corpusCuratedText)
+		entityFreq := make(freq)
+		for _, ent := range doc.Entities() {
+			entityFreq[ent.Text+" :: "+ent.Label]++
+			// fmt.Println(ent.Text, ent.Label)
+		}
+		entityFreqSorted := rSortFreq(entityFreq)
+		for counterEntityFreq, anEntityFreq := range entityFreqSorted {
+			fmt.Println(anEntityFreq.Key, anEntityFreq.Value)
+			if counterEntityFreq > 30 {
+				break
+			}
+		}
+
 	}
 
 	// push content into persitent ddbb
@@ -1045,24 +1111,15 @@ func main() {
 	fmt.Println("* Link bootstrapping ...")
 	linkBootstraping()
 
-	// Tokenizer frequencies
-	f = make(freq) // specific corpus token frequencies
-	// var dataCSV = [][]string{{}}
-	// file, err := os.Create("maxFreq-numWords-URL.csv")
-	file, err := os.Create("ranking-URL.csv")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	defer file.Close()
+	fmt.Println("* Init CSV ...")
+	csvInit()
 
-	writer = csv.NewWriter(file)
-	writer.Comma = '\t'
-	// defer writer.Flush()
-
-	for {
-		if !doNextLink() {
+	// Loop
+	for numLinksProcessed := 0; ; numLinksProcessed++ {
+		if !doNextLink(numLinksProcessed) {
 			break
 		}
 	}
-	fmt.Println("***** Done!!!")
+
+	fmt.Println("\n\n\n***** Done!!!")
 }
