@@ -23,7 +23,6 @@ import (
 	"unicode"
 
 	"github.com/jackdanger/collectlinks"
-	"github.com/jdkato/prose/v2"
 	snowballeng "github.com/kljensen/snowball/english"
 	"github.com/patrickmn/go-cache"
 	"github.com/spf13/viper"
@@ -527,30 +526,13 @@ func domainCounterDump() {
 }
 
 func domainReportFailed(domain string) {
-	f, err := os.OpenFile("./logs/domainFailed.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	if _, err := f.WriteString(domain + "\n"); err != nil {
-		log.Println(err)
-	}
+	string2fileAppend(domain+"\n", "./logs/domainFailed.log")
 }
 
 func domainHadFailed(domain string) bool {
-	file, err := os.Open("./logs/domainFailed.log")
-	if err != nil {
-		return false
-	}
-	defer file.Close()
-	b, err2 := ioutil.ReadAll(file)
-	if err2 != nil {
-		return false
-	}
-
 	re := regexp.MustCompile(`(?i)\W(` + domain + `)\W`)
 	// fmt.Printf("\n\nregexp: %s", `(?i)\W(`+domain+`)\W`)
-	matches := re.FindAllStringSubmatch(string(b[:]), -1)
+	matches := re.FindAllStringSubmatch(file2string("./logs/domainFailed.log"), -1)
 	// fmt.Printf("\n\nmatches: %+v", matches)
 	// fmt.Printf("\nlen(matches): %d", len(matches))
 	if len(matches) > 6 {
@@ -655,12 +637,25 @@ func stopWordsCount(text string) int {
 	rs := regexp.MustCompile(regex)
 	// t2 := rs.ReplaceAllString(text, " _ ")
 	// goDebug.Print(t2)
-	matches := rs.FindAllStringIndex(text, -1)
+	matches := rs.FindAllStringIndex(" "+text+" ", -1)
 	// goDebug.Print(matches)
 
 	return len(matches)
 }
 
+func stopWordsOnBorderCount(text string) int {
+	regexLeft := `(?i)^(` + engStopWords + `)\W`
+	rsLeft := regexp.MustCompile(regexLeft)
+	matchesLeft := rsLeft.FindAllStringIndex(text, -1)
+
+	regexRight := `(?i)\W(` + engStopWords + `)$`
+	rsRight := regexp.MustCompile(regexRight)
+	matchesRight := rsRight.FindAllStringIndex(text, -1)
+
+	return len(matchesLeft) + len(matchesRight)
+}
+
+// Remove stopwords
 func stopwordFilter(text string) string {
 	// fmt.Println("t1: ", text)
 
@@ -742,6 +737,283 @@ func getKVkeys(aMapArray []kv) []string {
 	}
 
 	return keys
+}
+
+func bigramsOf(t string) []string {
+	// var unigrams = []string{}
+	var bigrams = []string{}
+	var trigrams = []string{}
+
+	// Regard each sentence as a paragraph
+	t = strings.ReplaceAll(t, ".\n", "\n")
+	t = strings.ReplaceAll(t, ". ", "\n")
+	paragraphs := splitParagraphs(t)
+
+	// Ignore repeated/similar sentences
+	var uniqueSentenceSignatures = make(map[string]string)
+	for _, p := range paragraphs {
+		// remove stopwords from sentence
+		p2 := stopwordFilter(p)
+
+		// Find high frequency meaningful tokens
+		sentenceTokenFreqs := make(freq)
+		sentenceTokenFreqs.add(p2)
+		sentenceTokenFreqsSorted := rSortFreq(sentenceTokenFreqs)
+
+		// Build sentence signature w/ highest frequency meaningful tokens
+		sentenceSignature := ""
+		if len(sentenceTokenFreqsSorted) > 7 {
+			sentenceSignature = fmt.Sprintf("%v", getKVkeys(sentenceTokenFreqsSorted[:7]))
+		} else {
+			sentenceSignature = fmt.Sprintf("%v", getKVkeys(sentenceTokenFreqsSorted))
+		}
+
+		// Useful sentences are stored with no duplication on uniqueSentenceSignatures value field
+		if uniqueSentenceSignatures[sentenceSignature] == "" {
+			uniqueSentenceSignatures[sentenceSignature] = p
+			// fmt.Printf("uniqueSentenceSignatures: + %s\n", p)
+		} else {
+			// fmt.Printf("uniqueSentenceSignatures: - %s\n", p)
+		}
+	}
+
+	// Words must be separated by 2 spaces to regexp find all matches
+	r0 := regexp.MustCompile(`(\W+)`)
+
+	// Avoid meaningless characters
+	r1 := regexp.MustCompile(`([*\(\)\?\-\,\:\#\[\]\"\“]+)`)
+
+	// Remove double spaces
+	rf := regexp.MustCompile(`(\W)\W`)
+
+	// Find bigrams
+	re := regexp.MustCompile(`(?i)\W([^\W]+)\W`)
+
+	for _, p := range uniqueSentenceSignatures {
+		// Prepare text
+		p = r0.ReplaceAllString(" "+p+" ", `$1$1`)
+		p = r1.ReplaceAllString(p, ` `)
+
+		// Find bigrams
+		matches := re.FindAllStringSubmatch(p, -1)
+
+		previousToken := ""
+		previousToken2 := ""
+		for _, m := range matches {
+			// unigrams = append(unigrams, m[1])
+			// if previousToken2 != "" {
+			if len(tokenize(previousToken2)) == 2 {
+				trigramCandidate := strings.TrimSpace(previousToken2 + m[0])
+
+				// Remove double spaces
+				trigramCandidate = rf.ReplaceAllString(trigramCandidate, `$1`)
+
+				// avoid trigrams containing stopwords
+				if stopWordsCount(trigramCandidate) == 0 {
+					trigrams = append(trigrams, trigramCandidate)
+				}
+				// fmt.Println("T: ", trigramCandidate, stopWordsCount(trigramCandidate))
+			}
+			if previousToken != "" {
+				bigramCandidate := strings.TrimSpace(previousToken + m[0])
+
+				// Remove double spaces
+				bigramCandidate = rf.ReplaceAllString(bigramCandidate, `$1`)
+
+				// avoid bigrams containing stopwords
+				if stopWordsCount(bigramCandidate) == 0 {
+					bigrams = append(bigrams, bigramCandidate)
+				}
+				// fmt.Println("B: ", bigramCandidate, stopWordsCount(bigramCandidate))
+			}
+			// fmt.Printf("previousToken2: #%s#\n", previousToken2)
+			// fmt.Printf("previousToken: #%s#\n", previousToken)
+			previousToken2 = previousToken + m[0]
+			// if len(tokenize(previousToken2)) != 2 {
+			// 	//fmt.Println("T: ", trigramCandidate)
+			// 	fmt.Println("previousToken2: ", previousToken2)
+			// 	fmt.Println("previousToken: ", previousToken)
+			// 	fmt.Println("m[0]: ", m[0])
+			// }
+
+			previousToken = m[0]
+			// fmt.Printf("previousToken2: #%s#\n", previousToken2)
+			// fmt.Printf("previousToken: #%s#\n", previousToken)
+		}
+	}
+	return trigrams
+}
+
+func ngramsOf(t string, n int) []string {
+	var ngrams = []string{}
+
+	// Regard each sentence as a paragraph
+	t = strings.ReplaceAll(t, ".\n", "\n")
+	t = strings.ReplaceAll(t, ". ", "\n")
+	paragraphs := splitParagraphs(t)
+
+	// Ignore repeated/similar sentences
+	var uniqueSentenceSignatures = make(map[string]string)
+	for _, p := range paragraphs {
+		// remove stopwords from sentence
+		p2 := stopwordFilter(p)
+
+		// Find high frequency meaningful tokens
+		sentenceTokenFreqs := make(freq)
+		sentenceTokenFreqs.add(p2)
+		sentenceTokenFreqsSorted := rSortFreq(sentenceTokenFreqs)
+
+		// Build sentence signature w/ highest frequency meaningful tokens
+		sentenceSignature := ""
+		if len(sentenceTokenFreqsSorted) > 7 {
+			sentenceSignature = fmt.Sprintf("%v", getKVkeys(sentenceTokenFreqsSorted[:7]))
+		} else {
+			sentenceSignature = fmt.Sprintf("%v", getKVkeys(sentenceTokenFreqsSorted))
+		}
+
+		// Useful sentences are stored with no duplication on uniqueSentenceSignatures value field
+		if uniqueSentenceSignatures[sentenceSignature] == "" {
+			uniqueSentenceSignatures[sentenceSignature] = p
+			// fmt.Printf("uniqueSentenceSignatures: + %s\n", p)
+		} else {
+			// fmt.Printf("uniqueSentenceSignatures: - %s\n", p)
+		}
+	}
+
+	// Words must be separated by 2 spaces to regexp find all matches
+	r0 := regexp.MustCompile(`(\W+)`)
+
+	// Avoid meaningless characters
+	r1 := regexp.MustCompile(`([*\(\)\?\-\,\:\#\[\]\"]+)`)
+
+	// Remove double spaces
+	rf := regexp.MustCompile(`(\W)\W`)
+
+	// Find bigrams
+	re := regexp.MustCompile(`(?i)\W([^\W]+)\W`)
+
+	// nGrams to ignore
+	regexNGramsIgnore := `(?i)\W(cite_note|cite_ref|https*)\W`
+	ri := regexp.MustCompile(regexNGramsIgnore)
+
+	for _, p := range uniqueSentenceSignatures {
+		// Prepare text
+		p = r0.ReplaceAllString(" "+p+" ", `$1$1`)
+		p = r1.ReplaceAllString(p, ` `)
+
+		// Find bigrams
+		bigramMatches := re.FindAllStringSubmatch(p, -1)
+
+		var previousToken = make(map[int]string)
+		for _, aBigramFound := range bigramMatches {
+			if len(tokenize(previousToken[n-1])) == n-1 {
+				ngramCandidate := strings.TrimSpace(previousToken[n-1] + aBigramFound[0])
+
+				// Remove double spaces
+				ngramCandidate = rf.ReplaceAllString(ngramCandidate, `$1`)
+
+				if stopWordsOnBorderCount(ngramCandidate) == 0 { // avoid ngrams containing stopwords on left/right border
+					if len(ri.FindAllStringIndex(" "+ngramCandidate+" ", -1)) == 0 { // avoid ngrams to ignore
+						ngrams = append(ngrams, ngramCandidate)
+					}
+				}
+				// fmt.Println("ngramCandidate, stopWordsCount: ", ngramCandidate, stopWordsCount(ngramCandidate))
+			}
+
+			for i := n - 1; i > 0; i-- {
+				previousToken[i] = previousToken[i-1] + aBigramFound[0]
+			}
+			previousToken[0] = aBigramFound[0]
+		}
+	}
+	return ngrams
+}
+
+func ngramsFreqsOf(t string, n int) []kv {
+	ngrams := ngramsOf(t, n)
+	ngramsFreq := make(freq)
+	for _, ngram := range ngrams {
+		ngramsFreq[ngram]++
+	}
+	ngramsFreqSorted := rSortFreq(ngramsFreq)
+
+	// Ignore residual low frequencies
+	var limitedNgramsFreqSorted = []kv{}
+	for counterNgramFreq, anNgramFreq := range ngramsFreqSorted {
+		if counterNgramFreq > 100 || anNgramFreq.Value < 2 {
+			break
+		}
+		limitedNgramsFreqSorted = append(limitedNgramsFreqSorted, kv{Key: anNgramFreq.Key, Value: anNgramFreq.Value})
+		// fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
+	}
+
+	return limitedNgramsFreqSorted
+}
+
+func kvSliceRemoveItem(slice []kv, s int) []kv {
+	fmt.Printf("kvSliceRemoveItem: len(slice): %d; s:%d\n", len(slice), s)
+	fmt.Printf("kvSliceRemoveItem: slice1: %+v\n", slice)
+	fmt.Printf("kvSliceRemoveItem: slice2: %+v\n\n", append(slice[:s], slice[s+1:]...))
+	return append(slice[:s], slice[s+1:]...)
+}
+
+// When adding up all ngrams find out which sub-ngram or super-ngram must represent its class
+
+// N-GRAM:  Coronavirus COVID Update FDA Issues 7
+// N-GRAM:  Coronavirus COVID Update FDA Continues 3
+// N-GRAM:  Coronavirus COVID Update FDA Revokes 2
+// N-GRAM:  Coronavirus COVID Update FDA Authorizes 2
+// N-GRAM:  Coronavirus COVID Update FDA 31 <=========================== bigger freq
+
+// N-GRAM:  FDA actions on warning letters 16 <=========================== bigger n
+// N-GRAM:  FDA actions on warning 16
+
+// N-GRAM:  Food and Drug Administration’s 2
+// N-GRAM:  Food and Drug Administration FDA 2
+// N-GRAM:  Food and Drug Administration 12 <=========================== bigger freq
+
+// N-GRAM:  FDA actions on food safety 3 <=========================== bigger n
+// N-GRAM:  FDA actions on food 3
+
+// Algorithm:
+// 	#1.- check subsets. If any subset has higher frequency, ignore ngram
+// 	#2.- check supersets. If any superset has equal or higher frequency, ignore ngram
+
+func ngramsFreqsOfAll(t string, nMax int) []kv { // All n's from nMax to 2 decreasingly
+	var ngramsFreqs = []kv{}
+	var ngramsLevel = make(map[int][]kv)
+	var ngramsToIgnore = make(map[string]bool)
+	var ngramsLevelOk = make(map[int][]kv)
+
+	for n := nMax; n > 1; n-- {
+		ngramsLevel[n] = ngramsFreqsOf(t, n)
+		for _, ngram := range ngramsLevel[n] { // find out ngrams to ignore
+			// Ignore non-representative ngrams included in a class
+			// Algorithm #2: check supersets
+			if n < nMax {
+				for _, supersetNgram := range ngramsLevel[n+1] { // loop superset
+					if strings.Contains(supersetNgram.Key, ngram.Key) {
+						fmt.Printf("level %d; ngram: %+v; supersetNgram: %+v\n", n, ngram, supersetNgram)
+						if supersetNgram.Value >= ngram.Value {
+							// ignore this ngram
+							// ngramsLevel[n] = kvSliceRemoveItem(ngramsLevel[n], ngramIndex)
+							ngramsToIgnore[ngram.Key] = true
+							fmt.Printf("*** REMOVED ***\n")
+							break
+						}
+					}
+				}
+			}
+		}
+		for _, ngram := range ngramsLevel[n] { // rebuild ngramsLevel w/o ngrams to ignore
+			if !ngramsToIgnore[ngram.Key] {
+				ngramsLevelOk[n] = append(ngramsLevelOk[n], ngram)
+			}
+		}
+		ngramsFreqs = append(ngramsFreqs, ngramsLevelOk[n]...)
+	}
+
+	return ngramsFreqs
 }
 
 /***************************************************************************************************************
@@ -1013,22 +1285,36 @@ func doNextLink(numLinksProcessed int) bool {
 		LPoolDump()
 		domainCounterDump()
 
-		// Entities for global curated corpus
+		// // Entities for global curated corpus
+		// corpusCuratedText := file2string("./logs/corpusCuratedText.log")
+		// doc, _ := prose.NewDocument(corpusCuratedText)
+		// entityFreq := make(freq)
+		// for _, ent := range doc.Entities() {
+		// 	entityFreq[ent.Text+" :: "+ent.Label]++
+		// 	// fmt.Println(ent.Text, ent.Label)
+		// }
+		// entityFreqSorted := rSortFreq(entityFreq)
+		// for counterEntityFreq, anEntityFreq := range entityFreqSorted {
+		// 	fmt.Println(anEntityFreq.Key, anEntityFreq.Value)
+		// 	if counterEntityFreq > 30 {
+		// 		break
+		// 	}
+		// }
+
+		// Entities/Bigrams for global curated corpus
 		corpusCuratedText := file2string("./logs/corpusCuratedText.log")
-		doc, _ := prose.NewDocument(corpusCuratedText)
+		corpusCuratedBigrams := bigramsOf(corpusCuratedText)
 		entityFreq := make(freq)
-		for _, ent := range doc.Entities() {
-			entityFreq[ent.Text+" :: "+ent.Label]++
-			// fmt.Println(ent.Text, ent.Label)
+		for _, ent := range corpusCuratedBigrams {
+			entityFreq[ent]++
 		}
 		entityFreqSorted := rSortFreq(entityFreq)
 		for counterEntityFreq, anEntityFreq := range entityFreqSorted {
-			fmt.Println(anEntityFreq.Key, anEntityFreq.Value)
-			if counterEntityFreq > 30 {
+			fmt.Println("BIGRAM: ", anEntityFreq.Key, anEntityFreq.Value)
+			if counterEntityFreq > 100 {
 				break
 			}
 		}
-
 	}
 
 	// push content into persitent ddbb
@@ -1102,6 +1388,18 @@ func main() {
 	fmt.Println("* Init English corpus ...")
 	goCorpusFreqLib.Init()
 
+	// Ngrams for global curated corpus
+	fmt.Println("\n")
+	corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-small.txt")
+	ngramsFreqSorted := ngramsFreqsOfAll(corpusCuratedText, 5)
+	// N-GRAM:  Actions by the FDA
+	// ngramsFreqSorted := ngramsFreqsOf(corpusCuratedText, 4)
+	for _, anNgramFreq := range ngramsFreqSorted {
+		fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
+	}
+	fmt.Println("\n")
+	os.Exit(1)
+
 	// Allow go interfaces be expanded into custom structs of our cache implementation
 	gob.Register(CachedData{}) // For some reason, this declaration must be written on main function
 
@@ -1113,6 +1411,9 @@ func main() {
 
 	fmt.Println("* Init CSV ...")
 	csvInit()
+
+	fmt.Println("* Init Curated corpus ...")
+	string2file("\n", "./logs/corpusCuratedText.log")
 
 	// Loop
 	for numLinksProcessed := 0; ; numLinksProcessed++ {

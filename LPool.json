@@ -26,7 +26,7 @@
  {
   "Url": "https://www.fda.gov/emergency-preparedness-and-response/mcm-issues/coronavirus-disease-2019-covid-19",
   "Domain": "fda.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -242,7 +242,7 @@
  {
   "Url": "https://www.theatlantic.com/health/archive/2020/04/pandemic-confusing-uncertainty/610819/",
   "Domain": "theatlantic.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
@@ -272,7 +272,7 @@
  {
   "Url": "https://www.linkedin.com/shareArticle",
   "Domain": "linkedin.com",
-  "Count": 9,
+  "Count": 7,
   "Status": 2
  },
  {
@@ -326,7 +326,7 @@
  {
   "Url": "https://www.mayoclinic.org/diseases-conditions/coronavirus/symptoms-causes/syc-20479963",
   "Domain": "mayoclinic.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 2
  },
  {
@@ -464,7 +464,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/prevent-getting-sick/cloth-face-cover.html",
   "Domain": "cdc.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -530,7 +530,7 @@
  {
   "Url": "https://www.elsevier.com/connect/coronavirus-information-center",
   "Domain": "elsevier.com",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -602,7 +602,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/hcp/faq.html",
   "Domain": "cdc.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -1196,7 +1196,7 @@
  {
   "Url": "https://ourworldindata.org/coronavirus",
   "Domain": "ourworldindata.org",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -1305,139 +1305,139 @@
   "Url": "https://www.alberta.ca/stats/covid-19-alberta-statistics.htm",
   "Domain": "alberta.ca",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.publichealthontario.ca/en/data-and-analysis/infectious-disease/covid-19-data-surveillance/covid-19-data-tool",
   "Domain": "publichealthontario.ca",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.quebec.ca/en/health/health-issues/a-z/2019-coronavirus/situation-coronavirus-in-quebec/",
   "Domain": "quebec.ca",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.minsal.cl/22-informe-epidemiologico-covid-19/",
   "Domain": "minsal.cl",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.ins.gov.co/Noticias/Paginas/Coronavirus.aspx",
   "Domain": "ins.gov.co",
   "Count": 1,
-  "Status": 3
+  "Status": 0
  },
  {
   "Url": "https://www.ssi.dk/sygdomme-beredskab-og-forskning/sygdomsovervaagning/c/covid19-overvaagning",
   "Domain": "ssi.dk",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://thl.fi/fi/web/infektiotaudit-ja-rokotukset/ajankohtaista/ajankohtaista-koronaviruksesta-covid-19/tilannekatsaus-koronaviruksesta",
   "Domain": "thl.fi",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.lgl.bayern.de/gesundheit/infektionsschutz/infektionskrankheiten_a_z/coronavirus/karte_coronavirus/index.htm",
   "Domain": "lgl.bayern.de",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://toyokeizai.net/sp/visual/tko/covid19/en",
   "Domain": "toyokeizai.net",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://coronavirus.gob.mx/datos",
   "Domain": "coronavirus.gob.mx",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.rivm.nl/documenten/epidemiologische-situatie-covid-19-in-nederland-3-juni-2020",
   "Domain": "rivm.nl",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.doh.gov.ph/covid19tracker",
   "Domain": "doh.gov.ph",
   "Count": 1,
-  "Status": 3
+  "Status": 0
  },
  {
   "Url": "https://sacoronavirus.co.za/2020/05/29/update-on-covid-19-28th-may-2020/",
   "Domain": "sacoronavirus.co.za",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://covid19.colorado.gov/data/case-data",
   "Domain": "covid19.colorado.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://data.ct.gov/Health-and-Human-Services/COVID-19-confirmed-cases-and-deaths-by-age-group/ypz6-8qyf",
   "Domain": "data.ct.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://dph.georgia.gov/covid-19-daily-status-report",
   "Domain": "dph.georgia.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://hub.mph.in.gov/dataset/covid-19-case-demographics",
   "Domain": "hub.mph.in.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://coronavirus.maryland.gov",
   "Domain": "coronavirus.maryland.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.mass.gov/info-details/covid-19-response-reporting",
   "Domain": "mass.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://govstatus.egov.com/OR-OHA-COVID-19",
   "Domain": "govstatus.egov.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://dshs.texas.gov/coronavirus/additionaldata",
   "Domain": "dshs.texas.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.doh.wa.gov/emergencies/coronavirus",
   "Domain": "doh.wa.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.dhs.wisconsin.gov/covid-19/deaths.htm",
   "Domain": "dhs.wisconsin.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.who.int/dg/speeches/detail/who-director-general-s-statement-on-the-advice-of-the-ihr-emergency-committee-on-novel-coronavirus",
@@ -1485,7 +1485,7 @@
   "Url": "https://www.theadvocate.com/baton_rouge/news/coronavirus/article_f80cf77e-84fa-11ea-88d5-2b37dc9dd966.html",
   "Domain": "theadvocate.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.ncbi.nlm.nih.gov/books/NBK554776/",
@@ -1557,7 +1557,7 @@
   "Url": "https://www.scmp.com/news/hong-kong/health-environment/article/3074988/coronavirus-some-recovered-patients-may-have",
   "Domain": "scmp.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.sciencemag.org/news/2020/04/survivors-severe-covid-19-beating-virus-just-beginning",
@@ -1575,31 +1575,31 @@
   "Url": "https://www.immunology.org/news/bsi-open-letter-government-sars-cov-2-outbreak-response",
   "Domain": "immunology.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.independent.co.uk/life-style/health-and-families/coronavirus-immunity-reinfection-get-covid-19-twice-sick-spread-relapse-a9400691.html",
   "Domain": "independent.co.uk",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://slate.com/news-and-politics/2020/04/who-reports-coronavirus-testing-positive-recovery.html",
   "Domain": "slate.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.latimes.com/world-nation/story/2020-03-13/china-japan-korea-coronavirus-reinfection-test-positive",
   "Domain": "latimes.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.caixinglobal.com/2020-02-26/14-of-recovered-covid-19-patients-in-guangdong-tested-positive-again-101520415.html",
   "Domain": "caixinglobal.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1001/jama.2020.5788",
@@ -1617,19 +1617,19 @@
   "Url": "https://www.thetimes.co.uk/article/coronavirus-patients-cant-relapse-south-korean-scientists-believe-rkm8zm7d9",
   "Domain": "thetimes.co.uk",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.technologyreview.com/2020/04/27/1000569/how-long-are-people-immune-to-covid-19/",
   "Domain": "technologyreview.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://nautil.us/issue/83/intelligence/the-man-who-saw-the-pandemic-coming",
   "Domain": "nautil.us",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1097%2FJCMA.0000000000000270",
@@ -1683,7 +1683,7 @@
   "Url": "https://www.theguardian.com/world/2020/jan/20/coronavirus-spreads-to-beijing-as-china-confirms-new-cases",
   "Domain": "theguardian.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.3760%2Fcma.j.issn.0254-6450.2020.02.003",
@@ -1695,7 +1695,7 @@
   "Url": "https://www.wsj.com/articles/china-rules-out-animal-market-and-lab-as-coronavirus-origin-11590517508",
   "Domain": "wsj.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.reuters.com/article/us-health-coronavirus-italy-sewage/italy-sewage-study-suggests-covid-19-was-there-in-december-2019-idUSKBN23Q1J9",
@@ -1725,13 +1725,13 @@
   "Url": "https://www.livescience.com/first-case-coronavirus-found.html",
   "Domain": "livescience.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://nationalpost.com/news/politics/the-birth-of-a-pandemic-how-covid-19-went-from-wuhan-to-toronto",
   "Domain": "nationalpost.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.theguardian.com/global-development/2020/feb/07/coronavirus-chinese-rage-death-whistleblower-doctor-li-wenliang",
@@ -1761,13 +1761,13 @@
   "Url": "https://www.france24.com/en/20200120-china-confirms-sharp-rise-in-cases-of-sars-like-virus-across-the-country",
   "Domain": "france24.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.theglobeandmail.com/world/article-flattery-and-foot-dragging-chinas-influence-over-the-who-under/",
   "Domain": "theglobeandmail.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.theguardian.com/commentisfree/2020/mar/18/coronavirus-uk-expert-advice-wrong",
@@ -1779,19 +1779,19 @@
   "Url": "https://www.corriere.it/cronache/20_gennaio_30/coronavirus-italia-corona-9d6dc436-4343-11ea-bdc8-faf1f56f19b7.shtml",
   "Domain": "corriere.it",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://nypost.com/2020/03/13/who-says-europe-is-new-epicenter-of-coronavirus-pandemic/",
   "Domain": "nypost.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://news.sky.com/story/coronavirus-number-of-covid-19-deaths-in-italy-surpasses-china-as-total-reaches-3-405-11960412",
   "Domain": "news.sky.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.nytimes.com/2020/03/26/health/usa-coronavirus-cases.html",
@@ -1821,7 +1821,7 @@
   "Url": "https://www.pbs.org/newshour/nation/2-died-with-coronavirus-weeks-before-1st-u-s-virus-death",
   "Domain": "pbs.org",
   "Count": 1,
-  "Status": 3
+  "Status": 0
  },
  {
   "Url": "https://www.scmp.com/news/china/society/article/3089161/beijing-covid-19-outbreak-puts-food-markets-back-infection-focus",
@@ -1833,13 +1833,13 @@
   "Url": "https://www.cnn.com/2020/06/15/asia/coronavirus-beijing-outbreak-intl-hnk/index.html",
   "Domain": "cnn.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.channelnewsasia.com/news/asia/covid-19-cases-china-beijing-market-cluster-12833874",
   "Domain": "channelnewsasia.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://ourworldindata.org/covid-mortality-risk",
@@ -1905,7 +1905,7 @@
   "Url": "https://edition.cnn.com/world/live-news/coronavirus-pandemic-07-11-20-intl/h_d6a63735c82f708ffdcff33082da393b",
   "Domain": "edition.cnn.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.cebm.net/covid-19/global-covid-19-case-fatality-rates/",
@@ -1917,7 +1917,7 @@
   "Url": "https://towardsdatascience.com/gangelt-a-representative-study-on-the-lethality-of-covid-19-5d877dbd6e55",
   "Domain": "towardsdatascience.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.sciencemag.org/news/2020/04/antibody-surveys-suggesting-vast-undercount-coronavirus-infections-may-be-unreliable",
@@ -1934,20 +1934,20 @@
  {
   "Url": "https://arstechnica.com/science/2020/04/experts-demolish-studies-suggesting-covid-19-is-no-worse-than-flu/",
   "Domain": "arstechnica.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www1.nyc.gov/site/doh/covid/covid-19-data.page",
   "Domain": "www1.nyc.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://medium.com/bccp-uc-berkeley/how-deadly-is-covid-19-data-science-offers-answers-from-italy-mortality-data-58abedf824cf",
   "Domain": "medium.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1016%2FS0140-6736%2820%2930526-2",
@@ -2007,7 +2007,7 @@
   "Url": "http://www.euro.who.int/en/health-topics/health-emergencies/coronavirus-covid-19/weekly-surveillance-report",
   "Domain": "euro.who.int",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.nytimes.com/2020/04/03/us/coronavirus-male-female-data-bias.html",
@@ -2043,7 +2043,7 @@
   "Url": "https://www.kff.org/coronavirus-covid-19/issue-brief/covid-19-presents-significant-risks-for-american-indian-and-alaska-native-people/",
   "Domain": "kff.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1007%2Fs40615-020-00756-0",
@@ -2061,13 +2061,13 @@
   "Url": "https://www.health.org.uk/news-and-comment/charts-and-infographics/emerging-findings-on-the-impact-of-covid-19-on-black-and-min",
   "Domain": "health.org.uk",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.npr.org/sections/health-shots/2020/01/24/799208865/a-second-u-s-case-of-wuhan-coronavirus-is-confirmed",
   "Domain": "npr.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.nytimes.com/2020/02/02/health/coronavirus-pandemic-china.html",
@@ -2121,7 +2121,7 @@
   "Url": "https://www.todayonline.com/world/wuhan-novel-coronavirus-named-covid-19-who",
   "Domain": "todayonline.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://archive.today/20200321085608/https://www.todayonline.com/world/wuhan-novel-coronavirus-named-covid-19-who",
@@ -2133,7 +2133,7 @@
   "Url": "https://www.economist.com/china/2020/02/17/the-coronavirus-spreads-racism-against-and-among-ethnic-chinese",
   "Domain": "economist.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/technical-guidance/naming-the-coronavirus-disease-(covid-2019)-and-the-virus-that-causes-it",
@@ -2151,7 +2151,7 @@
   "Url": "https://www.buzzfeednews.com/article/janelytvynenko/coronavirus-disinformation-spread",
   "Domain": "buzzfeednews.com",
   "Count": 1,
-  "Status": 3
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1016%2Fj.jacc.2020.04.011",
@@ -2169,7 +2169,7 @@
   "Url": "https://www.forbes.com/sites/jamiewareham/2020/05/01/uk-lockdown-has-broken-hiv-chain-with-huge-reduction-in-new-sti-cases/",
   "Domain": "forbes.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.thelancet.com/journals/lanpub/article/PIIS2468-2667(20)30090-6/abstract",
@@ -2187,7 +2187,7 @@
   "Url": "https://www.newscientist.com/article/2242113-australia-sees-huge-decrease-in-flu-cases-due-to-coronavirus-measures/",
   "Domain": "newscientist.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1016%2FS0140-6736%2820%2930460-8",
@@ -2199,7 +2199,7 @@
   "Url": "https://www.brusselstimes.com/all-news/belgium-all-news/103003/coronavirus-belgian-woman-infected-her-cat/",
   "Domain": "brusselstimes.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.nytimes.com/2020/04/06/nyregion/bronx-zoo-tiger-coronavirus.html",
@@ -2211,7 +2211,7 @@
   "Url": "https://www.foxnews.com/world/mink-netherlands-coronavirus-farm",
   "Domain": "foxnews.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1126%2Fscience.abb7015",
@@ -2271,7 +2271,7 @@
   "Url": "https://www.cbsnews.com/news/france-bans-use-of-hydroxychloroquine-drug-touted-by-trump-to-treat-coronavirus/",
   "Domain": "cbsnews.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1016%2FS1473-3099%2820%2930144-4",
@@ -2325,7 +2325,7 @@
   "Url": "https://www.cambridge.org/core/product/identifier/S0022112020003304/type/journal_article",
   "Domain": "cambridge.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1017%2Fjfm.2020.330",
@@ -2355,7 +2355,7 @@
   "Url": "http://www.covidliterature.ca/",
   "Domain": "covidliterature.ca",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.nature.com/articles/d41573-020-00073-5",
@@ -2385,7 +2385,7 @@
   "Url": "https://biorender.com/covid-vaccine-tracker",
   "Domain": "biorender.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1007%2Fs40475-020-00201-6",
@@ -2402,14 +2402,14 @@
  {
   "Url": "https://milkeninstitute.org/covid-19-tracker",
   "Domain": "milkeninstitute.org",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
   "Url": "https://www.biocentury.com/article/304658",
   "Domain": "biocentury.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30798-4/fulltext",
@@ -2433,7 +2433,7 @@
   "Url": "https://www.fda.gov/news-events/press-announcements/coronavirus-covid-19-update-fda-issues-emergency-use-authorization-potential-covid-19-treatment",
   "Domain": "fda.gov",
   "Count": 2,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://theconversation.com/a-small-trial-finds-that-hydroxychloroquine-is-not-effective-for-treating-coronavirus-135484",
@@ -2529,7 +2529,7 @@
   "Url": "https://www.univadis.co.uk/viewarticle/covid-19-italy-launches-an-independent-trial-on-tocilizumab-715741",
   "Domain": "univadis.co.uk",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.vox.com/2020/3/12/21176783/coronavirus-covid-19-deaths-china-treatment-cytokine-storm-syndrome",
@@ -2553,13 +2553,13 @@
   "Url": "https://www.cancernetwork.com/news/fda-approves-phase-iii-clinical-trial-tocilizumab-covid-19-pneumonia",
   "Domain": "cancernetwork.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://ashpublications.org/blood/article/130/Supplement%201/1547/79746",
   "Domain": "ashpublications.org",
   "Count": 1,
-  "Status": 3
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1182%2Fblood.V130.Suppl_1.1547.1547",
@@ -2577,7 +2577,7 @@
   "Url": "https://www.longislandpress.com/2020/03/21/northwell-health-initiates-clinical-trials-of-2-covid-19-drugs/",
   "Domain": "longislandpress.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1172%2FJCI138003",
@@ -2601,18 +2601,18 @@
   "Url": "https://hub.jhu.edu/2020/03/13/covid-19-antibody-sera-arturo-casadevall/",
   "Domain": "hub.jhu.edu",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019",
   "Domain": "who.int",
-  "Count": 6,
+  "Count": 4,
   "Status": 2
  },
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/index.html",
   "Domain": "cdc.gov",
-  "Count": 9,
+  "Count": 6,
   "Status": 2
  },
  {
@@ -2625,13 +2625,13 @@
   "Url": "https://curlie.org/Health/Conditions_and_Diseases/Respiratory_Disorders/COVID-19",
   "Domain": "curlie.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://openmd.com/directory/covid-19",
   "Domain": "openmd.com",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://jamanetwork.com/journals/jama/pages/coronavirus-alert",
@@ -2648,7 +2648,7 @@
  {
   "Url": "https://www.thelancet.com/coronavirus",
   "Domain": "thelancet.com",
-  "Count": 6,
+  "Count": 5,
   "Status": 3
  },
  {
@@ -2660,7 +2660,7 @@
  {
   "Url": "https://www.nejm.org/coronavirus",
   "Domain": "nejm.org",
-  "Count": 5,
+  "Count": 4,
   "Status": 2
  },
  {
@@ -2685,25 +2685,25 @@
   "Url": "https://www.nlm.nih.gov/cgi/mesh/2015/MB_cgi",
   "Domain": "nlm.nih.gov",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://commons.wikimedia.org/wiki/Special:Search/Category:COVID-19",
   "Domain": "commons.wikimedia.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://species.wikimedia.org/wiki/Special:Search/COVID-19",
   "Domain": "species.wikimedia.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://en.wikivoyage.org/wiki/Special:Search/COVID-19",
   "Domain": "en.wikivoyage.org",
   "Count": 1,
-  "Status": 2
+  "Status": 0
  },
  {
   "Url": "https://en.wikinews.org/wiki/Special:Search/COVID-19",
@@ -2846,19 +2846,19 @@
  {
   "Url": "https://www.coronavirus.gov/",
   "Domain": "coronavirus.gov",
-  "Count": 5,
+  "Count": 4,
   "Status": 2
  },
  {
   "Url": "https://www.osha.gov/SLTC/covid-19/",
   "Domain": "osha.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
   "Url": "https://www.usa.gov/coronavirus",
   "Domain": "usa.gov",
-  "Count": 5,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -2912,7 +2912,7 @@
  {
   "Url": "https://www.linkedin.com/company/centers-for-disease-control-and-prevention",
   "Domain": "linkedin.com",
-  "Count": 7,
+  "Count": 6,
   "Status": 2
  },
  {
@@ -2924,8 +2924,8 @@
  {
   "Url": "https://www.medrxiv.org/content/10.1101/2020.04.14.20062463v1",
   "Domain": "medrxiv.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.nejm.org/doi/10.1056/NEJMe2002387",
@@ -2966,7 +2966,7 @@
  {
   "Url": "http://www.linkedin.com/shareArticle",
   "Domain": "linkedin.com",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -2984,8 +2984,8 @@
  {
   "Url": "https://coronavirus.jhu.edu/map.html",
   "Domain": "coronavirus.jhu.edu",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.nytimes.com/interactive/2020/world/coronavirus-maps.html",
@@ -8648,8 +8648,8 @@
  {
   "Url": "https://science.sciencemag.org/content/early/2020/04/14/science.abb5793",
   "Domain": "science.sciencemag.org",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.nejm.org/doi/full/10.1056/NEJMoa2006100",
@@ -9356,8 +9356,8 @@
  {
   "Url": "https://jamanetwork.com/journals/jama/fullarticle/2762452",
   "Domain": "jamanetwork.com",
-  "Count": 3,
-  "Status": 3
+  "Count": 2,
+  "Status": 0
  },
  {
   "Url": "https://www.cambridge.org/core/journals/infection-control-and-hospital-epidemiology/article/unprecedented-solutions-for-extraordinary-times-helping-longterm-care-settings-deal-with-the-covid19-pandemic/8947958D98AA154B70A52CC3CD1129B8",
@@ -9830,7 +9830,7 @@
  {
   "Url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30183-5/fulltext",
   "Domain": "thelancet.com",
-  "Count": 5,
+  "Count": 3,
   "Status": 3
  },
  {
@@ -12662,7 +12662,7 @@
  {
   "Url": "https://academic.oup.com/journals/pages/coronavirus",
   "Domain": "academic.oup.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -12770,8 +12770,8 @@
  {
   "Url": "https://www.ecdc.europa.eu/en/novel-coronavirus-china",
   "Domain": "ecdc.europa.eu",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.icsi.co.uk/courses/icsi-cnss-certified-network-security-specialist-covid-19",
@@ -12818,13 +12818,13 @@
  {
   "Url": "https://ncov2019.live/",
   "Domain": "ncov2019.live",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.worldometers.info/coronavirus/",
   "Domain": "worldometers.info",
-  "Count": 5,
+  "Count": 3,
   "Status": 2
  },
  {
@@ -14828,7 +14828,7 @@
  {
   "Url": "https://www.thelancet.com/journals/lanchi/article/PIIS2352-4642(20)30177-2/fulltext",
   "Domain": "thelancet.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -15536,8 +15536,8 @@
  {
   "Url": "https://covid19.who.int/",
   "Domain": "covid19.who.int",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.sciencedirect.com/journal/progress-in-disaster-science/special-issue/10S2VFG88M7",
@@ -15584,14 +15584,14 @@
  {
   "Url": "https://www.health.gov.au/health-topics/novel-coronavirus-2019-ncov",
   "Domain": "health.gov.au",
-  "Count": 4,
+  "Count": 3,
   "Status": 2
  },
  {
   "Url": "https://www.canada.ca/en/public-health/services/diseases/2019-novel-coronavirus-infection.html",
   "Domain": "canada.ca",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.minsal.cl/nuevo-coronavirus-2019-ncov/",
@@ -15716,25 +15716,25 @@
  {
   "Url": "http://del.icio.us/post",
   "Domain": "del.icio.us",
-  "Count": 3,
+  "Count": 2,
   "Status": 0
  },
  {
   "Url": "http://digg.com/submit",
   "Domain": "digg.com",
-  "Count": 5,
+  "Count": 3,
   "Status": 0
  },
  {
   "Url": "http://www.citeulike.org/posturl",
   "Domain": "citeulike.org",
-  "Count": 5,
+  "Count": 3,
   "Status": 0
  },
  {
   "Url": "http://www.mendeley.com/import/",
   "Domain": "mendeley.com",
-  "Count": 5,
+  "Count": 3,
   "Status": 0
  },
  {
@@ -15746,8 +15746,8 @@
  {
   "Url": "https://www.coronavirus.gov",
   "Domain": "coronavirus.gov",
-  "Count": 3,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://github.com/owid/covid-19-data/tree/master/public/data",
@@ -15908,7 +15908,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus/2019-ncov/",
   "Domain": "cdc.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -15968,7 +15968,7 @@
  {
   "Url": "https://www.cdc.gov/coronavirus",
   "Domain": "cdc.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -16010,8 +16010,8 @@
  {
   "Url": "https://www.medicare.gov/medicare-coronavirus",
   "Domain": "medicare.gov",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.medicaid.gov/resources-for-states/disaster-response-toolkit/coronavirus-disease-2019-covid-19/index.html",
@@ -16118,7 +16118,7 @@
  {
   "Url": "https://www.fema.gov/coronavirus",
   "Domain": "fema.gov",
-  "Count": 3,
+  "Count": 2,
   "Status": 2
  },
  {
@@ -16130,8 +16130,8 @@
  {
   "Url": "https://www.ihs.gov/coronavirus/",
   "Domain": "ihs.gov",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.militaryonesource.mil/coronavirus",
@@ -16172,14 +16172,14 @@
  {
   "Url": "https://www.nih.gov/health-information/coronavirus",
   "Domain": "nih.gov",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.drugabuse.gov/related-topics/covid-19-resources",
   "Domain": "drugabuse.gov",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.med.navy.mil/sites/nmcphc/program-and-policy-support/Pages/Novel-Coronavirus.aspx",
@@ -16706,7 +16706,7 @@
  {
   "Url": "https://www.linkedin.com/sharing/share-offsite/",
   "Domain": "linkedin.com",
-  "Count": 4,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -16748,7 +16748,7 @@
  {
   "Url": "http://www.connotea.org/add",
   "Domain": "connotea.org",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -16940,7 +16940,7 @@
  {
   "Url": "https://s100.copyright.com/AppDispatchServlet",
   "Domain": "s100.copyright.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -17756,8 +17756,8 @@
  {
   "Url": "https://coronavirus.data.gov.uk/",
   "Domain": "coronavirus.data.gov.uk",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.ijzcg.me/me/novosti/covid19-presjek-stanja-03-avgust-u-1700h",
@@ -18086,7 +18086,7 @@
  {
   "Url": "https://www.who.int/news-room/commentaries/detail/immunity-passports-in-the-context-of-covid-19",
   "Domain": "who.int",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -18122,7 +18122,7 @@
  {
   "Url": "https://www.who.int/emergencies/diseases/novel-coronavirus-2019/advice-for-public/myth-busters",
   "Domain": "who.int",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -18140,7 +18140,7 @@
  {
   "Url": "https://www.who.int/",
   "Domain": "who.int",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -18158,8 +18158,8 @@
  {
   "Url": "https://www.imperial.ac.uk/mrc-global-infectious-disease-analysis/news--wuhan-coronavirus/",
   "Domain": "imperial.ac.uk",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3809029/",
@@ -18434,8 +18434,8 @@
  {
   "Url": "https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide",
   "Domain": "ecdc.europa.eu",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://doi.org/10.1099/0022-1317-64-8-1787",
@@ -19130,8 +19130,8 @@
  {
   "Url": "https://www.cdc.gov/nchs/nvss/vsrr/covid19/index.htm",
   "Domain": "cdc.gov",
-  "Count": 3,
-  "Status": 2
+  "Count": 2,
+  "Status": 0
  },
  {
   "Url": "https://www.cdc.gov/vaccines/vpd/vpd-vac-basics.html",
@@ -19460,14 +19460,14 @@
  {
   "Url": "https://abetterscientist.wordpress.com/2020/04/19/why-i-dont-believe-that-2-5-4-of-people-in-santa-clara-county-have-had-covid19/",
   "Domain": "abetterscientist.wordpress.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://statmodeling.stat.columbia.edu/2020/04/19/fatal-flaws-in-stanford-study-of-coronavirus-prevalence/",
   "Domain": "statmodeling.stat.columbia.edu",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.nytimes.com/2020/04/14/magazine/coronavirus-er-doctor-diary-new-york-city.html",
@@ -19616,7 +19616,7 @@
  {
   "Url": "https://www.cdc.gov/media/releases/2020/t0225-cdc-telebriefing-covid-19.html",
   "Domain": "cdc.gov",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -19694,8 +19694,8 @@
  {
   "Url": "https://www.bloomberg.com/news/articles/2020-04-09/coronavirus-may-reactivate-in-cured-patients-korean-cdc-says",
   "Domain": "bloomberg.com",
-  "Count": 2,
-  "Status": 2
+  "Count": 1,
+  "Status": 0
  },
  {
   "Url": "https://www.cnn.com/2020/04/17/health/south-korea-coronavirus-retesting-positive-intl-hnk/index.html",
@@ -20552,7 +20552,7 @@
  {
   "Url": "https://share.flipboard.com/bookmarklet/popout",
   "Domain": "share.flipboard.com",
-  "Count": 2,
+  "Count": 1,
   "Status": 0
  },
  {
@@ -21116,1272 +21116,6 @@
  {
   "Url": "https://www.linkedin.com/company/infectious-diseases-society-of-america",
   "Domain": "linkedin.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.inspq.qc.ca/covid-19/donnees/projections",
-  "Domain": "inspq.qc.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ca.thrive.health/covid19/en",
-  "Domain": "ca.thrive.health",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://travel.gc.ca/assistance/emergency-info/financial-assistance/covid-19-financial-help",
-  "Domain": "travel.gc.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.info-coronavirus.be/fr/",
-  "Domain": "info-coronavirus.be",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://covid19.min-saude.pt/",
-  "Domain": "covid19.min-saude.pt",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mhlw.go.jp/stf/covid-19/open-data.html",
-  "Domain": "mhlw.go.jp",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://github.com/contactmodel/COVID19-Japan-Reff",
-  "Domain": "github.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://github.com/kaz-ogiwara/covid19/",
-  "Domain": "github.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://github.com/kaz-ogiwara/covid19/tree/master/data",
-  "Domain": "github.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://github.com/kaz-ogiwara/covid19",
-  "Domain": "github.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://api.whatsapp.com/send",
-  "Domain": "api.whatsapp.com",
-  "Count": 3,
-  "Status": 0
- },
- {
-  "Url": "https://data-cdphe.opendata.arcgis.com/search",
-  "Domain": "data-cdphe.opendata.arcgis.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/nchs/nvss/covid-19.htm",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://public.tableau.com/profile/oregon.health.authority.covid.19",
-  "Domain": "public.tableau.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://covid19.211info.org/",
-  "Domain": "covid19.211info.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/oha/erd/pages/covid-19-news.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/oha/PH/DISEASESCONDITIONS/DISEASESAZ/Pages/COVID19-FAQ.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/oha/HSD/OHP/Pages/ohp-covid-19.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/oha/PH/DISEASESCONDITIONS/DISEASESAZ/Pages/COVID-19.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/oha/ERD/Pages/covid-19-news.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/ode/students-and-family/healthsafety/Pages/COVID19.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://oregonearlylearning.com/COVID-19-Resources/For-Families",
-  "Domain": "oregonearlylearning.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://oregonearlylearning.com/COVID-19-Resources/For-Providers",
-  "Domain": "oregonearlylearning.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/DHS/COVID-19/Pages/LTC-Facilities.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/OHA/HSD/OHP/Pages/COVID-19.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/ODA/agriculture/Pages/COVID-19.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/covid19response/Pages/default.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://osha.oregon.gov/covid19/Pages/default.aspx",
-  "Domain": "osha.oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/aging/covid19-guidance.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/daily-life-coping/managing-stress-anxiety.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/DHS/SENIORS-DISABILITIES/SPPD/Pages/COVID19-ASL-Resources.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/communication/factsheets.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/prepare/get-your-household-ready-for-COVID-19.html ",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/prepare/get-your-household-ready-for-COVID-19-sp.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.ncfh.org/covid-19.html",
-  "Domain": "ncfh.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nelp.org/publication/faq-immigrant-workers-rights-and-covid-19/",
-  "Domain": "nelp.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://fruitgrowersnews.com/news/covid-19-and-food-safety-common-questions-from-fruit-and-vegetable-growers",
-  "Domain": "fruitgrowersnews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/specific-groups/pregnancy-faq.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/prepare/pregnancy-breastfeeding.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.bfmed.org/abm-statement-coronavirus",
-  "Domain": "bfmed.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/oha/PH/HEALTHYPEOPLEFAMILIES/DATAREPORTS/Pages/COVID-19-Resources.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/odva/COVID/Pages/Health.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://dfr.oregon.gov/insure/health/understand/Pages/coronavirus.aspx",
-  "Domain": "dfr.oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://oregonearlylearning.com/COVID-19-Resources",
-  "Domain": "oregonearlylearning.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.oregon.gov/highered/about/Pages/COVID19.aspx",
-  "Domain": "oregon.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://beta.portland.gov/pbem/help-stop-spread-covid-19-video",
-  "Domain": "beta.portland.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.cms.gov/",
-  "Domain": "cms.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://faq.ssa.gov/en-us/Topic/article/KA-01735",
-  "Domain": "faq.ssa.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.cms.gov/About-CMS/Agency-Information/Aboutwebsite/index.html",
-  "Domain": "cms.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.cms.gov/About-CMS/Agency-Information/Aboutwebsite/FOIA.html",
-  "Domain": "cms.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.cms.gov/About-CMS/Agency-Information/Aboutwebsite/NoFearAct.html",
-  "Domain": "cms.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.cms.gov/About-CMS/Agency-Information/Aboutwebsite/Help.html",
-  "Domain": "cms.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://data.dhsgis.wi.gov/datasets/covid-19-historical-data-table/data",
-  "Domain": "data.dhsgis.wi.gov",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://data.dhsgis.wi.gov/datasets/covid19-community-testing-sites/data",
-  "Domain": "data.dhsgis.wi.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://wa.me/",
-  "Domain": "wa.me",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.drugabuse.gov/about-nida/noras-blog/2020/04/covid-19-potential-implications-individuals-substance-use-disorders",
-  "Domain": "drugabuse.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.linkedin.com/company/british-society-for-immunology",
-  "Domain": "linkedin.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.huffpost.com/entry/can-you-get-coronavirus-again-after_l_5e6a8e2fc5b6dda30fc57d7d",
-  "Domain": "huffpost.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/about/steps-when-sick.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.reuters.com/article/us-health-coronavirus-who/who-says-looking-into-reports-of-some-covid-patients-testing-positive-again-idUSKCN21T0F1",
-  "Domain": "reuters.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://abcnews.go.com/US/coronavirus-updates-michael-avenatti-granted-temporary-release-prison/story",
-  "Domain": "abcnews.go.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.politico.com/news/2020/04/10/fauci-coronavirus-immunity-cards-for-americans-are-being-discussed-178784",
-  "Domain": "politico.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.scientificamerican.com/article/what-immunity-to-covid-19-really-means/",
-  "Domain": "scientificamerican.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://k.sina.com.cn/article_5675440730_m152485a5a02000rmp0.html",
-  "Domain": "k.sina.com.cn",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.caixinglobal.com/2020-03-06/covid-19-patient-dies-days-after-being-declared-recovered-101524580.html",
-  "Domain": "caixinglobal.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://covid19.ca.gov/what-you-can-do/",
-  "Domain": "covid19.ca.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.niaid.nih.gov/about/h-clifford-lane-md-bio",
-  "Domain": "niaid.nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wsj.com/articles/mlb-employees-to-participate-in-coronavirus-antibody-study-11586944803",
-  "Domain": "wsj.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nih.gov/news-events/news-releases/nih-begins-study-quantify-undetected-cases-coronavirus-infection",
-  "Domain": "nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://api.whatsapp.com/send/",
-  "Domain": "api.whatsapp.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1101/2020.03.09.20033241",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1101/2020.03.04.20031104",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1101/2020.03.09.20033357",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1101/2020.03.03.20028423",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1101/2020.03.03.20029843",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1101/2020.01.23.20018549",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1101/2020.03.05.20031088",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1101/2020.01.30.20019612",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.jstatsoft.org/article/view/v033i09",
-  "Domain": "jstatsoft.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://interactive.guim.co.uk/uploader/embed/2020/01/coronavirus_spread-zip/giv-3902dSLCdIc1qXq4/",
-  "Domain": "interactive.guim.co.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.pinterest.com/pin/find/",
-  "Domain": "pinterest.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.scmp.com/news/china/society/article/3074991/coronavirus-chinas-first-confirmed-covid-19-case-traced-back",
-  "Domain": "scmp.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.linkedIn.com/shareArticle",
-  "Domain": "linkedIn.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cnbc.com/2020/03/13/europe-is-now-the-epicenter-of-the-coronavirus-pandemic-who-says.html",
-  "Domain": "cnbc.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://hub.jhu.edu/novel-coronavirus-information/",
-  "Domain": "hub.jhu.edu",
-  "Count": 2,
-  "Status": 2
- },
- {
-  "Url": "https://www.statnews.com/2020/03/17/a-fiasco-in-the-making-as-the-coronavirus-pandemic-takes-hold-we-are-making-decisions-without-reliable-data/",
-  "Domain": "statnews.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wsj.com/articles/is-the-coronavirus-as-deadly-as-they-say-11585088464",
-  "Domain": "wsj.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://premierbiotech.com/innovation/covid-19/",
-  "Domain": "premierbiotech.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.politicopathy.com/2020/04/21/new-studies-suggest-huge-undercount-of-coronavirus-infections-but-are-they-right/",
-  "Domain": "politicopathy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://lokolbuzz.com/new-studies-suggest-huge-undercount-of-coronavirus-infections-but-are-they-right/",
-  "Domain": "lokolbuzz.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://scienceisworthit.com/experts-demolish-studies-suggesting-covid-19-is-no-worse-than-flu-science-ars-technica/",
-  "Domain": "scienceisworthit.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://replicario.com.br/especialistas-demolem-estudos-que-sugerem-que-o-covid-19-nao-e-pior-que-a-gripe/",
-  "Domain": "replicario.com.br",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://scoreit.online/2020/04/24/experts-demolish-studies-suggesting-covid-19-is-no-worse-than-flu/",
-  "Domain": "scoreit.online",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://chochilino.com/2020/04/24/technology/experts-demolish-studies-suggesting-covid-19-is-no-worse-than-flu/",
-  "Domain": "chochilino.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://breakingnewsandreligion.online/2020/04/27/experts-demolish-studies-suggesting-covid-19-is-no-worse-than-flu/",
-  "Domain": "breakingnewsandreligion.online",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://virusnewsnetwork.com/the-pandemic-doesnt-have-to-be-this-confusing/",
-  "Domain": "virusnewsnetwork.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.labnews.stream/the-pandemic-doesnt-have-to-be-this-confusing/",
-  "Domain": "labnews.stream",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://killcoronavirus.online/index.php/2020/04/29/the-pandemic-doesnt-have-to-be-this-confusing/",
-  "Domain": "killcoronavirus.online",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ozinize.com/2020/04/30/the-pandemic-doesnt-have-to-be-this-confusing/",
-  "Domain": "ozinize.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.politicopathy.com/2020/04/29/why-the-coronavirus-is-so-confusing/",
-  "Domain": "politicopathy.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://paswfl.com/2020/05/04/why-the-coronavirus-is-so-confusing/",
-  "Domain": "paswfl.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://novastarmedical.com/why-the-coronavirus-is-so-confusing/",
-  "Domain": "novastarmedical.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://github.com/nychealth/coronavirus-data",
-  "Domain": "github.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://github.com/nycpio/coronavirus-data",
-  "Domain": "github.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-nCoV",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.medrxiv.org/content/10.1101/2020.04.15.20067074v2",
-  "Domain": "medrxiv.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://github.com/bccp/covid-19-data",
-  "Domain": "github.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.medrxiv.org/content/10.1101/2020.04.15.20067074v1",
-  "Domain": "medrxiv.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.economist.com/graphic-detail/2020/04/03/covid-19s-death-toll-appears-higher-than-official-figures-suggest",
-  "Domain": "economist.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://github.com/pcm-dpc/COVID-19",
-  "Domain": "github.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nytimes.com/2020/04/14/nyregion/new-york-coronavirus-deaths.html",
-  "Domain": "nytimes.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/deaths/articles/coronavirusrelateddeathsbyethnicgroupenglandandwales/2march2020to10april2020",
-  "Domain": "ons.gov.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://wellcomeopenresearch.org/articles/5-88/v1",
-  "Domain": "wellcomeopenresearch.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.medrxiv.org/content/10.1101/2020.05.06.20092999v1",
-  "Domain": "medrxiv.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://oxfordbrc.nihr.ac.uk/large-scale-covid-19-infection-and-antibody-test-study-launched/",
-  "Domain": "oxfordbrc.nihr.ac.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.imperial.ac.uk/mrc-global-infectious-disease-analysis/covid-19/report-17-clinical/",
-  "Domain": "imperial.ac.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.theguardian.com/commentisfree/2020/apr/20/coronavirus-racial-inequality-uk-housing-employment-health-bame-covid-19",
-  "Domain": "theguardian.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://discoversociety.org/2020/04/17/racism-is-the-root-cause-of-ethnic-inequities-in-covid19/",
-  "Domain": "discoversociety.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.pulsetoday.co.uk/clinical/clinical-specialties/respiratory-/phe-review-into-bame-covid-19-deaths-will-trawl-thousands-of-health-records/20040759.article",
-  "Domain": "pulsetoday.co.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://web.whatsapp.com/send",
-  "Domain": "web.whatsapp.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.afsca.be/consumenten/dagelijksleven/andere/coronavirus/",
-  "Domain": "afsca.be",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1016/j.ajic.2020.06.216",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1063/5.0018804",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1016/j.buildenv.2020.107022",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1016/j.ypmed.2020.106236",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.3390/rs12152420",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1063/5.0021575",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1021/acs.estlett.0c00416",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1063/5.0018432",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.3390/ijerph17145167",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.3233/CH-209008",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1063/5.0013326",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1111/anae.15145",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1063/5.0012009",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1016/j.resuscitation.2020.06.001",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1136/bmj.m2016",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1063/5.0021427",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1016/j.ssci.2020.104866",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1016/j.trip.2020.100185",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://doi.org/10.1017/jfm.2020.330",
-  "Domain": "doi.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.npr.org/sections/coronavirus-live-updates/2020/04/03/826219824/president-trump-says-cdc-now-recommends-americans-wear-cloth-masks-in-public",
-  "Domain": "npr.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.who.int/who-documents-detail/draft-landscape-of-covid-19-candidate-vaccines",
-  "Domain": "who.int",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nih.gov/",
-  "Domain": "nih.gov",
-  "Count": 2,
-  "Status": 0
- },
- {
-  "Url": "https://www.covid-trials.org/",
-  "Domain": "covid-trials.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.addtoany.com/add_to/facebook",
-  "Domain": "addtoany.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.addtoany.com/add_to/twitter",
-  "Domain": "addtoany.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.addtoany.com/add_to/printfriendly",
-  "Domain": "addtoany.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.jci.org/articles/view/138003",
-  "Domain": "jci.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.wsj.com/articles/how-a-boys-blood-stopped-an-outbreak-11582847330",
-  "Domain": "wsj.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.tumblr.com/widgets/share/tool",
-  "Domain": "tumblr.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.acponline.org/clinical-information/clinical-resources-products/coronavirus-disease-2019-covid-19-information-for-internists",
-  "Domain": "acponline.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ama-assn.org/delivering-care/public-health/covid-19-2019-novel-coronavirus-resource-center-physicians",
-  "Domain": "ama-assn.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.apha.org/topics-and-issues/communicable-disease/coronavirus",
-  "Domain": "apha.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.gov.bm/coronavirus",
-  "Domain": "gov.bm",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.bing.com/covid",
-  "Domain": "bing.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.cidrap.umn.edu/infectious-disease-topics/covid-19",
-  "Domain": "cidrap.umn.edu",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://systems.jhu.edu/research/public-health/ncov/",
-  "Domain": "systems.jhu.edu",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.consumerreports.org/coronavirus/coronavirus-covid-19-updates/",
-  "Domain": "consumerreports.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ncov.dxy.cn/ncovh5/view/en_pneumonia",
-  "Domain": "ncov.dxy.cn",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://covidorg.com/",
-  "Domain": "covidorg.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.emedicinehealth.com/coronavirus/article_em.htm",
-  "Domain": "emedicinehealth.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ec.europa.eu/info/live-work-travel-eu/health/coronavirus-response_en",
-  "Domain": "ec.europa.eu",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://familydoctor.org/condition/coronavirus/",
-  "Domain": "familydoctor.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.globalhealthnow.org/topics/coronaviruses",
-  "Domain": "globalhealthnow.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.health.harvard.edu/diseases-and-conditions/coronavirus-resource-center",
-  "Domain": "health.harvard.edu",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.canada.ca/en/public-health/services/diseases/coronavirus-disease-covid-19.html",
-  "Domain": "canada.ca",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.hpsc.ie/a-z/respiratory/coronavirus/novelcoronavirus/",
-  "Domain": "hpsc.ie",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.mygov.in/covid-19/",
-  "Domain": "mygov.in",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.idsociety.org/public-health/COVID-19-Resource-Center/",
-  "Domain": "idsociety.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://isid.org/2019-novel-coronavirus/",
-  "Domain": "isid.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.gov.ie/en/campaigns/c36c85-covid-19-coronavirus/",
-  "Domain": "gov.ie",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.moh.gov.jm/edu-resources/learn-about-the-coronaviruses/",
-  "Domain": "moh.gov.jm",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://coronavirus.jhu.edu/",
-  "Domain": "coronavirus.jhu.edu",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.medscape.com/resource/coronavirus",
-  "Domain": "medscape.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.merckmanuals.com/professional/infectious-diseases/respiratory-viruses/coronaviruses-and-acute-respiratory-syndromes-covid-19,-mers,-and-sars",
-  "Domain": "merckmanuals.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.nicd.ac.za/diseases-a-z-index/covid-19/",
-  "Domain": "nicd.ac.za",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nejm.org/doi/full/10.1056/NEJMoa2001017",
-  "Domain": "nejm.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.covid19.ncdc.gov.ng/",
-  "Domain": "covid19.ncdc.gov.ng",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://promedmail.org/coronavirus/",
-  "Domain": "promedmail.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.gov.sg/features/covid-19",
-  "Domain": "gov.sg",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.gov.za/Coronavirus",
-  "Domain": "gov.za",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.gov.uk/government/collections/wuhan-novel-coronavirus",
-  "Domain": "gov.uk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.un.org/en/coronavirus",
-  "Domain": "un.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://www.uhs.hku.hk/phpedpr/novel_infectious_disease_of_PH_significance.php",
-  "Domain": "uhs.hku.hk",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.utmb.edu/covid-19/home/prevention-preparedness-and-social-distancing",
-  "Domain": "utmb.edu",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://utsouthwestern.edu/covid-19/about.html",
-  "Domain": "utsouthwestern.edu",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.webmd.com/coronavirus",
-  "Domain": "webmd.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "http://healthclarity.wolterskluwer.com/coronavirus-resources.html",
-  "Domain": "healthclarity.wolterskluwer.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(20)30154-9/fulltext",
-  "Domain": "thelancet.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://search.aol.com/aol/search",
-  "Domain": "search.aol.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ask.com/web",
-  "Domain": "ask.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.bing.com/search",
-  "Domain": "bing.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://duckduckgo.com/",
-  "Domain": "duckduckgo.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://ecosia.org/search",
-  "Domain": "ecosia.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://gigablast.com/search",
-  "Domain": "gigablast.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.startpage.com/do/search",
-  "Domain": "startpage.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://search.yahoo.com/search",
-  "Domain": "search.yahoo.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.yandex.com/yandsearch",
-  "Domain": "yandex.com",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nih.gov/coronavirus",
-  "Domain": "nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://directorsblog.nih.gov/2020/04/21/coping-with-the-collision-of-public-health-crises-covid-19-and-substance-use-disorders/",
-  "Domain": "directorsblog.nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7138334/",
-  "Domain": "ncbi.nlm.nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/symptoms-testing/index.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.nimh.nih.gov/about/director/messages/2020/coping-with-coronavirus-managing-stress-fear-and-anxiety.shtml",
-  "Domain": "nimh.nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://alcoholtreatment.niaaa.nih.gov/",
-  "Domain": "alcoholtreatment.niaaa.nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.centeronaddiction.org/the-buzz-blog/covid-19-we-are-here-you",
-  "Domain": "centeronaddiction.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://grants.nih.gov/grants/guide/notice-files/NOT-DA-20-047.html",
-  "Domain": "grants.nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://oir.nih.gov/sigs/covid-19-scientific-interest-group",
-  "Domain": "oir.nih.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.usa.gov/espanol/coronavirus",
-  "Domain": "usa.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.cdc.gov/coronavirus/2019-ncov/community/correction-detention/guidance-correctional-detention.html",
-  "Domain": "cdc.gov",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.themarshallproject.org/2020/03/17/tracking-prisons-response-to-coronavirus",
-  "Domain": "themarshallproject.org",
-  "Count": 1,
-  "Status": 0
- },
- {
-  "Url": "https://www.aclu.org/news/smart-justice/police-prosecutors-sheriffs-parole-officers-and-governors-can-help-stop-the-spread-of-covid-19-heres-how/",
-  "Domain": "aclu.org",
   "Count": 1,
   "Status": 0
  }
