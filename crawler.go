@@ -52,6 +52,14 @@ var minDocLen, maxDocLen int
 ****************************************************************************************************************
 ****************************************************************************************************************/
 
+func fileExists(filename string) bool {
+    info, err := os.Stat(filename)
+    if os.IsNotExist(err) {
+        return false
+    }
+    return !info.IsDir()
+}
+
 // copyFileContents copies the contents of the file named src to the file named
 // by dst. The file will be created if it does not already exist. If the
 // destination file exists, all it's contents will be replaced by the contents
@@ -1366,9 +1374,6 @@ func yamlInitGeneral() {
 	engStopWords = `the|` + engStopWordsWOthe
 	engLowRelevancyWords = `|` + stringRmNewLines(viper.GetString("engLowRelevancyWords"))
 	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + stringRmNewLines(viper.GetString("specialStopwords")) + `)\W`
-	proxyHost = viper.GetString("proxyHost")
-	proxyUser = viper.GetString("proxyUser")
-	proxyPass = viper.GetString("proxyPass")
 	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
 
 	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
@@ -1377,10 +1382,25 @@ func yamlInitGeneral() {
 	fmt.Printf("\n\nengStopWords: %s", engStopWords)
 	fmt.Printf("\n\nengLowRelevancyWords: %s", engLowRelevancyWords)
 	fmt.Printf("\n\nregexStopwords: %s", regexStopwords)
+	fmt.Printf("\n\ndownloadTimeout: %+v", downloadTimeout)
+}
+
+func yamlInitProxy() {
+	if !fileExists("./proxy.yaml") return
+	viper.SetConfigName("proxy") // name of config file (without extension)
+	viper.AddConfigPath(".")       // look for config in the working directory
+	err := viper.ReadInConfig()    // Find and read the config file
+	if err != nil {                // Handle errors reading the config file
+		panic(fmt.Errorf("Fatal error config file: %s", err))
+	}
+
+	proxyHost = viper.GetString("proxyHost")
+	proxyUser = viper.GetString("proxyUser")
+	proxyPass = viper.GetString("proxyPass")
+
 	fmt.Printf("\n\nproxyHost: %s", proxyHost)
 	fmt.Printf("\n\nproxyUser: %s", proxyUser)
 	fmt.Printf("\n\nproxyPass: %s", proxyPass)
-	fmt.Printf("\n\ndownloadTimeout: %+v", downloadTimeout)
 }
 
 func yamlInitSpecific() {
@@ -1408,6 +1428,7 @@ func yamlInitSpecific() {
 func main() {
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
+	yamlInitProxy()
 	yamlInitSpecific()
 
 	fmt.Println("* Init English corpus ...")

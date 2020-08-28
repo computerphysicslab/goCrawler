@@ -1,4 +1,5 @@
 old
 logs/*
 cache/*
+proxy.yaml
 

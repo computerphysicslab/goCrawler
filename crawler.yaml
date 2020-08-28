@@ -21,7 +21,4 @@ specialStopwords: |
   |january|february|march|april|may|june|july|august|september|october|november|december
   |com|org|gov|uk|edu|net|us|co|gob|au|ca
 
-proxyHost: "proxy1.sacyl.es:3128"
-proxyUser: "25163283H"
-proxyPass: "H0sp1t20"
 downloadTimeout: 8
