@@ -53,11 +53,11 @@ var minDocLen, maxDocLen int
 ****************************************************************************************************************/
 
 func fileExists(filename string) bool {
-    info, err := os.Stat(filename)
-    if os.IsNotExist(err) {
-        return false
-    }
-    return !info.IsDir()
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 // copyFileContents copies the contents of the file named src to the file named
@@ -169,7 +169,7 @@ func csvInit() {
 /**** TYPES ****/
 
 type ALink struct {
-	Url    string
+	URL    string
 	Domain string
 	Count  int
 	Status int // 0 = pending, 1 = crawling, 2 = downloaded, 3 = failed, 4 = bootstrapping
@@ -217,7 +217,7 @@ func cacheSave() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("\n\n##################################### BACKUP ##########################################\n")
+		fmt.Printf("\n\n##################################### BACKUP ##########################################\n")
 	}
 
 	// Serialize cache
@@ -420,7 +420,7 @@ func linkSeemsOk(l string) bool {
 func getNextLink() (int, string) {
 	maxi := 0
 	lasti := 0
-	maxUrl := ""
+	maxURL := ""
 	var priority, maxPriority float64
 
 	// fmt.Printf("* getNextLink() %d links on the pool\n", len(LPool))
@@ -430,7 +430,7 @@ func getNextLink() (int, string) {
 			fmt.Printf("\n\nFound bootstrapping url: %+v", l)
 			// Set this item directly as next candidate
 			maxi = i
-			maxUrl = l.Url
+			maxURL = l.URL
 			maxPriority = 0
 			break
 		}
@@ -438,12 +438,12 @@ func getNextLink() (int, string) {
 		// fmt.Printf("\n\ni,l = %d, %+v", i, l)
 		priority = float64(l.Count) * float64(l.Count) / (float64(domainCounter[l.Domain]) + 1.0)
 
-		if l.Status == 0 && priority > maxPriority && !isBanned(l.Url, l.Domain) && linkSeemsOk(l.Url) {
-			// fmt.Printf("\n\nl.Count=%d, domainCounter[l.Domain]=%d, priority=%f, l.Url=%s", l.Count, domainCounter[l.Domain], priority, l.Url)
+		if l.Status == 0 && priority > maxPriority && !isBanned(l.URL, l.Domain) && linkSeemsOk(l.URL) {
+			// fmt.Printf("\n\nl.Count=%d, domainCounter[l.Domain]=%d, priority=%f, l.URL=%s", l.Count, domainCounter[l.Domain], priority, l.URL)
 
 			// Set this item as best candidate so far
 			maxi = i
-			maxUrl = l.Url
+			maxURL = l.URL
 
 			maxPriority = priority
 		}
@@ -453,7 +453,7 @@ func getNextLink() (int, string) {
 
 	increaseDomainCounter(LPool[maxi].Domain)
 
-	return maxi, maxUrl
+	return maxi, maxURL
 }
 
 func addLink(link string, avoidFilters bool) bool {
@@ -486,7 +486,7 @@ func addLink(link string, avoidFilters bool) bool {
 
 	// Full scan search for the link
 	for i, l := range LPool {
-		if l.Url == link {
+		if l.URL == link {
 			LPool[i].Count++
 			return true
 		}
@@ -510,7 +510,7 @@ func linkBootstraping() {
 	goDebug.Print("linkBootstraping", LPool)
 }
 
-func LPoolDump() {
+func lPoolDump() {
 	jdata, err := json.MarshalIndent(LPool, "", " ")
 	if err != nil {
 		fmt.Println("error: ", err)
@@ -1314,7 +1314,7 @@ func doNextLink(numLinksProcessed int) bool {
 		string2file(output, "./corpusNoEngFrequencies.txt")
 
 		// LPool dump to file
-		LPoolDump()
+		lPoolDump()
 		domainCounterDump()
 
 		// // Entities for global curated corpus
@@ -1351,7 +1351,7 @@ func doNextLink(numLinksProcessed int) bool {
 	}
 
 	// push content into persitent ddbb
-	// save(curatedContent, l.Url)
+	// save(curatedContent, l.URL)
 
 	// Adding links of urls passing filters
 	if prevState == 0 && LPool[maxi].Status == 2 {
@@ -1386,11 +1386,13 @@ func yamlInitGeneral() {
 }
 
 func yamlInitProxy() {
-	if !fileExists("./proxy.yaml") return
+	if !fileExists("./proxy.yaml") {
+		return
+	}
 	viper.SetConfigName("proxy") // name of config file (without extension)
-	viper.AddConfigPath(".")       // look for config in the working directory
-	err := viper.ReadInConfig()    // Find and read the config file
-	if err != nil {                // Handle errors reading the config file
+	viper.AddConfigPath(".")     // look for config in the working directory
+	err := viper.ReadInConfig()  // Find and read the config file
+	if err != nil {              // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
 
