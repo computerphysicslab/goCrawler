@@ -1437,7 +1437,7 @@ func main() {
 	goCorpusFreqLib.Init()
 
 	// Ngrams for global curated corpus
-	fmt.Println("\n")
+	fmt.Printf("\n")
 	// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-small.txt")
 	corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19.txt")
 	ngramsFreqSorted := ngramsFreqsOfAll(corpusCuratedText, 5)
