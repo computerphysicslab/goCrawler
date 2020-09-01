@@ -1143,7 +1143,8 @@ func doNextLink(numLinksProcessed int) bool {
 
 	// Remove urls, imgs, long words and low stopwords paragraphs from text
 	for i, p := range paragraphs {
-		regex0 := `(?i)(ñ|ç|ü)` // To avoid processing international characters that behave as a word separator, like "ñ"
+		regex0 := `(?i)([ñçüịủĐứđượđềộềậệụạăủữăòốêầnắ])` // To avoid processing international characters that behave as a word separator, like "ñ"
+
 		r0 := regexp.MustCompile(regex0)
 		matches := r0.FindAllStringSubmatch(p, -1)
 		if len(matches) > 0 {
@@ -1167,7 +1168,7 @@ func doNextLink(numLinksProcessed int) bool {
 		p4 := r3.ReplaceAllString(p3, " ")
 		// fmt.Printf("\n\n%s", p4)
 
-		regex4 := `(?i)\W(div|img|nofollow|(alt|class|style|width|height|onclick)="[^"]*")\W`
+		regex4 := `(?i)\W(div|img|nofollow|javascript:|(alt|class|style|width|height|onclick)="[^"]*")\W`
 		r4 := regexp.MustCompile(regex4)
 		// p5 := r4.ReplaceAllString(p4, " ")
 		matches4 := r4.FindAllStringSubmatch(p, -1)
@@ -1491,8 +1492,3 @@ func main() {
 
 // https://euractiv.cz/section/politika/news/the-capitals-covid-19-byl-ve-spanelsku-uz-rok-pred-vypuknutim-pandemie/
 // V jeho jednomyslném schválení však brání dlouhodobý nesouhlas dvojice zmíněných států. „Slyším tak často z Polska a Maďarska, že nemají problém s právním státem, až bych skoro čekala, že to dokážou tím, že pro to zvednou ruku,“ prohlásila. (ČTK)----
-
-// https://euractiv.es/section/politicas/news/el-coronavirus-ya-estaba-en-espana-un-ano-antes-de-estallar-la-pandemia/
-// Comentarios ( #ea-comments ) Imprimir ( javascript:window.print() ) Email ( ?subject=El coronavirus ya estaba en España un año antes de estallar la pandemia%20%E2%80%93%20euractiv.es&body=El coronavirus ya estaba en España un año antes de estallar la ) ( coronavirus ya estaba en España un año antes de estallar la pandemia ) Facebook ( coronavirus ya estaba en España un año antes de estallar la pandemia%20%E2%80%93%20euractiv.es ) Twitter ( coronavirus ya estaba en España un año antes de estallar la pandemia ) LinkedIn ( coronavirus ya estaba en España un año antes de estallar la pandemia ) WhatsApp ( coronavirus ya estaba en España un año antes de estallar la )
-// Estudia así imponer restricciones de entrada en la UE a ciudadanos de países terceros según su situación epidémica, lo que podría impedir la llegada de ciudadanos de países como Estados Unidos, Brasil o Rusia, en los que la epidemia aún no ha sido controlada.
-// Comentarios ( #ea-comments ) Imprimir ( javascript:window.print() ) Email ( ?subject=El coronavirus ya estaba en España un año antes de estallar la pandemia%20%E2%80%93%20euractiv.es&body=El coronavirus ya estaba en España un año antes de estallar la ) ( coronavirus ya estaba en España un año antes de estallar la pandemia ) Facebook ( coronavirus ya estaba en España un año antes de estallar la pandemia%20%E2%80%93%20euractiv.es ) Twitter ( coronavirus ya estaba en España un año antes de estallar la pandemia ) LinkedIn ( coronavirus ya estaba en España un año antes de estallar la pandemia ) WhatsApp ( coronavirus ya estaba en España un año antes de estallar la )----
