@@ -168,16 +168,16 @@ func csvInit() {
 
 /**** TYPES ****/
 
-type ALink struct {
+type aLink struct {
 	URL    string
 	Domain string
 	Count  int
 	Status int // 0 = pending, 1 = crawling, 2 = downloaded, 3 = failed, 4 = bootstrapping
 }
 
-var LPool []ALink
+var lPool []aLink
 
-type CachedData struct {
+type cachedData struct {
 	Content string
 	Links   []string
 }
@@ -328,12 +328,12 @@ func download(urlLink string) (string, []string, error) {
 }
 
 func downloadCached(urlLink string) (content string, links []string, err error) {
-	var ACachedData CachedData
+	var ACachedData cachedData
 
 	// Get results from cache if available
 	b, found := myCache.Get(urlLink)
 	if found {
-		ACachedData = b.(CachedData)
+		ACachedData = b.(cachedData)
 		fmt.Printf(" [CACHE]")
 		// fmt.Println("ACachedData: ", ACachedData)
 		err = nil
@@ -410,7 +410,7 @@ func linkSeemsOk(l string) bool {
 	r, _ := regexp.Compile(regexLinkOk)
 	if len(r.FindStringSubmatch(l)) > 0 {
 		return true
-	} else {
+		// } else {
 		// fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
 	}
 
@@ -423,9 +423,9 @@ func getNextLink() (int, string) {
 	maxURL := ""
 	var priority, maxPriority float64
 
-	// fmt.Printf("* getNextLink() %d links on the pool\n", len(LPool))
+	// fmt.Printf("* getNextLink() %d links on the pool\n", len(lPool))
 
-	for i, l := range LPool {
+	for i, l := range lPool {
 		if l.Status == 4 { // bootstrapping url
 			fmt.Printf("\n\nFound bootstrapping url: %+v", l)
 			// Set this item directly as next candidate
@@ -451,7 +451,7 @@ func getNextLink() (int, string) {
 	}
 	fmt.Printf("* getNextLink() %d links on the pool. Found best link at %d position. Priority: %.03f\n", lasti, maxi, priority)
 
-	increaseDomainCounter(LPool[maxi].Domain)
+	increaseDomainCounter(lPool[maxi].Domain)
 
 	return maxi, maxURL
 }
@@ -485,18 +485,18 @@ func addLink(link string, avoidFilters bool) bool {
 	}
 
 	// Full scan search for the link
-	for i, l := range LPool {
+	for i, l := range lPool {
 		if l.URL == link {
-			LPool[i].Count++
+			lPool[i].Count++
 			return true
 		}
 	}
 
 	// Link is new
 	if avoidFilters {
-		LPool = append(LPool, ALink{Url: link, Domain: domain, Count: 1, Status: 4})
+		lPool = append(lPool, aLink{URL: link, Domain: domain, Count: 1, Status: 4})
 	} else {
-		LPool = append(LPool, ALink{Url: link, Domain: domain, Count: 1, Status: 0})
+		lPool = append(lPool, aLink{URL: link, Domain: domain, Count: 1, Status: 0})
 	}
 
 	return true
@@ -507,11 +507,11 @@ func linkBootstraping() {
 		addLink(l, true)
 	}
 
-	goDebug.Print("linkBootstraping", LPool)
+	goDebug.Print("linkBootstraping", lPool)
 }
 
 func lPoolDump() {
-	jdata, err := json.MarshalIndent(LPool, "", " ")
+	jdata, err := json.MarshalIndent(lPool, "", " ")
 	if err != nil {
 		fmt.Println("error: ", err)
 	}
@@ -1114,21 +1114,21 @@ func doNextLink(numLinksProcessed int) bool {
 		fmt.Println(maxi)
 		return false // meaning there are no more links to explore
 	}
-	prevState := LPool[maxi].Status
-	LPool[maxi].Status = 1
+	prevState := lPool[maxi].Status
+	lPool[maxi].Status = 1
 	fmt.Printf("\n* Downloading url: %s", nextLink)
 
 	content, links, err := downloadCached(nextLink)
 	// fmt.Printf("\ncontent, links, err := downloadCached(nextLink) => links = %+v", links)
 	if err != nil {
-		LPool[maxi].Status = 3
+		lPool[maxi].Status = 3
 		fmt.Println("\nDownload error: ", err)
 	} else {
-		LPool[maxi].Status = 2
+		lPool[maxi].Status = 2
 	}
 
 	// Adding links of bootstrapping before filters
-	if prevState == 4 && LPool[maxi].Status == 2 {
+	if prevState == 4 && lPool[maxi].Status == 2 {
 		addLinksOf(nextLink, links)
 	}
 
@@ -1354,7 +1354,7 @@ func doNextLink(numLinksProcessed int) bool {
 	// save(curatedContent, l.URL)
 
 	// Adding links of urls passing filters
-	if prevState == 0 && LPool[maxi].Status == 2 {
+	if prevState == 0 && lPool[maxi].Status == 2 {
 		addLinksOf(nextLink, links)
 	}
 
@@ -1444,11 +1444,11 @@ func main() {
 	for _, anNgramFreq := range ngramsFreqSorted {
 		fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
 	}
-	fmt.Println("\n")
+	fmt.Printf("\n")
 	os.Exit(1)
 
 	// Allow go interfaces be expanded into custom structs of our cache implementation
-	gob.Register(CachedData{}) // For some reason, this declaration must be written on main function
+	gob.Register(cachedData{}) // For some reason, this declaration must be written on main function
 
 	fmt.Println("* Init cache ...")
 	cacheInit()
