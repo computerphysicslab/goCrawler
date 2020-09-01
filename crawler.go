@@ -177,7 +177,7 @@ type aLink struct {
 
 var lPool []aLink
 
-type cachedData struct {
+type CachedData struct {
 	Content string
 	Links   []string
 }
@@ -328,12 +328,12 @@ func download(urlLink string) (string, []string, error) {
 }
 
 func downloadCached(urlLink string) (content string, links []string, err error) {
-	var ACachedData cachedData
+	var ACachedData CachedData
 
 	// Get results from cache if available
 	b, found := myCache.Get(urlLink)
 	if found {
-		ACachedData = b.(cachedData)
+		ACachedData = b.(CachedData)
 		fmt.Printf(" [CACHE]")
 		// fmt.Println("ACachedData: ", ACachedData)
 		err = nil
@@ -645,7 +645,7 @@ func stopWordsCount(text string) int {
 	rs := regexp.MustCompile(regex)
 	// t2 := rs.ReplaceAllString(text, " _ ")
 	// goDebug.Print(t2)
-	matches := rs.FindAllStringIndex(" "+text+" ", -1)
+	matches := rs.FindAllStringSubmatch(" "+text+" ", -1)
 	// goDebug.Print(matches)
 
 	return len(matches)
@@ -1143,6 +1143,13 @@ func doNextLink(numLinksProcessed int) bool {
 
 	// Remove urls, imgs, long words and low stopwords paragraphs from text
 	for i, p := range paragraphs {
+		regex0 := `(?i)(ñ|ç|ü)` // To avoid processing international characters that behave as a word separator, like "ñ"
+		r0 := regexp.MustCompile(regex0)
+		matches := r0.FindAllStringSubmatch(p, -1)
+		if len(matches) > 0 {
+			paragraphs[i] = ""
+			continue
+		}
 		regex1 := `(?i)\W([^ \t]*/[^ \t]*)\W`
 		r1 := regexp.MustCompile(regex1)
 		p2 := r1.ReplaceAllString(p, " ")
@@ -1162,10 +1169,16 @@ func doNextLink(numLinksProcessed int) bool {
 
 		regex4 := `(?i)\W(div|img|nofollow|(alt|class|style|width|height|onclick)="[^"]*")\W`
 		r4 := regexp.MustCompile(regex4)
-		p5 := r4.ReplaceAllString(p4, " ")
-		if p4 != p5 {
-			// fmt.Printf("\n\n***** p4 != p5: \n%s\n%s\n", p4, p5)
+		// p5 := r4.ReplaceAllString(p4, " ")
+		matches4 := r4.FindAllStringSubmatch(p, -1)
+		// if p4 != p5 {
+		// 	// fmt.Printf("\n\n***** p4 != p5: \n%s\n%s\n", p4, p5)
+		// }
+		if len(matches4) > 0 {
+			paragraphs[i] = ""
+			continue
 		}
+		p5 := p4
 
 		numStopWords := stopWordsCount(p5)
 		numTotalWords := len(tokenize(p5))
@@ -1186,20 +1199,18 @@ func doNextLink(numLinksProcessed int) bool {
 			continue
 		}
 		ratio := float64(stopWordsCount(p)) / float64(tokensCount(p)+1)
+		// fmt.Printf("\nratio: %.03f %d %d %d paragraph: %s", ratio, len(p), stopWordsCount(p), tokensCount(p), p)
 		if ratio < 0.1 || ratio > 0.38 {
 			// if ratio < 0.1 {
-			// 	fmt.Printf("\nSMALL ratio: %.03f %d %d %d paragrap: %s", ratio, len(p), stopWordsCount(p), tokensCount(p), p)
+			// 	fmt.Printf("\nSMALL ratio: %.03f %d %d %d paragraph: %s", ratio, len(p), stopWordsCount(p), tokensCount(p), p)
 			// }
 			// if ratio > 0.38 {
-			// 	fmt.Printf("\nBIG ratio: %.03f %d %d %d paragrap: %s", ratio, len(p), stopWordsCount(p), tokensCount(p), p)
+			// 	fmt.Printf("\nBIG ratio: %.03f %d %d %d paragraph: %s", ratio, len(p), stopWordsCount(p), tokensCount(p), p)
 			// }
 			continue
 		}
 		curatedContent = curatedContent + "\n" + p
 	}
-
-	string2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
-	// fmt.Printf("\n\ncuratedContent: %s", curatedContent)
 
 	// Doc length
 	docLen := len(tokenize(curatedContent))
@@ -1214,6 +1225,9 @@ func doNextLink(numLinksProcessed int) bool {
 		fmt.Printf("\n*** docLen < %d : %d %s", minDocLen, docLen, curatedContent)
 		return true
 	}
+
+	string2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
+	fmt.Printf("\n\ncuratedContent: %s", curatedContent)
 
 	// Current doc frequencies
 	fDoc := make(freq)
@@ -1437,18 +1451,21 @@ func main() {
 	goCorpusFreqLib.Init()
 
 	// Ngrams for global curated corpus
-	fmt.Printf("\n")
-	// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-small.txt")
-	corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19.txt")
-	ngramsFreqSorted := ngramsFreqsOfAll(corpusCuratedText, 5)
-	for _, anNgramFreq := range ngramsFreqSorted {
-		fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
+	if 0 {
+		fmt.Printf("\n")
+		// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-small.txt")
+		// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19.txt")
+		corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-medium.txt")
+		ngramsFreqSorted := ngramsFreqsOfAll(corpusCuratedText, 5)
+		for _, anNgramFreq := range ngramsFreqSorted {
+			fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
+		}
+		fmt.Printf("\n")
+		os.Exit(1)
 	}
-	fmt.Printf("\n")
-	os.Exit(1)
 
-	// Allow go interfaces be expanded into custom structs of our cache implementation
-	gob.Register(cachedData{}) // For some reason, this declaration must be written on main function
+	// Allow go interfaces to be expanded into custom structs of our cache implementation
+	gob.Register(CachedData{}) // For some reason, this declaration must be written on main function
 
 	fmt.Println("* Init cache ...")
 	cacheInit()
@@ -1471,3 +1488,11 @@ func main() {
 
 	fmt.Println("\n\n\n***** Done!!!")
 }
+
+// https://euractiv.cz/section/politika/news/the-capitals-covid-19-byl-ve-spanelsku-uz-rok-pred-vypuknutim-pandemie/
+// V jeho jednomyslném schválení však brání dlouhodobý nesouhlas dvojice zmíněných států. „Slyším tak často z Polska a Maďarska, že nemají problém s právním státem, až bych skoro čekala, že to dokážou tím, že pro to zvednou ruku,“ prohlásila. (ČTK)----
+
+// https://euractiv.es/section/politicas/news/el-coronavirus-ya-estaba-en-espana-un-ano-antes-de-estallar-la-pandemia/
+// Comentarios ( #ea-comments ) Imprimir ( javascript:window.print() ) Email ( ?subject=El coronavirus ya estaba en España un año antes de estallar la pandemia%20%E2%80%93%20euractiv.es&body=El coronavirus ya estaba en España un año antes de estallar la ) ( coronavirus ya estaba en España un año antes de estallar la pandemia ) Facebook ( coronavirus ya estaba en España un año antes de estallar la pandemia%20%E2%80%93%20euractiv.es ) Twitter ( coronavirus ya estaba en España un año antes de estallar la pandemia ) LinkedIn ( coronavirus ya estaba en España un año antes de estallar la pandemia ) WhatsApp ( coronavirus ya estaba en España un año antes de estallar la )
+// Estudia así imponer restricciones de entrada en la UE a ciudadanos de países terceros según su situación epidémica, lo que podría impedir la llegada de ciudadanos de países como Estados Unidos, Brasil o Rusia, en los que la epidemia aún no ha sido controlada.
+// Comentarios ( #ea-comments ) Imprimir ( javascript:window.print() ) Email ( ?subject=El coronavirus ya estaba en España un año antes de estallar la pandemia%20%E2%80%93%20euractiv.es&body=El coronavirus ya estaba en España un año antes de estallar la ) ( coronavirus ya estaba en España un año antes de estallar la pandemia ) Facebook ( coronavirus ya estaba en España un año antes de estallar la pandemia%20%E2%80%93%20euractiv.es ) Twitter ( coronavirus ya estaba en España un año antes de estallar la pandemia ) LinkedIn ( coronavirus ya estaba en España un año antes de estallar la pandemia ) WhatsApp ( coronavirus ya estaba en España un año antes de estallar la )----
