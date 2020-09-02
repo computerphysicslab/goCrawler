@@ -17,7 +17,6 @@ import (
 	"os"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -31,6 +30,7 @@ import (
 	"github.com/computerphysicslab/goPackages/goDebug"
 
 	goCorpusFreqLib "goCrawler/goCorpusFreqLib"
+	stringlib "goCrawler/stringlib"
 )
 
 /******************************************************************************/
@@ -118,24 +118,6 @@ func file2string(filename string) string {
 	}
 
 	return string(b[:])
-}
-
-/***************************************************************************************************************
-****************************************************************************************************************
-* String functions *********************************************************************************************
-****************************************************************************************************************
-****************************************************************************************************************/
-
-func stringRmNewLines(t string) string {
-	var re = regexp.MustCompile(`(\n+)`)
-	t = re.ReplaceAllString(t, "")
-
-	return t
-}
-
-func isNumeric(s string) bool {
-	_, err := strconv.ParseFloat(s, 64)
-	return err == nil
 }
 
 /***************************************************************************************************************
@@ -1143,11 +1125,11 @@ func doNextLink(numLinksProcessed int) bool {
 
 	// Remove urls, imgs, long words and low stopwords paragraphs from text
 	for i, p := range paragraphs {
-		regex0 := `(?i)([ñçüịủĐứđượđềộềậệụạăủữăòốêầnắ])` // To avoid processing international characters that behave as a word separator, like "ñ"
-
-		r0 := regexp.MustCompile(regex0)
-		matches := r0.FindAllStringSubmatch(p, -1)
-		if len(matches) > 0 {
+		// regex0 := `(?i)([ñçüịủĐứđượđềộềậệụạă])` // To avoid processing international characters that behave as a word separator, like "ñ"
+		// r0 := regexp.MustCompile(regex0)
+		// matches := r0.FindAllStringSubmatch(p, -1)
+		// if len(matches) > 0 {
+		if strings.ContainsAny(p, `ñçüịủĐứđượđềộềậệụạăšýěůčžČủữăòốêầ`) { // To avoid processing international characters that behave as a word separator, like "ñ"
 			paragraphs[i] = ""
 			continue
 		}
@@ -1383,12 +1365,12 @@ func yamlInitGeneral() {
 	if err != nil {                // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
-	regexBannedDomains = stringRmNewLines(viper.GetString("regexBannedDomains"))
-	regexLinkBannedTokens = stringRmNewLines(viper.GetString("regexLinkBannedTokens"))
-	engStopWordsWOthe = stringRmNewLines(viper.GetString("engStopWordsWOthe"))
+	regexBannedDomains = stringlib.RmNewLines(viper.GetString("regexBannedDomains"))
+	regexLinkBannedTokens = stringlib.RmNewLines(viper.GetString("regexLinkBannedTokens"))
+	engStopWordsWOthe = stringlib.RmNewLines(viper.GetString("engStopWordsWOthe"))
 	engStopWords = `the|` + engStopWordsWOthe
-	engLowRelevancyWords = `|` + stringRmNewLines(viper.GetString("engLowRelevancyWords"))
-	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + stringRmNewLines(viper.GetString("specialStopwords")) + `)\W`
+	engLowRelevancyWords = `|` + stringlib.RmNewLines(viper.GetString("engLowRelevancyWords"))
+	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + stringlib.RmNewLines(viper.GetString("specialStopwords")) + `)\W`
 	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
 
 	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
@@ -1428,9 +1410,9 @@ func yamlInitSpecific() {
 	if err != nil {                         // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
-	curatedDomains = stringRmNewLines(viper.GetString("curatedDomains"))
-	regexLinkOk = `(?i)^https*://.*(` + stringRmNewLines(viper.GetString("linkOk")) + `|` + curatedDomains + `)`
-	regexRankingKeywords = stringRmNewLines(viper.GetString("regexRankingKeywords"))
+	curatedDomains = stringlib.RmNewLines(viper.GetString("curatedDomains"))
+	regexLinkOk = `(?i)^https*://.*(` + stringlib.RmNewLines(viper.GetString("linkOk")) + `|` + curatedDomains + `)`
+	regexRankingKeywords = stringlib.RmNewLines(viper.GetString("regexRankingKeywords"))
 	bootstrapingLinks = viper.GetStringSlice("bootstrapingLinks")
 	minDocLen = viper.GetInt("minDocLen")
 	maxDocLen = viper.GetInt("maxDocLen")
@@ -1456,7 +1438,8 @@ func main() {
 		fmt.Printf("\n")
 		// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-small.txt")
 		// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19.txt")
-		corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-medium.txt")
+		// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-medium.txt")
+		corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-large.txt")
 		ngramsFreqSorted := ngramsFreqsOfAll(corpusCuratedText, 5)
 		for _, anNgramFreq := range ngramsFreqSorted {
 			fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
@@ -1489,6 +1472,3 @@ func main() {
 
 	fmt.Println("\n\n\n***** Done!!!")
 }
-
-// https://euractiv.cz/section/politika/news/the-capitals-covid-19-byl-ve-spanelsku-uz-rok-pred-vypuknutim-pandemie/
-// V jeho jednomyslném schválení však brání dlouhodobý nesouhlas dvojice zmíněných států. „Slyším tak často z Polska a Maďarska, že nemají problém s právním státem, až bych skoro čekala, že to dokážou tím, že pro to zvednou ruku,“ prohlásila. (ČTK)----
