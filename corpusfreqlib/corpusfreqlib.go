@@ -5,7 +5,8 @@
 // all.num.gz file as of 2020-08-19
 // nouns, verbs, adjectives, and adverbs
 
-package goCorpusFreqLib
+// Package corpusfreqlib tells the frequency of a token/term on standard english & contemporary corpora
+package corpusfreqlib
 
 import (
 	"bufio"
@@ -49,8 +50,8 @@ func fileExists(filename string) bool {
 func loadCorpus(filename string) map[string]WordInfo {
 	if !fileExists(filename) {
 		fmt.Printf("\nError: Corpus data not found on %s", filename)
-		if filename == "./goCorpusFreqLib/all.num" {
-			fmt.Printf("\nDownload all.num file like this:" + "\n\nmkdir goCorpusFreqLib\ncd goCorpusFreqLib\nwget \"http://www.kilgarriff.co.uk/BNClists/all.num.gz\"\ngunzip all.num.gz\ncd..\n\n")
+		if filename == "./corpusfreqlib/all.num" {
+			fmt.Printf("\nDownload all.num file like this:" + "\n\nmkdir corpusfreqlib\ncd corpusfreqlib\nwget \"http://www.kilgarriff.co.uk/BNClists/all.num.gz\"\ngunzip all.num.gz\ncd..\n\n")
 		}
 		os.Exit(1)
 	}
@@ -95,8 +96,8 @@ func loadCorpus(filename string) map[string]WordInfo {
 }
 
 func Init() {
-	corpusFreqsEng = loadCorpus("./goCorpusFreqLib/all.num")
-	corpusFreqsCont = loadCorpus("./goCorpusFreqLib/contemporaryEnglish.txt")
+	corpusFreqsEng = loadCorpus("./corpusfreqlib/all.num")
+	corpusFreqsCont = loadCorpus("./corpusfreqlib/contemporaryEnglish.txt")
 
 	// both copora have in common the word "the" as a metric to perform a normalization
 	ContFactor := float64(corpusFreqsEng["the"].numTotal) / float64(corpusFreqsCont["the"].numTotal) // normalization factor for contemporary english corpus

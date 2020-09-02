@@ -25,6 +25,8 @@ github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+Ce
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
+github.com/chrisport/go-lang-detector v0.0.0-20180912070833-7e13c74bc6e3 h1:iFqsBjwu+Y0l0wb2RCnz5F7nMHBwKKgo3T83ztugtG8=
+github.com/chrisport/go-lang-detector v0.0.0-20180912070833-7e13c74bc6e3/go.mod h1:8v62mvwrNNMf8pyPwOe+GLBByz66pZ6tiVjgmmYyBpg=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/computerphysicslab/goPackages v0.0.0-20200817121305-196a94877c66 h1:E/RDxK+Hmaw1YNSyg5UJ+e9hQq8LdVE3FI4qcZ75lh8=
 github.com/computerphysicslab/goPackages v0.0.0-20200817121305-196a94877c66/go.mod h1:MV6T2qOJaEZ8g4DHh8zdNBGjq7dUp05/Q2YpgCD8eR4=

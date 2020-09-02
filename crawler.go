@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -29,7 +28,8 @@ import (
 
 	"github.com/computerphysicslab/goPackages/goDebug"
 
-	goCorpusFreqLib "goCrawler/goCorpusFreqLib"
+	corpusfreqlib "goCrawler/corpusfreqlib"
+	iolib "goCrawler/iolib"
 	stringlib "goCrawler/stringlib"
 )
 
@@ -45,80 +45,6 @@ var regexRankingKeywords, proxyHost, proxyUser, proxyPass string
 var downloadTimeout time.Duration
 var bootstrapingLinks []string
 var minDocLen, maxDocLen int
-
-/***************************************************************************************************************
-****************************************************************************************************************
-* I/O functions ************************************************************************************************
-****************************************************************************************************************
-****************************************************************************************************************/
-
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
-}
-
-// copyFileContents copies the contents of the file named src to the file named
-// by dst. The file will be created if it does not already exist. If the
-// destination file exists, all it's contents will be replaced by the contents
-// of the source file.
-func copyFileContents(src, dst string) (err error) {
-	in, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer in.Close()
-	out, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer func() {
-		cerr := out.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-	if _, err = io.Copy(out, in); err != nil {
-		return
-	}
-	err = out.Sync()
-	return
-}
-
-func string2file(text string, filename string) {
-	aFile, err := os.Create(filename)
-	if err != nil {
-		log.Println(err)
-	}
-	aFile.Write([]byte(text))
-}
-
-func string2fileAppend(text string, filename string) {
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	if _, err := f.WriteString(text + "\n"); err != nil {
-		log.Println(err)
-	}
-}
-
-func file2string(filename string) string {
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Println(err)
-	}
-	defer file.Close()
-	b, err2 := ioutil.ReadAll(file)
-	if err2 != nil {
-		log.Println(err)
-	}
-
-	return string(b[:])
-}
 
 /***************************************************************************************************************
 ****************************************************************************************************************
@@ -195,7 +121,7 @@ func cacheSave() {
 	// save a backup from time to time
 	saveBackupCount++
 	if saveBackupCount%10 == 0 {
-		err := copyFileContents("./cache/cachePersistent.dat", "./cache/cachePersistent.backup")
+		err := iolib.CopyFileContents("./cache/cachePersistent.dat", "./cache/cachePersistent.backup")
 		if err != nil {
 			panic(err)
 		}
@@ -516,13 +442,13 @@ func domainCounterDump() {
 }
 
 func domainReportFailed(domain string) {
-	string2fileAppend(domain+"\n", "./logs/domainFailed.log")
+	iolib.String2fileAppend(domain+"\n", "./logs/domainFailed.log")
 }
 
 func domainHadFailed(domain string) bool {
 	re := regexp.MustCompile(`(?i)\W(` + domain + `)\W`)
 	// fmt.Printf("\n\nregexp: %s", `(?i)\W(`+domain+`)\W`)
-	matches := re.FindAllStringSubmatch(file2string("./logs/domainFailed.log"), -1)
+	matches := re.FindAllStringSubmatch(iolib.File2string("./logs/domainFailed.log"), -1)
 	// fmt.Printf("\n\nmatches: %+v", matches)
 	// fmt.Printf("\nlen(matches): %d", len(matches))
 	if len(matches) > 6 {
@@ -1125,14 +1051,24 @@ func doNextLink(numLinksProcessed int) bool {
 
 	// Remove urls, imgs, long words and low stopwords paragraphs from text
 	for i, p := range paragraphs {
+		// Language detection
+
 		// regex0 := `(?i)([ñçüịủĐứđượđềộềậệụạă])` // To avoid processing international characters that behave as a word separator, like "ñ"
 		// r0 := regexp.MustCompile(regex0)
 		// matches := r0.FindAllStringSubmatch(p, -1)
 		// if len(matches) > 0 {
+
 		if strings.ContainsAny(p, `ñçüịủĐứđượđềộềậệụạăšýěůčžČủữăòốêầ`) { // To avoid processing international characters that behave as a word separator, like "ñ"
 			paragraphs[i] = ""
 			continue
 		}
+
+		// if !isEnglish(p) {
+		// 	paragraphs[i] = ""
+		// 	fmt.Printf("\n\nNOT ENGLISH: %s", p)
+		// 	continue
+		// }
+
 		regex1 := `(?i)\W([^ \t]*/[^ \t]*)\W`
 		r1 := regexp.MustCompile(regex1)
 		p2 := r1.ReplaceAllString(p, " ")
@@ -1209,7 +1145,7 @@ func doNextLink(numLinksProcessed int) bool {
 		return true
 	}
 
-	string2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
+	iolib.String2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
 	fmt.Printf("\n\ncuratedContent: %s", curatedContent)
 
 	// Current doc frequencies
@@ -1271,7 +1207,7 @@ func doNextLink(numLinksProcessed int) bool {
 		for _, gg := range corpusFreqsSorted {
 			output = output + fmt.Sprintf("%d %s %s %d\n", gg.Value, gg.Key, "none", 0)
 		}
-		string2file(output, "./corpusFrequencies.txt")
+		iolib.String2file(output, "./corpusFrequencies.txt")
 
 		// substracting english words frequencies
 		corpusFreqsWithoutEnglish := make(freq) // specific corpus token frequencies w/o english baseline
@@ -1279,7 +1215,7 @@ func doNextLink(numLinksProcessed int) bool {
 		var intercorpusScaleFactor float64
 		intercorpusContrast := 20.0
 		if corpusFreqsSorted[0].Key == "the" {
-			intercorpusScaleFactor = float64(1+goCorpusFreqLib.Freq("the")) / float64(corpusFreqsSorted[0].Value)
+			intercorpusScaleFactor = float64(1+corpusfreqlib.Freq("the")) / float64(corpusFreqsSorted[0].Value)
 		} else {
 			panic("Error: stopword \"the\" not found!")
 		}
@@ -1295,10 +1231,10 @@ func doNextLink(numLinksProcessed int) bool {
 		// keyValue={Key:tests Value:388} [eng: 4681] [corpusFreqsWithoutEnglish: 0]
 		for _, keyValue := range corpusFreqsSorted {
 			// By division:
-			// corpusFreqsWithoutEnglish[keyValue.Key] = int(intercorpusScaleFactor * float64(keyValue.Value) / float64(1+goCorpusFreqLib.Freq(keyValue.Key)))
+			// corpusFreqsWithoutEnglish[keyValue.Key] = int(intercorpusScaleFactor * float64(keyValue.Value) / float64(1+corpusfreqlib.Freq(keyValue.Key)))
 			// By substraction:
-			corpusFreqsWithoutEnglish[keyValue.Key] = keyValue.Value - int(intercorpusContrast*float64(1+goCorpusFreqLib.Freq(keyValue.Key))/intercorpusScaleFactor)
-			// fmt.Printf("\nkeyValue=%+v [eng: %d] [corpusFreqsWithoutEnglish: %d]", keyValue, goCorpusFreqLib.Freq(keyValue.Key), corpusFreqsWithoutEnglish[keyValue.Key])
+			corpusFreqsWithoutEnglish[keyValue.Key] = keyValue.Value - int(intercorpusContrast*float64(1+corpusfreqlib.Freq(keyValue.Key))/intercorpusScaleFactor)
+			// fmt.Printf("\nkeyValue=%+v [eng: %d] [corpusFreqsWithoutEnglish: %d]", keyValue, corpusfreqlib.Freq(keyValue.Key), corpusFreqsWithoutEnglish[keyValue.Key])
 		}
 		corpusFreqsWithoutEnglishSorted := rSortFreq(corpusFreqsWithoutEnglish)
 		fmt.Println("\n\nCorpus frequencies w/o Eng.: ", corpusFreqsWithoutEnglishSorted[:100])
@@ -1308,14 +1244,14 @@ func doNextLink(numLinksProcessed int) bool {
 		for _, gg := range corpusFreqsWithoutEnglishSorted {
 			output = output + fmt.Sprintf("%d %s\n", gg.Value, gg.Key)
 		}
-		string2file(output, "./corpusNoEngFrequencies.txt")
+		iolib.String2file(output, "./corpusNoEngFrequencies.txt")
 
 		// LPool dump to file
 		lPoolDump()
 		domainCounterDump()
 
 		// // Entities for global curated corpus
-		// corpusCuratedText := file2string("./logs/corpusCuratedText.log")
+		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText.log")
 		// doc, _ := prose.NewDocument(corpusCuratedText)
 		// entityFreq := make(freq)
 		// for _, ent := range doc.Entities() {
@@ -1331,7 +1267,7 @@ func doNextLink(numLinksProcessed int) bool {
 		// }
 
 		// Entities/Bigrams for global curated corpus
-		// corpusCuratedText := file2string("./logs/corpusCuratedText.log")
+		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText.log")
 		// // ngramsOf
 		// corpusCuratedBigrams := bigramsOf(corpusCuratedText)
 		// entityFreq := make(freq)
@@ -1383,7 +1319,7 @@ func yamlInitGeneral() {
 }
 
 func yamlInitProxy() {
-	if !fileExists("./proxy.yaml") {
+	if !iolib.FileExists("./proxy.yaml") {
 		return
 	}
 	viper.SetConfigName("proxy") // name of config file (without extension)
@@ -1399,7 +1335,7 @@ func yamlInitProxy() {
 
 	fmt.Printf("\n\nproxyHost: %s", proxyHost)
 	fmt.Printf("\n\nproxyUser: %s", proxyUser)
-	fmt.Printf("\n\nproxyPass: %s", proxyPass)
+	// fmt.Printf("\n\nproxyPass: %s", proxyPass)
 }
 
 func yamlInitSpecific() {
@@ -1424,22 +1360,57 @@ func yamlInitSpecific() {
 	fmt.Printf("\n\nbootstrapingLinks: %+v", bootstrapingLinks)
 }
 
+// var isEnglishDetector langdet.Detector
+
+// func isEnglish(text string) bool {
+// 	if len(isEnglishDetector.Languages) == 0 {
+// 		fmt.Println("* Init English detector ...")
+// 		isEnglishDetector = langdetdef.NewWithDefaultLanguages()
+// 	}
+
+// 	if isEnglishDetector.GetClosestLanguage(text) == "english" {
+// 		return true
+// 	}
+
+// 	return false
+
+// 	// result = detector.GetClosestLanguage("ont ne comprend rien")
+// 	// fmt.Println("GetClosestLanguage returns:\n", "    ", result)
+
+// 	// fullResults := detector.GetLanguages("ont ne comprend rien")
+// 	// fmt.Println("GetLanguages returns:")
+// 	// for _, r := range fullResults {
+// 	// 	fmt.Println("    ", r.Name, r.Confidence, "%")
+// 	// }
+
+// 	// fullResults = detector.GetLanguages("义勇军进行曲")
+// 	// fmt.Println("GetLanguages for Chinese returns:")
+// 	// for _, r := range fullResults {
+// 	// 	fmt.Println("    ", r.Name, r.Confidence, "%")
+// 	// }
+// }
+
 func main() {
+	// fmt.Println(isEnglish("do not care about quantity"))
+	// fmt.Println(isEnglish("V jeho jednomyslném schválení však brání dlouhodobý nesouhlas dvojice zmíněných států. „Slyším tak často z Polska a Maďarska, že nemají problém s právním státem, až bych skoro čekala, že to dokážou tím, že pro to zvednou ruku,“ prohlásila. (ČTK)*"))
+	// fmt.Println(isEnglish("Jesteśmy przekonani, że właśnie taki rodzaj dziennikarstwa najlepiej pomaga rozumieć to, co dzieje się dookoła nas i stanowi najbardziej wartościowy wkład w rozwój demokracji oraz wartości obywatelskich"))
+	// os.Exit(1)
+
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
 	yamlInitProxy()
 	yamlInitSpecific()
 
 	fmt.Println("* Init English corpus ...")
-	goCorpusFreqLib.Init()
+	corpusfreqlib.Init()
 
 	// Ngrams for global curated corpus
 	if false {
 		fmt.Printf("\n")
-		// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-small.txt")
-		// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19.txt")
-		// corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-medium.txt")
-		corpusCuratedText := file2string("./logs/corpusCuratedText-Covid19-large.txt")
+		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-small.txt")
+		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19.txt")
+		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-medium.txt")
+		corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-large.txt")
 		ngramsFreqSorted := ngramsFreqsOfAll(corpusCuratedText, 5)
 		for _, anNgramFreq := range ngramsFreqSorted {
 			fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
@@ -1461,7 +1432,7 @@ func main() {
 	csvInit()
 
 	fmt.Println("* Init curated corpus ...")
-	string2file("\n", "./logs/corpusCuratedText.log")
+	iolib.String2file("\n", "./logs/corpusCuratedText.log")
 
 	// Loop
 	for numLinksProcessed := 0; ; numLinksProcessed++ {
