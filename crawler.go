@@ -26,6 +26,8 @@ import (
 	"github.com/spf13/viper"
 	"jaytaylor.com/html2text"
 
+	"github.com/abadojack/whatlanggo"
+
 	"github.com/computerphysicslab/goPackages/goDebug"
 
 	corpusfreqlib "goCrawler/corpusfreqlib"
@@ -1058,16 +1060,23 @@ func doNextLink(numLinksProcessed int) bool {
 		// matches := r0.FindAllStringSubmatch(p, -1)
 		// if len(matches) > 0 {
 
-		if strings.ContainsAny(p, `ñçüịủĐứđượđềộềậệụạăšýěůčžČủữăòốêầ`) { // To avoid processing international characters that behave as a word separator, like "ñ"
-			paragraphs[i] = ""
-			continue
-		}
+		// if strings.ContainsAny(p, `ñçüịủĐứđượđềộềậệụạăšýěůčžČủữăòốêầ`) { // To avoid processing international characters that behave as a word separator, like "ñ"
+		// 	paragraphs[i] = ""
+		// 	continue
+		// }
 
 		// if !isEnglish(p) {
 		// 	paragraphs[i] = ""
 		// 	fmt.Printf("\n\nNOT ENGLISH: %s", p)
 		// 	continue
 		// }
+
+		whatlanggoInfo := whatlanggo.Detect(p)
+		if whatlanggoInfo.Lang.String() != "English" {
+			paragraphs[i] = ""
+			// fmt.Printf("\n\nNOT ENGLISH (%s): %s", whatlanggoInfo.Lang.String(), p)
+			continue
+		}
 
 		regex1 := `(?i)\W([^ \t]*/[^ \t]*)\W`
 		r1 := regexp.MustCompile(regex1)
@@ -1146,7 +1155,7 @@ func doNextLink(numLinksProcessed int) bool {
 	}
 
 	iolib.String2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
-	fmt.Printf("\n\ncuratedContent: %s", curatedContent)
+	// fmt.Printf("\n\ncuratedContent: %s", curatedContent)
 
 	// Current doc frequencies
 	fDoc := make(freq)
@@ -1394,6 +1403,9 @@ func main() {
 	// fmt.Println(isEnglish("do not care about quantity"))
 	// fmt.Println(isEnglish("V jeho jednomyslném schválení však brání dlouhodobý nesouhlas dvojice zmíněných států. „Slyším tak často z Polska a Maďarska, že nemají problém s právním státem, až bych skoro čekala, že to dokážou tím, že pro to zvednou ruku,“ prohlásila. (ČTK)*"))
 	// fmt.Println(isEnglish("Jesteśmy przekonani, że właśnie taki rodzaj dziennikarstwa najlepiej pomaga rozumieć to, co dzieje się dookoła nas i stanowi najbardziej wartościowy wkład w rozwój demokracji oraz wartości obywatelskich"))
+
+	// info := whatlanggo.Detect("V jeho jednomyslném schválení však brání dlouhodobý nesouhlas dvojice zmíněných států. „Slyším tak často z Polska a Maďarska, že nemají problém s právním státem, až bych skoro čekala, že to dokážou tím, že pro to zvednou ruku,“ prohlásila. (ČTK)*")
+	// fmt.Println("Language:", info.Lang.String(), " Script:", whatlanggo.Scripts[info.Script], " Confidence: ", info.Confidence)
 	// os.Exit(1)
 
 	fmt.Println("* Loading YAML config ...")
