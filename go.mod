@@ -6,6 +6,7 @@ require (
 	github.com/abadojack/whatlanggo v1.0.1
 	github.com/chrisport/go-lang-detector v0.0.0-20180912070833-7e13c74bc6e3
 	github.com/computerphysicslab/goPackages v0.0.0-20200817121305-196a94877c66
+	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/jackdanger/collectlinks v0.0.0-20160421202702-24c4ee2870ba
 	github.com/jdkato/prose/v2 v2.0.0
 	github.com/kljensen/snowball v0.6.0

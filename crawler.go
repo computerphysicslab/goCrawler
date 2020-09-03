@@ -30,9 +30,10 @@ import (
 
 	"github.com/computerphysicslab/goPackages/goDebug"
 
-	corpusfreqlib "goCrawler/corpusfreqlib"
-	iolib "goCrawler/iolib"
-	stringlib "goCrawler/stringlib"
+	"goCrawler/corpusfreqlib"
+	"goCrawler/iolib"
+	"goCrawler/redislib"
+	"goCrawler/stringlib"
 )
 
 /******************************************************************************/
@@ -241,17 +242,26 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 	var ACachedData CachedData
 
 	// Get results from cache if available
-	b, found := myCache.Get(urlLink)
+	// b, found := myCache.Get(urlLink)
+	// Get results from Redis cache if available
+	found := redislib.Exists("cache_" + urlLink)
 	if found {
-		ACachedData = b.(CachedData)
+		// b := redislib.GetInterface("cache_" + urlLink)
+		// ACachedData = b.(CachedData)
+		err = json.Unmarshal([]byte(redislib.Get("cache_"+urlLink)), &ACachedData)
+		if err != nil {
+			panic(err)
+		}
+
 		fmt.Printf(" [CACHE]")
 		// fmt.Println("ACachedData: ", ACachedData)
 		err = nil
 	} else {
 		ACachedData.Content, ACachedData.Links, err = download(urlLink)
 		if err == nil {
-			myCache.Set(urlLink, ACachedData, cache.NoExpiration) // Store download results in cache
-			cacheSave()                                           // Save cache to disk
+			// myCache.Set(urlLink, ACachedData, cache.NoExpiration) // Store download results in cache
+			redislib.SetInterface("cache_"+urlLink, ACachedData) // Store download results in Redis cache
+			// cacheSave()                                           // Save cache to disk
 			fmt.Printf(" [ONLINE]")
 		}
 	}
@@ -1369,45 +1379,7 @@ func yamlInitSpecific() {
 	fmt.Printf("\n\nbootstrapingLinks: %+v", bootstrapingLinks)
 }
 
-// var isEnglishDetector langdet.Detector
-
-// func isEnglish(text string) bool {
-// 	if len(isEnglishDetector.Languages) == 0 {
-// 		fmt.Println("* Init English detector ...")
-// 		isEnglishDetector = langdetdef.NewWithDefaultLanguages()
-// 	}
-
-// 	if isEnglishDetector.GetClosestLanguage(text) == "english" {
-// 		return true
-// 	}
-
-// 	return false
-
-// 	// result = detector.GetClosestLanguage("ont ne comprend rien")
-// 	// fmt.Println("GetClosestLanguage returns:\n", "    ", result)
-
-// 	// fullResults := detector.GetLanguages("ont ne comprend rien")
-// 	// fmt.Println("GetLanguages returns:")
-// 	// for _, r := range fullResults {
-// 	// 	fmt.Println("    ", r.Name, r.Confidence, "%")
-// 	// }
-
-// 	// fullResults = detector.GetLanguages("义勇军进行曲")
-// 	// fmt.Println("GetLanguages for Chinese returns:")
-// 	// for _, r := range fullResults {
-// 	// 	fmt.Println("    ", r.Name, r.Confidence, "%")
-// 	// }
-// }
-
 func main() {
-	// fmt.Println(isEnglish("do not care about quantity"))
-	// fmt.Println(isEnglish("V jeho jednomyslném schválení však brání dlouhodobý nesouhlas dvojice zmíněných států. „Slyším tak často z Polska a Maďarska, že nemají problém s právním státem, až bych skoro čekala, že to dokážou tím, že pro to zvednou ruku,“ prohlásila. (ČTK)*"))
-	// fmt.Println(isEnglish("Jesteśmy przekonani, że właśnie taki rodzaj dziennikarstwa najlepiej pomaga rozumieć to, co dzieje się dookoła nas i stanowi najbardziej wartościowy wkład w rozwój demokracji oraz wartości obywatelskich"))
-
-	// info := whatlanggo.Detect("V jeho jednomyslném schválení však brání dlouhodobý nesouhlas dvojice zmíněných států. „Slyším tak často z Polska a Maďarska, že nemají problém s právním státem, až bych skoro čekala, že to dokážou tím, že pro to zvednou ruku,“ prohlásila. (ČTK)*")
-	// fmt.Println("Language:", info.Lang.String(), " Script:", whatlanggo.Scripts[info.Script], " Confidence: ", info.Confidence)
-	// os.Exit(1)
-
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
 	yamlInitProxy()
@@ -1421,8 +1393,8 @@ func main() {
 		fmt.Printf("\n")
 		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-small.txt")
 		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19.txt")
-		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-medium.txt")
-		corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-large.txt")
+		corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-medium.txt")
+		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-large.txt")
 		ngramsFreqSorted := ngramsFreqsOfAll(corpusCuratedText, 5)
 		for _, anNgramFreq := range ngramsFreqSorted {
 			fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
@@ -1434,8 +1406,8 @@ func main() {
 	// Allow go interfaces to be expanded into custom structs of our cache implementation
 	gob.Register(CachedData{}) // For some reason, this declaration must be written on main function
 
-	fmt.Println("* Init cache ...")
-	cacheInit()
+	// fmt.Println("* Init cache ...")
+	// cacheInit()
 
 	fmt.Println("* Link bootstrapping ...")
 	linkBootstraping()
@@ -1455,3 +1427,20 @@ func main() {
 
 	fmt.Println("\n\n\n***** Done!!!")
 }
+
+// * Downloading url: http://(https://aasm.org/coronavirus-covid-19-faqs-cpap-sleep-apnea-patients/)panic: regexp: Compile(`(?i)\W((https)\W`): error parsing regexp: missing closing ): `(?i)\W((https)\W`
+
+// goroutine 1 [running]:
+// regexp.MustCompile(0xc000f022f0, 0x10, 0x7)
+// 	/usr/lib/go-1.13/src/regexp/regexp.go:311 +0x152
+// main.domainHadFailed(0xc000f022e0, 0x6, 0xc000f022e0)
+// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:461 +0x84
+// main.download(0xc002a05e50, 0x4e, 0x0, 0xc002a05e50, 0x4e, 0xc009945ec0, 0x54, 0xc002cf3850, 0x4dd471)
+// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:187 +0xfe
+// main.downloadCached(0xc002a05e50, 0x4e, 0x9694e9, 0x16, 0xc002cf3a90, 0x1, 0x1, 0x62, 0x0)
+// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:260 +0xc6
+// main.doNextLink(0xcdf, 0x1)
+// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:1041 +0x143
+// main.main()
+// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:1423 +0x2bd
+// exit status 2

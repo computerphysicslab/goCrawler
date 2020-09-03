@@ -1,5 +1,5 @@
-// Package stringlib provides string functions beyond goLang primitives
-package stringlib
+// Package iolib provides I/O functions beyond goLang primitives
+package iolib
 
 import (
 	"io"
