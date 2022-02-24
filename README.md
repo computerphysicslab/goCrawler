@@ -9,16 +9,18 @@ Text-mining topic relevant sources
 - [Run](#run)
 - [Output](#output)
 - [About the author](#About-the-author)
-- [Redis Install] (#Appendix:-How-to-install-Redis-service-on-Linux-Ubuntu)
+- [Redis Install] (#Redis-Install)
 
 #### About goCrawler
 
 goLang crawler restricted to only topic relevant/curated URLs. It includes token frequency analysis and NLP nGram detection
 
+Watch goLang goCrawler running at https://youtu.be/7IDkNYcMXxU
+
 
 #### Install
 
-By using go.mod needed libraries are automagically downloaded on first run.
+By using go.mod needed libraries are automagically downloaded on first run. Add Redis service. Check this document at the end of it.
 
 
 #### Run
@@ -63,7 +65,9 @@ Find me at https://www.linkedin.com/in/semanticwebarchitect/ or computerphysicsl
 I am very interested on Text-Mining, Natural Language Processing, Named Entity Recognition and building textual corpora and search apps for Health/Biomedical/Clinical domain
 
 
-#### Appendix: How to install Redis service on Linux Ubuntu
+#### Redis Install
+
+Appendix: How to install Redis service on Linux Ubuntu
 
 goCrwaler uses Redis noSQL local database to cache visited urls and avoid unnecessary network overload. So you need to install it prior to running the crawler.
 
