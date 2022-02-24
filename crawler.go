@@ -1170,9 +1170,6 @@ func doNextLink(numLinksProcessed int) bool {
 		return true
 	}
 
-	iolib.String2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
-	// fmt.Printf("\n\ncuratedContent: %s", curatedContent)
-
 	// Current doc frequencies
 	fDoc := make(freq)
 	fDoc.add(curatedContent)
@@ -1209,6 +1206,9 @@ func doNextLink(numLinksProcessed int) bool {
 		fmt.Printf("\n\n++++++++++ NOT ENOUGH RELEVANCY %+v\n", s)
 		return true
 	}
+
+	iolib.String2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
+	// fmt.Printf("\n\ncuratedContent: %s", curatedContent)
 
 	// Append CSV row
 	// err = csvWriter.Write([]string{gDoc[0].Key, fmt.Sprintf("%d", gDoc[0].Value), fmt.Sprintf("%d", docLen), fmt.Sprintf("%.03f", float64(gDoc[0].Value)/float64(1+docLen)), nextLink})
