@@ -26,6 +26,7 @@ func newPool() *redis.Pool {
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", ":6379")
 			if err != nil {
+				fmt.Printf("Redis seems not responding to TCP call\n")
 				panic(err.Error())
 			}
 			return c, err

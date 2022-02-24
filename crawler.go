@@ -48,6 +48,7 @@ var regexRankingKeywords, proxyHost, proxyUser, proxyPass string
 var downloadTimeout time.Duration
 var bootstrapingLinks []string
 var minDocLen, maxDocLen int
+var scoreThreshold float64
 
 /***************************************************************************************************************
 ****************************************************************************************************************
@@ -1005,6 +1006,11 @@ var (
 	logCGI      = log.New(outfile3, "", 0)
 )
 
+var (
+	outfile4, _ = os.Create("./logs/domainFailed.log")
+	logDomainFailed = log.New(outfile4, "", 0)
+)
+
 var uniqueSignature = make(map[string]string)
 var corpusFreqs freq = make(freq)
 
@@ -1189,11 +1195,18 @@ func doNextLink(numLinksProcessed int) bool {
 	}
 	// panic(gDocSignature)
 
-	// ignore when signature is not unique
+	// Ignore when signature is not unique
 	if uniqueSignature[gDocSignature] == "" {
 		uniqueSignature[gDocSignature] = nextLink
 	} else {
 		fmt.Printf("\n\n++++++++++ SIMILAR FOUND ON %s\n", uniqueSignature[gDocSignature])
+		return true
+	}
+
+	// Ignore when ranking score is lower than cutoff threshold
+	s := rankingByKeywords(curatedContent)
+	if s < scoreThreshold {
+		fmt.Printf("\n\n++++++++++ NOT ENOUGH RELEVANCY %+v\n", s)
 		return true
 	}
 
@@ -1205,8 +1218,8 @@ func doNextLink(numLinksProcessed int) bool {
 	}
 	csvWriter.Flush()
 
-	// Cut values on maxFreq/numWords ratio 0.1 - 0.005
-	if float64(gDoc[0].Value)/float64(1+docLen) > 0.1 || float64(gDoc[0].Value)/float64(1+docLen) < 0.005 {
+	// Cut values on maxFreq/numWords ratio 0.1 - 0.002
+	if float64(gDoc[0].Value)/float64(1+docLen) > 0.1 || float64(gDoc[0].Value)/float64(1+docLen) < 0.002 {
 		fmt.Printf("\n*** Filter on maxFreq/numWords ratio : %.03f %s", float64(gDoc[0].Value)/float64(1+docLen), curatedContent)
 		return true
 	}
@@ -1371,6 +1384,7 @@ func yamlInitSpecific() {
 	bootstrapingLinks = viper.GetStringSlice("bootstrapingLinks")
 	minDocLen = viper.GetInt("minDocLen")
 	maxDocLen = viper.GetInt("maxDocLen")
+	scoreThreshold = float64(viper.GetInt("scoreThreshold"))
 
 	fmt.Printf("\n\nargsWithoutProg: %+v", argsWithoutProg)
 	fmt.Printf("\n\ncuratedDomains: %s", curatedDomains)
@@ -1380,6 +1394,20 @@ func yamlInitSpecific() {
 }
 
 func main() {
+	// TODO: create logs folder if not exist
+	fmt.Println("* Checking logs folder ...")
+	if _, err := os.Stat("./logs"); os.IsNotExist(err) {
+		// Logs folder does not exist, we create it automatically
+		os.MkdirAll("./logs", os.ModePerm)
+	}
+
+	// TODO: check redislib is working ok
+	fmt.Println("* Checking Redis service ...")
+	err := redislib.Ping()
+	if err != nil {
+		fmt.Println("Redis service reverts error: ", err)
+	}
+
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
 	yamlInitProxy()
