@@ -2,12 +2,7 @@ old
 logs/*
 cache/*
 proxy.yaml
-
-500_VAERS_keywords_frequencies.txt
 revolution.yaml
 vaers.yaml
-domainCounter.json
-LPool.json
-ranking-URL.csv
-corpusFrequencies.txt
+output/*
 corpusNoEngFrequencies.txt
