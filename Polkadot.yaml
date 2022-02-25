@@ -6,7 +6,7 @@ linkOk: |
   2022|\.io|polka|Gavin|Wood|Parachains*|Kusama|Rust|Parity|web3|polkasyndicate|subdao|wasm|acala|slot|relay|substrate|litentry|kilt|xcm|Efinity|Centrifuge|Ternoa|Moonriver|Shadows|Celer|PolkaBridge|crowdloans*|HydraDX|multichain|crosschain|XCMP|interoperability|interoperable|ksm|validators*|composable|encointer|nominators*|collators*|chainlink|rococo|bifrost|aventus|altair|jorrin|petrowski
 
 regexRankingKeywords: |
-  (?i)\W(polkadot|Gavin|Wood|Parachains*|Kusama|Rust|Parity|web3|polkasyndicate|subdao|wasm|acala|slot|relay|substrate|litentry|kilt|xcm|Efinity|Centrifuge|Ternoa|Moonriver|Shadows|Celer|PolkaBridge|crowdloans*|HydraDX|multichain|crosschain|XCMP)\W
+  (?i)\W(polkadot|Gavin|Wood|Parachains*|Kusama|Rust|Parity|web3|polkasyndicate|subdao|wasm|acala|slot|relay|substrate|litentry|kilt|xcm|Efinity|Centrifuge|Ternoa|Moonriver|Shadows|Celer|PolkaBridge|crowdloans*|HydraDX|multichain|crosschain|XCMP|interoperability|interoperable|ksm|validators*|composable|encointer|nominators*|collators*|chainlink|rococo|bifrost|aventus|altair|jorrin|petrowski)\W
 
 minDocLen: 50
 maxDocLen: 100000
@@ -72,3 +72,8 @@ bootstrapingLinks:
 - "https://centrifuge.io/altair/"
 - "https://relaychain.fm/hosts/jorrin-bruns"
 - "https://relaychain.fm/hosts/joe-petrowski"
+- "https://medium.com/@samueluj23/polkadot-is-a-heterogeneous-multi-chain-with-scalability-e8da1d749fb2"
+- "https://blog.cryptostars.is/how-to-launch-a-project-on-polkadot-dapp-parachain-and-bridge-25d028822678"
+- "https://kbaiiitmk.medium.com/polkadot-the-connecting-dots-of-blockchain-9ce37bc941f"
+- "https://dfg-official.medium.com/dfg-contributes-200-000-dot-to-the-composable-finance-crowdloan-9abe267edf67"
+- "https://www.etfexpress.com/2022/02/24/309586/coinshares-launches-polkadot-etp-six"
