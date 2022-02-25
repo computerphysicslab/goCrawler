@@ -1,4 +1,4 @@
-// aggregates coronavirus related research documents
+// aggregates a custom topic related research documents
 package main
 
 import (
@@ -60,8 +60,8 @@ var csvWriter *csv.Writer
 
 func csvInit() {
 	// var dataCSV = [][]string{{}}
-	// file, err := os.Create("maxFreq-numWords-URL.csv")
-	file, err := os.Create("ranking-URL.csv")
+	// file, err := os.Create("output/maxFreq-numWords-URL.csv")
+	file, err := os.Create("output/ranking-URL.csv")
 	if err != nil {
 		log.Fatal("Cannot create file: ", err)
 	}
@@ -438,7 +438,7 @@ func lPoolDump() {
 		fmt.Println("error: ", err)
 	}
 	// fmt.Println(string(jdata))
-	jsonFile, err := os.Create("./LPool.json")
+	jsonFile, err := os.Create("./output/LPool.json")
 	if err != nil {
 		log.Println(err)
 	}
@@ -451,7 +451,7 @@ func domainCounterDump() {
 		fmt.Println("domainCounterDump error: ", err)
 	}
 	// fmt.Println(string(jdata))
-	jsonFile, err := os.Create("./domainCounter.json")
+	jsonFile, err := os.Create("./output/domainCounter.json")
 	jsonFile.Write(jdata)
 }
 
@@ -1240,7 +1240,7 @@ func doNextLink(numLinksProcessed int) bool {
 		for _, gg := range corpusFreqsSorted {
 			output = output + fmt.Sprintf("%d %s %s %d\n", gg.Value, gg.Key, "none", 0)
 		}
-		iolib.String2file(output, "./corpusFrequencies.txt")
+		iolib.String2file(output, "./output/corpusFrequencies.txt")
 
 		// substracting english words frequencies
 		corpusFreqsWithoutEnglish := make(freq) // specific corpus token frequencies w/o english baseline
@@ -1277,7 +1277,7 @@ func doNextLink(numLinksProcessed int) bool {
 		for _, gg := range corpusFreqsWithoutEnglishSorted {
 			output = output + fmt.Sprintf("%d %s\n", gg.Value, gg.Key)
 		}
-		iolib.String2file(output, "./corpusNoEngFrequencies.txt")
+		iolib.String2file(output, "./output/corpusNoEngFrequencies.txt")
 
 		// LPool dump to file
 		lPoolDump()
@@ -1395,14 +1395,19 @@ func yamlInitSpecific() {
 }
 
 func main() {
-	// TODO: create logs folder if not exist
+	// Create needed folders if don't exist
 	fmt.Println("* Checking logs folder ...")
 	if _, err := os.Stat("./logs"); os.IsNotExist(err) {
 		// Logs folder does not exist, we create it automatically
 		os.MkdirAll("./logs", os.ModePerm)
 	}
+	fmt.Println("* Checking output folder ...")
+	if _, err := os.Stat("./output"); os.IsNotExist(err) {
+		// Output folder does not exist, we create it automatically
+		os.MkdirAll("./output", os.ModePerm)
+	}
 
-	// TODO: check redislib is working ok
+	// Check redislib is working ok
 	fmt.Println("* Checking Redis service ...")
 	err := redislib.Ping()
 	if err != nil {
