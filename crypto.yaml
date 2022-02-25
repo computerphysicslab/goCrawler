@@ -4,10 +4,10 @@ curatedDomains: |
   en\.wikipedia\.org|independent\.co\.uk|(medium|forbes|fortune|wired|cointelegraph|economist|statista|reuters|aljazeera|newsbtc|newscientist|nytimes|techcrunch)\.com
 
 linkOk: |
-  2022|cryptocurrency|bitcoin|ethereum|polkadot|blockchain|cryptocurrencies|eth|ether|crypto|monero|bitcoins|tokens|decentralized|buterin|scams|blockchains|binance|bancor|solidity|DAO|CeFi|DeFi|Cex
+  2022|cryptocurrency|bitcoins*|ethereum|polkadot|cryptocurrencies|eth|ether|crypto|monero|tokens*|decentralized|buterin|scams*|binance|bancor|solidity|DAO|CeFi|DeFi|Cex
 
 regexRankingKeywords: |
-  (?i)\W(2022|cryptocurrency|bitcoin|ethereum|polkadot|blockchain|cryptocurrencies|eth|ether|crypto|monero|bitcoins|tokens|decentralized|buterin|scams|blockchains|binance|bancor|solidity|DAO|CeFi|DeFi|Cex|price|bear|bearish|bull|bullish|market|coin|coins|mining|ICO|miners|transaction|transactions|currencies|ledger|wallet|cryptography|satoshi)\W
+  (?i)\W(2022|cryptocurrency|bitcoins*|ethereum|polkadot|blockchains*|cryptocurrencies|eth|ether|crypto|monero|tokens*|decentralized|buterin|scams*|binance|bancor|solidity|DAO|CeFi|DeFi|Cex|price|bear|bearish|bull|bullish|market|coin|coins|mining|ICO|miners|transaction|transactions|currencies|ledger|wallet|cryptography|satoshi|PoW|PoS|staking|dot|network|chain|volume|trust|trading|etoro|broker|proof|stake|holders*|buy|vesting|investors|governance|testnet|node|EthDenver)\W
 
 minDocLen: 200
 maxDocLen: 100000

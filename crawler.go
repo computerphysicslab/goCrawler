@@ -331,7 +331,8 @@ func linkSeemsOk(l string) bool {
 	r, _ := regexp.Compile(regexLinkOk)
 	if len(r.FindStringSubmatch(l)) > 0 {
 		return true
-		// } else {
+	} else {
+		iolib.String2fileAppend(l, "./logs/linksNotOk.log")
 		// fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
 	}
 
@@ -1007,7 +1008,7 @@ var (
 )
 
 var (
-	outfile4, _ = os.Create("./logs/domainFailed.log")
+	outfile4, _     = os.Create("./logs/domainFailed.log")
 	logDomainFailed = log.New(outfile4, "", 0)
 )
 

@@ -1,0 +1,74 @@
+# Polkadot
+curatedDomains: |
+  en\.wikipedia\.org|independent\.co\.uk|(medium|forbes|fortune|wired|cointelegraph|economist|statista|reuters|aljazeera|newsbtc|newscientist|nytimes|techcrunch)\.com
+
+linkOk: |
+  2022|\.io|polka|Gavin|Wood|Parachains*|Kusama|Rust|Parity|web3|polkasyndicate|subdao|wasm|acala|slot|relay|substrate|litentry|kilt|xcm|Efinity|Centrifuge|Ternoa|Moonriver|Shadows|Celer|PolkaBridge|crowdloans*|HydraDX|multichain|crosschain|XCMP|interoperability|interoperable|ksm|validators*|composable|encointer|nominators*|collators*|chainlink|rococo|bifrost|aventus|altair|jorrin|petrowski
+
+regexRankingKeywords: |
+  (?i)\W(polkadot|Gavin|Wood|Parachains*|Kusama|Rust|Parity|web3|polkasyndicate|subdao|wasm|acala|slot|relay|substrate|litentry|kilt|xcm|Efinity|Centrifuge|Ternoa|Moonriver|Shadows|Celer|PolkaBridge|crowdloans*|HydraDX|multichain|crosschain|XCMP)\W
+
+minDocLen: 50
+maxDocLen: 100000
+
+# // Minimum relevancy
+scoreThreshold: 10
+
+# // Pages w/ great links
+bootstrapingLinks:
+- "https://en.wikipedia.org/wiki/Polkadot_(cryptocurrency)"
+- "https://en.wikipedia.org/wiki/Gavin_Wood"
+- "https://en.wikipedia.org/wiki/Proof_of_stake"
+- "https://coinmarketcap.com/currencies/polkadot-new/"
+- "https://99bitcoins.com/buy-polkadot-dot/"
+- "https://coingecko.com/coins/polkadot"
+- "https://www.economywatch.com/cryptocurrency/polkadot-wallet"
+- "https://polkadot.network/"
+- "https://www.economywatch.com/uk/cryptocurrency/buy-polkadot-coin"
+- "https://wiki.polkadot.network/docs/getting-started"
+- "https://wiki.polkadot.network/docs/learn-DOT"
+- "https://polkadot.network/what-is-polkadot-a-brief-introduction/"
+- "https://polkasyndicate.medium.com/"
+- "https://www.economywatch.com/uk/cryptocurrency/polkadot-wallet"
+- "https://subdao.medium.com/pda-polkadot-dao-alliance-officially-initiated-by-11-projects-first-online-global-summit-on-apr-6117c670dd58"
+- "https://polkadot.network/web3-foundation-initiates-launch-polkadot-is-live/"
+- "https://claims.polkadot.network/"
+- "https://subdao.medium.com/"
+- "https://patractlabs.medium.com/crust-nftmart-cycan-polka-warriors-852ceb5f2239"
+- "https://github.com/paritytech/polkadot"
+- "https://newsletter.dotleap.com/p/dotleap-71-a-kusama-valentine"
+- "https://kusama.polkassembly.io/post/1352"
+- "https://kusama.polkassembly.io/post/1358"
+- "https://dotpulse.defipulse.com/p/dot-pulse-24-kusama-and-polkadot"
+- "https://www.coindesk.com/business/2022/02/23/aventus-taps-scytale-ventures-to-boost-polkadot-parachain-plans/"
+- "https://ambcrypto.com/polkadot-parachain-fraudster-revealed-thanks-to-secs-complaint-in-2019/"
+- "https://www.newsbtc.com/news/polkadot-electricity-consumption-is-less-than-solana-bitcoin-and-ethereum/"
+- "https://www.cryptoglobe.com/latest/2022/02/coin-bureau-on-polkadot-dot-could-become-one-of-the-top-cryptos-of-2022/"
+- "https://cryptopotato.com/polkadot-allocates-993286-dot-to-boost-its-ecosystem-and-web3-development/"
+- "https://www.coinspeaker.com/what-is-polkadot-ethereum-killer/"
+- "https://techiegamers.com/gavin-wood-net-worth/"
+- "https://cointelegraph.com/news/crypto-stories-gavin-wood-discusses-why-he-decided-to-code-ethereum"
+- "https://finance.yahoo.com/news/aventus-network-scytale-ventures-partner-130500115.html"
+- "https://investorplace.com/2022/02/polkadot-crypto-price-predictions-where-will-dot-go-with-nft-support/"
+- "https://www.cnbctv18.com/cryptocurrency/polkadot-blockchain-how-is-it-different-and-why-is-it-on-crypto-enthusiasts-radar-12265222.htm"
+- "https://cointelegraph.com/news/how-polkadot-s-parachain-auctions-make-a-decentralized-web3-possible"
+- "https://thedefiant.io/polkadot-parachains-second-group/"
+- "https://www.securities.io/7-best-polkadot-ecosystem-tokens-to-watch/"
+- "https://medium.com/paradigm-fund/polkadot-interlay-wins-the-current-polkadot-parachain-slot-auction-kico-will-be-onboarded-as-a015649f5f58"
+- "https://www.financemagnates.com/cryptocurrency/news/coinshares-announces-listing-of-staked-polkadot-etp-on-six-swiss-exchange/"
+- "https://www.mobiloitte.com/blockchain/polkadot-development-solutions/"
+- "https://www.cryptopolitan.com/polkadot-price-analysis-2022-02-24/"
+- "https://www.bitcoinsuisse.com/fundamentals/what-is-moonbeam"
+- "https://cryptopreneurss.com/crypto-fund-kr1-invests-further-in-cross-chain-liquidity-protocol-hydradx/"
+- "https://cryptoz-cards.medium.com/free-the-zoombies-nft-data-d950928901ed"
+- "https://cryptodailysun.com/xcm-the-cross-consensus-message-format/"
+- "https://polkadot.network/blog/common-good-parachains-an-introduction-to-governance-allocated-parachain-slots/"
+- "https://polkadot.network/blog/introducing-encointer-making-web3-truly-inclusive/"
+- "https://www.mindtheproduct.com/web3-for-product-managers/"
+- "https://www.benzinga.com/markets/cryptocurrency/22/02/25794424/vitalik-buterin-believes-ethereum-needs-its-own-kusama-network-a-lesson-to-learn-from-polk"
+- "https://encointer.org/"
+- "https://parachains.info/details/bifrost_finance_polkadot"
+- "https://blockchainreporter.net/aventus-network-and-scytale-ventures-partner-for-polkadot-integration/"
+- "https://centrifuge.io/altair/"
+- "https://relaychain.fm/hosts/jorrin-bruns"
+- "https://relaychain.fm/hosts/joe-petrowski"

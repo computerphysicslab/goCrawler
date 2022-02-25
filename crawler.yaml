@@ -1,6 +1,6 @@
 regexBannedDomains: "(?i)((facebook|twitter|reddit|instagram|google|youtube|urldefense|thesexyouwant)\\.(com|org)|archive\\.org|repubblica\\.it|(^en)\\.wikipedia\\.org|anchor\\.fm)"
 
-regexLinkBannedTokens: "(?i)(login|signup|pdf|\\.(pdf|ps|xls|ods|csv|json|png|jpg|gif|zip|tar|gz|iso|rar|mp3|wav|avi|mpeg|mpg|mp4|mov|docx|exe|7z|ppt|doc))"
+regexLinkBannedTokens: "(?i)(login|signup|pdf|\\.(pdf|ps|xls|ods|csv|json|png|jpg|gif|zip|tar|gz|iso|rar|mp3|wav|avi|mpeg|mpg|mp4|mov|docx|exe|7z|ppt|doc|rs))"
 
 engStopWordsWOthe: |
   a|and|be|have|i|in|of|that|to|with|from|is|on|up|for|should|even|why|by|during|we|could|but|about|as|or|this|at|not|all|other
