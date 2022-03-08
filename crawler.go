@@ -1052,9 +1052,9 @@ func doNextLink(numLinksProcessed int) bool {
 	lPool[maxi].Status = 1
 	fmt.Printf("\n* Downloading url: %s", nextLink)
 
-	// TODO Takes a lot of time to daownload or process
-	// * Downloading url: https://comeperdpeso.blogspot.com/2022/01/reduslim.html [ONLINE]
-	// *** docLen < 50 : 0 * getNextLink() 3253 links on the pool. Found best link at 2364 position. Priority: 0.500
+	// TODO Some URLs take a lot of time to download or process.
+	// Adding log to find out if the issue is coming from the
+	// download process or the afterward process.
 
 	content, links, err := downloadCached(nextLink)
 	// fmt.Printf("\ncontent, links, err := downloadCached(nextLink) => links = %+v", links)
