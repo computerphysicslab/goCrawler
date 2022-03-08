@@ -49,6 +49,7 @@ var downloadTimeout time.Duration
 var bootstrapingLinks []string
 var minDocLen, maxDocLen int
 var scoreThreshold float64
+var addUrl string
 
 /***************************************************************************************************************
 ****************************************************************************************************************
@@ -149,7 +150,7 @@ func cacheSave() {
 	}
 }
 
-func proxyGet(urlLink string) (resp *http.Response, err error) {
+func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	var client *http.Client
 	if proxyHost != "" {
 		client = &http.Client{
@@ -175,7 +176,13 @@ func proxyGet(urlLink string) (resp *http.Response, err error) {
 	// To avoid EOF errors
 	req.Close = true
 
+	if printLog {
+		fmt.Printf("\nStart downloading")
+	}
 	resp, err = client.Do(req)
+	if printLog {
+		fmt.Printf("\nEnd downloading")
+	}
 
 	// defer req.Body.Close()
 
@@ -192,7 +199,7 @@ func download(urlLink string) (string, []string, error) {
 	logDownload.Printf("\tRequested")
 
 	// resp, err := http.Get(urlLink)
-	resp, err := proxyGet(urlLink)
+	resp, err := proxyGet(urlLink, true)
 	if err != nil {
 		logDownload.Printf("\tHttp transport error:\n\t\t%s", err)
 		domainReportFailed(domain)
@@ -1045,6 +1052,10 @@ func doNextLink(numLinksProcessed int) bool {
 	lPool[maxi].Status = 1
 	fmt.Printf("\n* Downloading url: %s", nextLink)
 
+	// TODO Takes a lot of time to daownload or process
+	// * Downloading url: https://comeperdpeso.blogspot.com/2022/01/reduslim.html [ONLINE]
+	// *** docLen < 50 : 0 * getNextLink() 3253 links on the pool. Found best link at 2364 position. Priority: 0.500
+
 	content, links, err := downloadCached(nextLink)
 	// fmt.Printf("\ncontent, links, err := downloadCached(nextLink) => links = %+v", links)
 	if err != nil {
@@ -1319,6 +1330,23 @@ func doNextLink(numLinksProcessed int) bool {
 	// push content into persitent ddbb
 	// save(curatedContent, l.URL)
 
+	// Request external search engine to index the url
+	if len(addUrl) > 0 {
+		requestIndexUrl := addUrl + url.QueryEscape(nextLink)
+		fmt.Printf("\n\nrequestIndexUrl: %s", requestIndexUrl)
+
+		// Call indexer as a gorutine for concurrency
+		go func(aUrl string) {
+			_, err = proxyGet(aUrl, false)
+			if err != nil {
+				// logDownload.Printf("\tHttp transport error:\n\t\t%s", err)
+				fmt.Printf("\n\nHttp transport error:\n\t\t%s", err)
+			}
+		}(requestIndexUrl)
+	}
+
+	// os.Exit(1)
+
 	// Adding links of urls passing filters
 	if prevState == 0 && lPool[maxi].Status == 2 {
 		addLinksOf(nextLink, links)
@@ -1341,6 +1369,7 @@ func yamlInitGeneral() {
 	engLowRelevancyWords = `|` + stringlib.RmNewLines(viper.GetString("engLowRelevancyWords"))
 	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + stringlib.RmNewLines(viper.GetString("specialStopwords")) + `)\W`
 	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
+	addUrl = strings.TrimSpace(viper.GetString("addUrl"))
 
 	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
 	fmt.Printf("\n\nregexLinkBannedTokens: %s", regexLinkBannedTokens)
@@ -1349,6 +1378,7 @@ func yamlInitGeneral() {
 	fmt.Printf("\n\nengLowRelevancyWords: %s", engLowRelevancyWords)
 	fmt.Printf("\n\nregexStopwords: %s", regexStopwords)
 	fmt.Printf("\n\ndownloadTimeout: %+v", downloadTimeout)
+	fmt.Printf("\n\naddUrl: %s", addUrl)
 }
 
 func yamlInitProxy() {
