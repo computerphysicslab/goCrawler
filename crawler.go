@@ -1038,7 +1038,7 @@ func addLinksOf(nextLink string, links []string) {
 			}
 		}
 	}
-	fmt.Printf(" %d links found (%d added)", len(links), linksAdded)
+	fmt.Printf("\n %d links found (%d added)", len(links), linksAdded)
 }
 
 func doNextLink(numLinksProcessed int) bool {
@@ -1050,7 +1050,7 @@ func doNextLink(numLinksProcessed int) bool {
 	}
 	prevState := lPool[maxi].Status
 	lPool[maxi].Status = 1
-	fmt.Printf("\n* Downloading url: %s", nextLink)
+	fmt.Printf("\n\n* Downloading url: %s", nextLink)
 
 	// TODO Some URLs take a lot of time to download or process.
 	// Adding log to find out if the issue is coming from the
@@ -1060,7 +1060,7 @@ func doNextLink(numLinksProcessed int) bool {
 	// fmt.Printf("\ncontent, links, err := downloadCached(nextLink) => links = %+v", links)
 	if err != nil {
 		lPool[maxi].Status = 3
-		fmt.Println("\nDownload error: ", err)
+		fmt.Println("\nDownload error: ", strings.Trim(err.Error(), "\n"))
 	} else {
 		lPool[maxi].Status = 2
 	}
@@ -1244,7 +1244,11 @@ func doNextLink(numLinksProcessed int) bool {
 		fmt.Printf("\n\nnumLinksProcessed: %d", numLinksProcessed)
 
 		corpusFreqsSorted := rSortFreq(corpusFreqs)
-		fmt.Println("\n\nCorpus frequencies: ", corpusFreqsSorted[:100])
+		corpusFreqsSorted_100 := corpusFreqsSorted
+		if len(corpusFreqsSorted) > 100 {
+			corpusFreqsSorted_100 = corpusFreqsSorted[:100]
+		}
+		fmt.Println("\n\nCorpus frequencies: ", corpusFreqsSorted_100)
 
 		// Saving corpus frequencies in format all.num from British National Corpus
 		output := ""
@@ -1281,7 +1285,11 @@ func doNextLink(numLinksProcessed int) bool {
 			// fmt.Printf("\nkeyValue=%+v [eng: %d] [corpusFreqsWithoutEnglish: %d]", keyValue, corpusfreqlib.Freq(keyValue.Key), corpusFreqsWithoutEnglish[keyValue.Key])
 		}
 		corpusFreqsWithoutEnglishSorted := rSortFreq(corpusFreqsWithoutEnglish)
-		fmt.Println("\n\nCorpus frequencies w/o Eng.: ", corpusFreqsWithoutEnglishSorted[:100])
+		corpusFreqsWithoutEnglishSorted_100 := corpusFreqsWithoutEnglishSorted
+		if len(corpusFreqsWithoutEnglishSorted) > 100 {
+			corpusFreqsWithoutEnglishSorted_100 = corpusFreqsWithoutEnglishSorted[:100]
+		}
+		fmt.Println("\n\nCorpus frequencies w/o Eng.: ", corpusFreqsWithoutEnglishSorted_100)
 
 		// Saving corpus w/o English frequencies in basic format
 		output = ""
@@ -1333,7 +1341,7 @@ func doNextLink(numLinksProcessed int) bool {
 	// Request external search engine to index the url
 	if len(addUrl) > 0 {
 		requestIndexUrl := addUrl + url.QueryEscape(nextLink)
-		fmt.Printf("\n\nrequestIndexUrl: %s", requestIndexUrl)
+		fmt.Printf("\nrequestIndexUrl: %s", requestIndexUrl)
 
 		// Call indexer as a gorutine for concurrency
 		go func(aUrl string) {
