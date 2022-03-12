@@ -331,8 +331,16 @@ func isBanned(link string, domain string) bool {
 }
 
 func linkSeemsOk(l string) bool {
-	if len(l) > 300 {
+	if len(l) > 256 {
 		return false
+	}
+
+	// Standard URL validation in goLang
+	_, err := url.ParseRequestURI(l)
+	if err != nil {
+		log.Fatal("Cannot create file: ", err)
+		iolib.String2fileAppend(l, "./logs/linksNotOk.log")
+		fmt.Printf("\n\nParseRequestURI error: %s", err)
 	}
 
 	r, _ := regexp.Compile(regexLinkOk)
