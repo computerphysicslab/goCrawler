@@ -330,28 +330,53 @@ func isBanned(link string, domain string) bool {
 	return false
 }
 
-func linkSeemsOk(l string) bool {
-	if len(l) > 256 {
+func linkSeemsOk(l string, avoidCustomCheck bool) bool {
+	// fmt.Printf("\n\nlinkSeemsOk(%s , %v)", l, avoidCustomCheck)
+
+	if len(l) < 13 || len(l) > 256 {
 		return false
 	}
+
+	// fmt.Printf("\nlinkSeemsOk 1")
 
 	// Standard URL validation in goLang
 	_, err := url.ParseRequestURI(l)
 	if err != nil {
-		log.Fatal("Cannot create file: ", err)
-		iolib.String2fileAppend(l, "./logs/linksNotOk.log")
+		iolib.String2fileAppend(l, "./logs/linksNotOk.ParseRequestURI.log")
 		fmt.Printf("\n\nParseRequestURI error: %s", err)
+		return false
 	}
 
-	r, _ := regexp.Compile(regexLinkOk)
-	if len(r.FindStringSubmatch(l)) > 0 {
-		return true
-	} else {
-		iolib.String2fileAppend(l, "./logs/linksNotOk.log")
-		// fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
+	// fmt.Printf("\nlinkSeemsOk 2")
+
+	// Additional URL validator to avoid panic error cases like this:
+	// http://(http://health.org/2010/04/17/
+	regexURL := `(?i)(^http(s)?://[a-z0-9-]+(\.[a-z0-9-]+)*(:[0-9]+)?(\/[a-z0-9\-\_\/\.\+\%\(\)\~\@]*)?$)`
+	rURL := regexp.MustCompile(regexURL)
+	matches := rURL.FindAllStringSubmatch(l, -1)
+	if len(matches) < 1 {
+		iolib.String2fileAppend(l, "./logs/linksNotOk.additional.log")
+		// fmt.Printf("\n\nAdditional URL validator failed: %s", l)
+		return false
 	}
 
-	return false
+	// fmt.Printf("\nlinkSeemsOk 3: %d", len(matches))
+
+	// Check url against specific profile config regex
+	if !avoidCustomCheck {
+		r, _ := regexp.Compile(regexLinkOk)
+		if len(r.FindStringSubmatch(l)) > 0 {
+			return true
+		} else {
+			iolib.String2fileAppend(l, "./logs/linksNotOk.log")
+			// fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
+			return false
+		}
+	}
+
+	// fmt.Printf("\nlinkSeemsOk 4")
+
+	return true
 }
 
 func getNextLink() (int, string) {
@@ -360,7 +385,9 @@ func getNextLink() (int, string) {
 	maxURL := ""
 	var priority, maxPriority float64
 
-	// fmt.Printf("* getNextLink() %d links on the pool\n", len(lPool))
+	if len(lPool) == 0 {
+		return maxi, ""
+	}
 
 	for i, l := range lPool {
 		if l.Status == 4 { // bootstrapping url
@@ -375,7 +402,7 @@ func getNextLink() (int, string) {
 		// fmt.Printf("\n\ni,l = %d, %+v", i, l)
 		priority = float64(l.Count) * float64(l.Count) / (float64(domainCounter[l.Domain]) + 1.0)
 
-		if l.Status == 0 && priority > maxPriority && !isBanned(l.URL, l.Domain) && linkSeemsOk(l.URL) {
+		if l.Status == 0 && priority > maxPriority && !isBanned(l.URL, l.Domain) && linkSeemsOk(l.URL, true) {
 			// fmt.Printf("\n\nl.Count=%d, domainCounter[l.Domain]=%d, priority=%f, l.URL=%s", l.Count, domainCounter[l.Domain], priority, l.URL)
 
 			// Set this item as best candidate so far
@@ -396,6 +423,12 @@ func getNextLink() (int, string) {
 func addLink(link string, avoidFilters bool) bool {
 	// fmt.Printf("\n\naddLink(%s, %+v)", link, avoidFilters)
 	domain := getDomain(link)
+
+	if !linkSeemsOk(link, avoidFilters) { // Avoid links that do not pass keyword filter
+		// fmt.Println("***** Link seems not ok: ", link)
+		return false
+	}
+
 	if !avoidFilters {
 		if domain == "" { // Avoid null and local urls
 			return false
@@ -403,11 +436,6 @@ func addLink(link string, avoidFilters bool) bool {
 
 		if isBanned(link, domain) { // Avoid banned domains
 			// fmt.Println("***** Banned domain: ", link)
-			return false
-		}
-
-		if !linkSeemsOk(link) { // Avoid links that do not pass keyword filter
-			// fmt.Println("***** Link seems not ok: ", link)
 			return false
 		}
 
