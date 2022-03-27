@@ -343,7 +343,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	_, err := url.ParseRequestURI(l)
 	if err != nil {
 		iolib.String2fileAppend(l, "./logs/linksNotOk.ParseRequestURI.log")
-		fmt.Printf("\n\nParseRequestURI error: %s", err)
+		// fmt.Printf("\n\nParseRequestURI error: %s", err)
 		return false
 	}
 
@@ -365,7 +365,9 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	// Check url against specific profile config regex
 	if !avoidCustomCheck {
 		r, _ := regexp.Compile(regexLinkOk)
-		if len(r.FindStringSubmatch(l)) > 0 {
+		match := r.FindStringSubmatch(l)
+		if len(match) > 0 {
+			fmt.Printf("\nlinkSeemsOk: -%s- matches regexLinkOk: %s", match[1], l)
 			return true
 		} else {
 			iolib.String2fileAppend(l, "./logs/linksNotOk.log")
@@ -1079,6 +1081,10 @@ func addLinksOf(nextLink string, links []string) {
 
 func doNextLink(numLinksProcessed int) bool {
 	maxi, nextLink := getNextLink()
+
+	// Just for debug purposes, to show on screen why this url was accepted
+	linkSeemsOk(nextLink, false)
+
 	if nextLink == "" {
 		fmt.Println("* No more links available in the pool")
 		fmt.Println(maxi)
