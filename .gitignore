@@ -1,7 +1,5 @@
 old
 logs/*
 cache/*
-proxy.yaml
-revolution.yaml
-vaers.yaml
 output/*
+profiles/*
