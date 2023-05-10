@@ -1,6 +1,6 @@
 regexBannedDomains: "(?i)((facebook|twitter|reddit|instagram|google|youtube|etherscan|urldefense|thesexyouwant)\\.(com|org)|archive\\.org|repubblica\\.it|(^en)\\.wikipedia\\.org|anchor\\.fm|doi\\.org|github\\.com|blockscout|etherscan|polygonscan|qoinfaucet|pinterest)"
 
-regexLinkBannedTokens: "(?i)(login|signup|pdf|\\.(pdf|ps|xls|ods|csv|json|png|jpg|gif|zip|tar|gz|iso|rar|mp3|wav|avi|mpeg|mpg|mp4|mov|docx|exe|7z|ppt|doc|rs))"
+regexLinkBannedTokens: "(?i)(login|signup|search|pdf|\\.(pdf|ps|xls|ods|csv|json|png|jpg|gif|zip|tar|gz|iso|rar|mp3|wav|avi|mpeg|mpg|mp4|mov|docx|exe|7z|ppt|doc|rs|tgz))"
 
 engStopWordsWOthe: |
   a|and|be|have|i|in|of|that|to|with|from|is|on|up|for|should|even|why|by|during|we|could|but|about|as|or|this|at|not|all|other
@@ -14,7 +14,7 @@ engLowRelevancyWords: |
   |system|review|based|provide|results|additional|include|current|important|week|group|full|different|person|take|continue|national|needs*|millions*|requiremets*|working
   |your|more|says|read|make|made|see|does|due|she|one|said|being|had|need|them|many|used|must|do|they|it|he|twitter|facebook|date|time|pages*|topics*|example
   |things|real|wiki|early|year|currently|higher|specific|state|resources*|social|study|guidance|local|leave|online|centers*|email|blog|don|according|updates*d*|world
-  |cookies|javascript|google|internet|webinar|color|challenges*|click|faqs*|fig|cite|preprints*
+  |cookies|javascript|google|internet|webinar|color|challenges*|click|faqs*|fig|cite|preprints*|note|isbn
 
 specialStopwords: |
   https*|www|php|aspx|index|en|html
@@ -24,5 +24,5 @@ specialStopwords: |
 downloadTimeout: 8
 
 # // Search engine to feed w/ new URLs
-addUrl: https://search.aibull.io/addUrlPost.php?sender=goCrawler&url=
+# addUrl: https://search.aibull.io/addUrlPost.php?sender=goCrawler&url=
 
