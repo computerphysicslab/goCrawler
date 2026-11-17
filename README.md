@@ -147,7 +147,23 @@ gofmt -l .              # formatting check (should print nothing)
 ```
 
 The same commands are available as `make` targets: `make build`, `make test`, `make fmt`,
-`make vet`, `make run PROFILE=<name>` and `make clean`.
+`make vet`, `make run PROFILE=<name>`, `make selftest` and `make clean`.
+
+Every function in the Go sources has an English doc comment. Automated tests live next to the code
+they exercise (`crawler_test.go`, `storelib/store_test.go`, `robotspolicy/robotspolicy_test.go`).
+
+### Built-in self-test
+
+The binary can verify itself without network access or a profile file:
+
+```shell
+go run crawler.go --selftest     # or: make selftest
+```
+
+It checks tokenisation, domain extraction, keyword ranking, n-grams, the English reference corpus,
+the robots policy, frequency counting, the local SQLite store, invalid-backend handling and
+rejected-link deduplication. It prints `[PASS]`/`[FAIL]` per check and exits with status 0 only when
+all checks pass.
 
 ---
 
@@ -193,9 +209,9 @@ bootstrapingLinks:       # seed URLs
 The effective URL whitelist is built as
 `(?i)^https*://.*(<linkOk>|<curatedDomains>)` in `yamlInitSpecific()` (`crawler.go:1471`).
 
-**Important:** profiles stored in `profiles/` are *not* read from that directory. The profile YAML
-must be copied to the working directory, because the program opens `<name>.yaml` relative to `.`:
-the argument to `go run crawler.go <name>` is the profile filename without its extension.
+`yamlInitSpecific()` looks for `<name>.yaml` in `profiles/` first and falls back to the working
+directory for backwards compatibility. The argument to `go run crawler.go <name>` is the profile
+name without its extension; the resolved path is printed as `profile file:` at startup.
 
 ### Proxy (optional)
 
@@ -207,13 +223,8 @@ and used for HTTP requests. It is not included in the repository.
 ## Running the crawler
 
 ```shell
-# recommended: the Makefile copies the profile from profiles/ when needed
-make run PROFILE=crypto
-make run PROFILE=astrophotography
-
-# or do it manually: copy the profile to the working directory, then run
-cp profiles/crypto.yaml ./
-go run crawler.go crypto            # argument = YAML filename without extension
+make run PROFILE=crypto             # resolves profiles/crypto.yaml
+go run crawler.go astrophotography  # resolves profiles/astrophotography.yaml
 ```
 
 The crawler runs until its link pool is exhausted. Progress is printed to stdout, including
@@ -272,12 +283,38 @@ allowed:
 Cached pages are not re-checked, so a warm cache does not generate extra `robots.txt` traffic.
 Set `respectRobots: false` in `crawler.yaml` to disable the policy.
 
-### CPU usage
+### CPU usage and parallelisation
 
 The crawler is sequential: it does **not** use all available cores. In a controlled 106-second run
 on an 8-core machine it consumed 24.78 s user + 0.88 s system CPU, about **24 % of one core**
-(mostly waiting on the network). `GOMAXPROCS` defaults to 8, but no crawling work is parallelised;
-see roadmap item 14 for a worker-pool design.
+(mostly waiting on the network). `GOMAXPROCS` defaults to 8, but no crawling work is parallelised.
+
+**Can downloads be parallelised?** Yes, but the goal is overlapping *network latency*, not using the
+8 CPU cores: the workload is I/O-bound, so even a single core could drive many concurrent HTTP
+requests. Eight workers is a reasonable upper bound, not a requirement.
+
+The crawler is currently a single loop (`getNextLink` → `downloadCached` → filter → write output).
+These globals are mutated from that loop and would need protection or ownership separation:
+
+| Shared state | Location | Risk when parallel |
+|---|---|---|
+| `lPool []aLink` | `crawler.go:97` | status updates and appends race |
+| `domainCounter map[string]int` | `crawler.go:104` | priority calculation races |
+| `uniqueSignature map[string]string` | `crawler.go:966` | duplicate documents accepted twice |
+| `corpusFreqs freq` | `crawler.go:967` | map writes race |
+| `csvWriter` | `crawler.go:66` | `csv.Writer` is not concurrency-safe |
+| `logRejectedLink` sets and file appends | `crawler.go:327` | dedup and interleaved writes |
+| `cacheStore` | SQLite `SetMaxOpenConns(1)` / single Redis connection | serialises all traffic |
+| `robotsPolicy` | `robotspolicy/` | already mutex-protected; per-host delay needs reserving |
+
+Pure functions (tokenisation, language detection, HTML conversion, ranking) need no changes;
+config and the English reference corpus are read-only after initialisation.
+
+A safe design is a dispatcher goroutine owning `lPool`/`domainCounter`, N workers doing download
+and filtering, and an aggregator goroutine owning all result structures and file writes. Each worker
+must also respect per-domain politeness (including `Crawl-delay`). Expected gain is a large reduction
+in wall time (network latency dominates), but CPU usage will stay low and output ordering will change.
+This is roadmap item 14; it is **not implemented**. Use `go test -race` when implementing.
 
 ## Outputs
 
@@ -309,6 +346,28 @@ line, the curated text, and a `----` separator.
 | `linksNotOk.log` | **append-only** | Links failing the profile whitelist. |
 | `linksNotOk.additional.log` | **append-only** | Links failing the strict URL regex. |
 | `linksNotOk.ParseRequestURI.log` | **append-only** | Links failing Go's URI parser. |
+| `robotsBlocked.log` | **append-only, deduplicated** | URLs skipped because `robots.txt` disallows them. |
+| `<Profile>-YYYY-MM-DD-ZHH-MM-SS.txt` | one per run | Full console output of the session (see below). |
+
+### Session output files
+
+Every run tees its console output to `logs/<Profile>-<YYYY-MM-DD>-Z<HH>-<MM>-<SS>.txt`, where the
+timestamp is **UTC** (the `Z` prefix). Example: `Astrophotography-2026-11-17-Z20-30-33.txt`.
+The profile name is capitalised; the file contains the complete output from configuration loading
+to the final `Done!!!` message, including `[CACHE]` / `[ONLINE]` / `[ROBOTS-BLOCKED]` markers.
+
+### Measured cache benefit
+
+Two consecutive runs with the same `astrophotography` profile on this machine:
+
+| Run | Wall time | Cache hits | Online downloads | Documents | CPU |
+|---|---:|---:|---:|---:|---:|
+| Cold (empty cache) | 194 s | 0 | 76 | 35 | 16 % of one core |
+| Warm (populated cache) | 45 s | 76 | 0 | 35 | 53 % of one core |
+
+The warm run was about **4.3× faster**, produced exactly the same 35 documents and made zero HTTP
+requests. The SQLite file was 32 MB for those 76 pages. Note that the warm run is more CPU-dense
+(53 % vs 16 %) because it no longer waits on the network, but it is still single-threaded.
 
 > **Warning:** the three `linksNotOk*.log` files grow without limit and are never deduplicated. In
 > historical runs they reached about 1.9 GB (over 45 million lines), mostly repeated social-share and
@@ -368,7 +427,6 @@ alignment/registration and integration/stacking of astronomical images with keyw
 `pixinsight` and `siril`.
 
 ```shell
-cp profiles/astrophotography.yaml ./
 go run crawler.go astrophotography
 ```
 

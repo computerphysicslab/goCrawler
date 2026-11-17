@@ -36,6 +36,7 @@ func Init(backend, path string) (Store, error) {
 	}
 }
 
+// ensureDir creates the parent directory of a path if needed.
 func ensureDir(path string) error {
 	dir := filepath.Dir(path)
 	if dir == "." || dir == "" {

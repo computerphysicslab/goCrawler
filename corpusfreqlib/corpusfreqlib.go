@@ -47,6 +47,7 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
+// loadCorpus reads a BNC-style frequency file into a map.
 func loadCorpus(filename string) map[string]WordInfo {
 	if !fileExists(filename) {
 		fmt.Printf("\nError: Corpus data not found on %s", filename)
@@ -95,6 +96,7 @@ func loadCorpus(filename string) map[string]WordInfo {
 	return corpusFreqs
 }
 
+// Init loads and normalizes the English reference corpora.
 func Init() {
 	corpusFreqsEng = loadCorpus("./corpusfreqlib/all.num")
 	corpusFreqsCont = loadCorpus("./corpusfreqlib/contemporaryEnglish.txt")
@@ -114,12 +116,14 @@ func Init() {
 	Test()
 }
 
+// Freq returns the standard English frequency of a token.
 func Freq(token string) (numTotal int) {
 	numTotal = corpusFreqs[token].numTotal
 
 	return
 }
 
+// Test prints a few sample frequencies for manual verification.
 func Test() {
 	fmt.Printf("\n\n")
 	fmt.Printf("THE: %d\n", Freq("the"))

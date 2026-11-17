@@ -337,8 +337,19 @@ lo registro aquí y ajusto las secciones anteriores si hace falta.)_
    trabaja **desde cero reciclando código y estructuras**. Redis se mantiene como opción pero ya
    no es obligatorio. Implementación completa en §2.9. Preferencias a respetar: sin datos
    heredados, entorno limpio tras probar, y documentación actualizada.
-- **2026-11-17:** El usuario pidió una **prueba real** del buscador con el tema *astrophotography
-  image stacking*, **todo en inglés**. Ver §8: perfil nuevo, dos pasadas, resultados y aprendizajes.
+ - **2026-11-17:** El usuario pidió una **prueba real** del buscador con el tema *astrophotography
+   image stacking*, **todo en inglés**. Ver §8: perfil nuevo, dos pasadas, resultados y aprendizajes.
+
+### Políticas habituales de trabajo (reglas permanentes)
+
+- **Refrescar SIEMPRE la lista de tareas en la columna derecha de OpenCode**: usar la herramienta
+  de tareas (todowrite) al iniciar cualquier trabajo, marcar `in_progress` antes de empezar,
+  actualizar el estado en tiempo real (no agrupar completados al final) y dejar todo completado o
+  con el bloqueo explicado antes de responder. El usuario lo ha pedido expresamente (2026-11-17).
+- Todo el **código y la documentación del repo en inglés** (este `context-ai.md` es el diario
+  histórico en español; se mantiene en ambas copias).
+- Mantener el entorno limpio tras las pruebas (Redis parado, perfiles copiados a la raíz borrados).
+- Los ficheros de salida de cada ejecución se graban en `logs/<Perfil>-YYYY-MM-DD-ZHH-MM-SS.txt`.
 
 ---
 
@@ -482,5 +493,82 @@ El usuario pidió **focalizar la investigación** en
 - Informe guardado en
   `astronomia/SkyStacker/research/06-crawler-based-source-discovery-2026-11-17.md` (en inglés),
   con método, resultados, observaciones de robots.txt, nota de CPU y seguimiento sugerido.
-- README y roadmap actualizados: política robots documentada, ítem 12 marcado DONE (falta el delay
-  genérico configurable por dominio), ítem 18 (frecuencias desactualizadas) sigue pendiente.
+ - README y roadmap actualizados: política robots documentada, ítem 12 marcado DONE (falta el delay
+   genérico configurable por dominio), ítem 18 (frecuencias desactualizadas) sigue pendiente.
+
+## 12. Análisis de paralelización con 8 núcleos (2026-11-17)
+
+**Conclusión:** se puede paralelizar, pero el objetivo no es "usar los 8 cores" sino **solapar
+latencia de red**. El trabajo es I/O-bound (24 % de un núcleo medido), así que 8 workers es un
+límite razonable, no un requisito; el cuello no es la CPU.
+
+Estado compartido que habría que proteger o dar dueño único (ver tabla en README §"CPU usage"):
+`lPool`, `domainCounter`, `uniqueSignature`, `corpusFreqs`, `csvWriter` (no concurrency-safe),
+los sets/ficheros de `logRejectedLink`, `cacheStore` (SQLite `SetMaxOpenConns(1)` / Redis una sola
+conexión) y `robotsPolicy` (ya tiene mutex, pero `Wait` debería reservar el hueco por host).
+El código puro (tokenización, whatlanggo, html2text, collectlinks, ranking, stopwords) no cambia;
+config y `corpusfreqlib` son read-only tras init.
+
+Diseño propuesto (roadmap 14, **no implementado**): un dispatcher dueño de `lPool`/`domainCounter`
+que alimenta un canal, N workers que descargan y filtran, y un agregador dueño de
+`uniqueSignature`, `corpusFreqs`, CSV, corpus y JSON. Añadir rate limit por dominio y validar con
+`go test -race`. Ganancia esperada: gran reducción de tiempo wall; el orden de salida cambiaría.
+
+## 13. Comentarios en inglés y autotests (2026-11-17)
+
+- El usuario pidió **comentarios en inglés para cada función** y **autotests**. Regla a respetar:
+  desde ahora **todo el código y la documentación del repo en inglés** (`context-ai.md` es la
+  excepción histórica en español, por ser el diario de contexto del usuario).
+- Se añadieron doc comments en inglés a **todas las funciones** de `crawler.go`, `corpusfreqlib`,
+  `iolib`, `stringlib`, `redislib`, `storelib` y `robotspolicy`, incluidas las de test. Verificado
+  con un script que comprueba que cada `func` tiene una línea `//` inmediatamente anterior.
+- **Autotests nuevos:**
+  - `crawler_test.go` (paquete main): 11 tests de funciones puras y estado — `tokenize`,
+    `splitParagraphs`, dominios, `rankingByKeywords`, `analyze`, `bestParagraph`, frecuencias,
+    n-gramas, `linkSeemsOk`, `domainHadFailed` (sin inyección de regex) y dedup de logs. Usa
+    `t.TempDir()` + `os.Chdir` para no tocar los logs reales.
+  - **Modo `--selftest`** implementado **dentro de `crawler.go`** (importante: `go run crawler.go`
+    compila solo ese fichero, así que `runSelfTests` no puede vivir en otro archivo del paquete).
+    Imprime `[PASS]`/`[FAIL]` por check y sale 0 solo si todo pasa; 11 checks ✅.
+  - `Makefile`: nuevo target `selftest` (`go run crawler.go --selftest`).
+- Nota de implementación: `setupTestConfig()` vive en `crawler.go` (no en `_test.go`) porque lo
+  usan tanto los tests como `--selftest`. Las funciones `freq.add` y `analyze` eliminan tokens de
+  1-2 caracteres, por eso los tests usan `alpha`/`beta` en vez de `x`/`y`.
+ - Verificación: `go build ./...`, `go vet ./...`, `go test ./...` y `go run crawler.go --selftest`
+   ✅. Roadmap: ítem 9 marcado DONE.
+
+## 14. Ficheros de sesión y rendimiento de la caché (2026-11-17)
+
+- El usuario pidió que la salida en pantalla se grabe en ficheros tipo
+  **`Astrophotography-2026-11-17-Z20-30-33.txt`**. Implementado `startSessionOutput()` en
+  `crawler.go`: crea `logs/<Perfil>-YYYY-MM-DD-ZHH-MM-SS.txt` con **timestamp UTC** (prefijo `Z`),
+  nombre del perfil capitalizado, y hace *tee* de `os.Stdout` al terminal y al fichero mediante
+  `os.Pipe` + `io.MultiWriter`. Se cierra con `defer` al terminar `main`. Verificado: ficheros
+  de 28-65 KB con la salida completa (config, `[CACHE]`/`[ONLINE]`, `Done!!!`).
+- **Medición del caché SQLite** con el perfil `astrophotography`, dos rondas consecutivas:
+  - **Fría** (caché vacía): **194 s**, 0 `[CACHE]`, 76 `[ONLINE]`, 35 documentos, CPU 16 % de un
+    núcleo, BD final de **32 MB**.
+  - **Caliente** (misma BD): **45 s**, **76 `[CACHE]`**, 0 `[ONLINE]`, los **mismos 35 documentos**,
+    CPU 53 % de un núcleo.
+  - **Aceleración ≈ 4,3×**, cero peticiones HTTP en la ronda caliente y resultados idénticos.
+    La CPU sube porque desaparece la espera de red, pero sigue siendo un solo hilo de trabajo.
+- README actualizado con la tabla de sesiones y la tabla fría/caliente. Los ficheros de sesión y
+  `cache/cache.db` quedan en `logs/` y `cache/` (ignorados por Git).
+
+## 15. Crawler en background, política de tareas e ítem 8 (2026-11-17)
+
+- El usuario pidió **poner a trabajar el crawler de fondo con la research de SkyStacker** mientras
+  se actualizaba el repo y se avanzaba un punto del roadmap.
+  - Lanzado con `setsid /tmp/opencode/crawler.bin skystacker-research` (PID 1194186 al arrancar),
+    totalmente desacoplado del shell: `nohup ... &` dentro de la herramienta bash murió al cerrarse
+    la sesión; `setsid` + binario compilado sí sobrevive. Salida en `/tmp/opencode/skystacker_bg2.log`
+    y fichero de sesión en `logs/Skystacker-research-...txt`.
+  - **Política añadida a §7**: refrescar SIEMPRE la lista de tareas en la columna derecha de
+    OpenCode (todowrite en tiempo real, nunca agrupar completados al final).
+- **Roadmap ítem 8 completado** (perfiles desde `profiles/` sin copiar a la raíz):
+  `yamlInitSpecific()` usa ahora una instancia local de Viper, busca `./profiles/<name>.yaml`
+  primero y hace fallback a `.`; imprime `profile file:` al arrancar. Makefile `run` simplificado
+  (sin `cp`). Verificado: `go run crawler.go crypto` cargó
+  `.../profiles/crypto.yaml` con la raíz limpia.
+- README y roadmap actualizados. Estado del roadmap: **ítems 1–6, 8, 9 y 12 DONE**; pendientes
+  7, 10–11, 13–18.

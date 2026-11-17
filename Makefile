@@ -1,7 +1,7 @@
 BINARY := crawler
 PROFILE ?=
 
-.PHONY: all build run test fmt vet clean
+.PHONY: all build run test selftest fmt vet clean
 
 all: build
 
@@ -11,13 +11,13 @@ build:
 
 run:
 	@test -n "$(PROFILE)" || (echo "Usage: make run PROFILE=<name>" && exit 1)
-	@if [ ! -f "$(PROFILE).yaml" ] && [ -f "profiles/$(PROFILE).yaml" ]; then \
-		cp "profiles/$(PROFILE).yaml" .; \
-	fi
 	go run crawler.go $(PROFILE)
 
 test:
 	go test ./...
+
+selftest:
+	go run crawler.go --selftest
 
 fmt:
 	gofmt -w .

@@ -29,6 +29,7 @@ type Policy struct {
 	lastReq   map[string]time.Time
 }
 
+// New creates a policy with an HTTP client and empty per-host caches.
 func New(userAgent string, timeout time.Duration) *Policy {
 	return &Policy{
 		client:    &http.Client{Timeout: timeout},
@@ -38,6 +39,7 @@ func New(userAgent string, timeout time.Duration) *Policy {
 	}
 }
 
+// hostKeyOf splits a URL into its host key and request path.
 func hostKeyOf(rawURL string) (string, string, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -49,6 +51,7 @@ func hostKeyOf(rawURL string) (string, string, error) {
 	return u.Scheme + "://" + u.Host, u.RequestURI(), nil
 }
 
+// rulesFor fetches, parses and caches the robots.txt rules of a host.
 func (p *Policy) rulesFor(hostKey string) *hostRules {
 	p.mu.Lock()
 	defer p.mu.Unlock()

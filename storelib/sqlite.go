@@ -12,6 +12,7 @@ type sqliteStore struct {
 	path string
 }
 
+// newSQLiteStore opens the SQLite cache database and creates its schema.
 func newSQLiteStore(path string) (Store, error) {
 	if err := ensureDir(path); err != nil {
 		return nil, fmt.Errorf("creating cache dir: %w", err)
@@ -44,14 +45,17 @@ func newSQLiteStore(path string) (Store, error) {
 	return &sqliteStore{db: db, path: path}, nil
 }
 
+// Name returns a human-readable backend identifier.
 func (s *sqliteStore) Name() string { return "SQLite (" + s.path + ")" }
 
+// Exists reports whether a key is present in the cache.
 func (s *sqliteStore) Exists(key string) bool {
 	var one int
 	err := s.db.QueryRow(`SELECT 1 FROM cache WHERE key = ?`, key).Scan(&one)
 	return err == nil
 }
 
+// Get returns the cached value of a key.
 func (s *sqliteStore) Get(key string) string {
 	var value string
 	if err := s.db.QueryRow(`SELECT value FROM cache WHERE key = ?`, key).Scan(&value); err != nil {
@@ -60,12 +64,14 @@ func (s *sqliteStore) Get(key string) string {
 	return value
 }
 
+// Set inserts or updates a cached value.
 func (s *sqliteStore) Set(key, value string) error {
 	_, err := s.db.Exec(`INSERT INTO cache(key, value) VALUES(?, ?)
 		ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP`, key, value)
 	return err
 }
 
+// Close closes the database handle.
 func (s *sqliteStore) Close() error {
 	return s.db.Close()
 }

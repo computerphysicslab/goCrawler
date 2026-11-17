@@ -58,15 +58,20 @@ editing `crawler.yaml`.
 `--cache-path`, `--max-links`, `--verbose`, `--dry-run`.
 **Impact:** scriptable, no file edits needed for common options.
 
-### 8. Load profiles from `profiles/` directly
-**Problem:** the YAML must be copied to the working directory before every run.
+### 8. Load profiles from `profiles/` directly — **DONE (2026-11-17)**
+**Problem (solved):** the YAML had to be copied to the working directory before every run.
+`yamlInitSpecific()` now uses a local Viper instance that looks in `profiles/` first and falls back
+to `.`; the resolved path is printed at startup. The Makefile `run` target no longer copies files.
 **Proposal:** search `./profiles/<name>.yaml` first, then fall back to `./<name>.yaml` for backwards
 compatibility.
 **Impact:** removes a manual, error-prone step.
 
-### 9. Unit tests for the crawling and filtering logic
-**Problem:** only the cache backends have tests. Core functions (`linkSeemsOk`, `rankingByKeywords`,
-`analyze`, stopword filtering, URI validation) are untested.
+### 9. Unit tests for the crawling and filtering logic — **DONE (2026-11-17)**
+**Problem (solved):** only the cache backends were tested. Implemented: `crawler_test.go` covers
+tokenisation, paragraph splitting, domain extraction, keyword ranking, stopword filtering, best
+paragraph, frequencies, n-grams, link validation, failed-domain counting and log deduplication.
+A `--selftest` CLI mode performs the same kind of checks from the compiled binary. Remaining:
+end-to-end tests of `doNextLink` with an HTTP fixture server.
 **Proposal:** table-driven tests with representative URLs, English/non-English paragraphs and
 boundary cases for every threshold.
 **Impact:** safe refactoring and reproducible behaviour.
@@ -106,10 +111,37 @@ and add a query command/CLI that returns matching documents and snippets.
 item in this roadmap.**
 
 ### 14. Concurrent workers with per-domain rate limiting
-**Problem:** crawling is completely sequential; fetching hundreds of pages is slow.
-**Proposal:** introduce a bounded worker pool with a shared queue and per-domain rate limits.
-Requires making `lPool`, `domainCounter`, the logs and the SQLite writes thread-safe.
-**Impact:** large speed-up, but significant refactoring and new race-condition risks.
+**Problem:** crawling is completely sequential; fetching hundreds of pages is slow. A 106-second
+run used only 24.78 s user + 0.88 s system CPU (24 % of one core on an 8-core machine), so the
+bottleneck is network latency, not CPU.
+
+**Feasibility analysis (2026-11-17):** parallelisation is feasible, but it is an **I/O concurrency**
+change, not a way to "use the 8 cores". Eight workers is a sensible upper bound; the right worker
+count should be tuned against politeness limits, not `runtime.NumCPU()`.
+
+State that must be protected or given a single owner:
+
+- `lPool []aLink` (status changes in `getNextLink`/`doNextLink`, appends and `Count++` in `addLink`);
+- `domainCounter map[string]int` (read for priority, written by `increaseDomainCounter`);
+- `uniqueSignature map[string]string` (check-then-set: two workers could accept the same document);
+- `corpusFreqs freq` (map writes);
+- `csvWriter` (not concurrency-safe; `log.Logger` itself is safe);
+- `logRejectedLink` sets plus the non-atomic `String2fileAppend` calls;
+- `cacheStore`: SQLite is opened with `SetMaxOpenConns(1)` and `redislib` reuses one connection —
+  either serialise access or use a real connection pool;
+- `robotsPolicy` already has a mutex, but its `Wait` should reserve the next per-host slot instead
+  of only recording the last request time.
+
+Pure code (tokenisation, `whatlanggo`, `html2text`, `collectlinks`, ranking, stopword filtering) can
+run unchanged in workers; configuration and `corpusfreqlib` are read-only after initialisation.
+
+**Proposal:** one dispatcher goroutine owns the link pool and counters and feeds a channel; N workers
+download, parse and filter; one aggregator goroutine owns `uniqueSignature`, `corpusFreqs`, the CSV,
+the corpus file and the JSON dumps. Add per-domain rate limiting and `Crawl-delay`, and either keep
+results ordered by an index or accept unordered output. Validate with `go test -race`.
+
+**Impact:** large wall-time reduction (I/O bound); CPU stays low. Refactoring effort is significant
+and output ordering changes. **Status: proposed, not implemented.**
 
 ### 15. Better ranking: normalize length and add semantic similarity
 **Problem:** `rankingByKeywords` divides by `sqrt(1 + tokenCount)`, so long, highly relevant
@@ -158,6 +190,6 @@ of the main results.
 
 ## Status
 
-Items **1–6 and 12 are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
+Items **1–6, 8, 9 and 12 are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
 across runs, not only within a run; item 12 covers robots.txt, User-Agent and Crawl-delay, but not a
-general configurable delay). Items **7–11, 13–17 and 18 remain proposed / not started**.
+general configurable delay). Items **7, 10–11, 13–17 and 18 remain proposed / not started**.
