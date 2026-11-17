@@ -11,6 +11,7 @@ import (
 	goCorpusFreqLib "goCrawler/corpusfreqlib"
 )
 
+// main prints sample frequencies from the English reference corpus.
 func main() {
 	goCorpusFreqLib.Init()
 	goCorpusFreqLib.Test()

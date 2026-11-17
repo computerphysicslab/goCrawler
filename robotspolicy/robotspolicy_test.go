@@ -10,6 +10,7 @@ import (
 	"goCrawler/robotspolicy"
 )
 
+// TestAllowsBlocksAndCrawlDelay verifies allow, disallow and Crawl-delay handling.
 func TestAllowsBlocksAndCrawlDelay(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/robots.txt" {
@@ -41,6 +42,7 @@ func TestAllowsBlocksAndCrawlDelay(t *testing.T) {
 	}
 }
 
+// TestMissingRobotsFailsOpen verifies that a missing robots.txt allows crawling.
 func TestMissingRobotsFailsOpen(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)

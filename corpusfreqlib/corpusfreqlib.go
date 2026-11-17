@@ -21,7 +21,6 @@ type WordInfo struct {
 	numDocs    int // number of documents the word was found on, out of 4124
 }
 
-// var corpusFreqs = map[string]WordInfo{
 // 	"!!WHOLE_CORPUS": {100106029, "!!ANY", 4124},
 // 	"the":            {6187267, "at0", 4120},
 // 	"of":             {2941444, "prf", 4108},
@@ -31,7 +30,6 @@ type WordInfo struct {
 // 	"to":             {1620850, "to0", 4115},
 // 	"it":             {1089186, "pnp", 4097},
 // 	"is":             {998389, "vbz", 4097},
-// }
 
 var corpusFreqs = map[string]WordInfo{}     // English corpus (classical + contenmporary)
 var corpusFreqsEng = map[string]WordInfo{}  // Classical English
@@ -75,11 +73,7 @@ func loadCorpus(filename string) map[string]WordInfo {
 
 	for scanner.Scan() {
 		l = scanner.Text()
-		// fmt.Println(l)
 		numLine++
-		// if numLine > 100000 {
-		// 	panic(1)
-		// }
 
 		_, err := fmt.Sscanf(l, "%d %s %s %d", &numTotal, &word, &POStagging, &numDocs)
 		if err != nil {
@@ -87,7 +81,6 @@ func loadCorpus(filename string) map[string]WordInfo {
 		}
 
 		if corpusFreqs[word].numTotal == 0 {
-			// fmt.Printf("\n"+`"%s": {%d, "%s", %d},`, word, numTotal, POStagging, numDocs)
 			corpusFreqs[word] = WordInfo{numTotal, POStagging, numDocs}
 		}
 	}

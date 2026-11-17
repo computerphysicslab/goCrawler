@@ -1,4 +1,4 @@
-// aggregates a custom topic related research documents
+// Package main implements a topic-restricted web crawler that builds curated English corpora.
 package main
 
 import (
@@ -25,8 +25,8 @@ import (
 	"github.com/jackdanger/collectlinks"
 	snowballeng "github.com/kljensen/snowball/english"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/slog"
 	"jaytaylor.com/html2text"
+	"log/slog"
 
 	"github.com/abadojack/whatlanggo"
 
@@ -169,8 +169,8 @@ func rejectionSummary() []interface{} {
 ****************************************************************************************************************/
 
 var csvWriter *csv.Writer
+var csvFile *os.File
 
-// csvInit creates the ranking CSV writer and opens its output file.
 // csvInit creates the ranking CSV writer, appending when resuming.
 func csvInit() {
 	var file *os.File
@@ -183,11 +183,9 @@ func csvInit() {
 	if err != nil {
 		log.Fatal("Cannot create file: ", err)
 	}
-	// defer file.Close()
-
+	csvFile = file
 	csvWriter = csv.NewWriter(file)
 	csvWriter.Comma = '\t'
-	// defer csvWriter.Flush()
 }
 
 /***************************************************************************************************************
@@ -234,9 +232,6 @@ func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	if err != nil {
 		return
 	}
-	// if err != nil {
-	// 	panic(fmt.Errorf("http.NewRequest error: %s", err))
-	// }
 
 	// To avoid EOF errors
 	req.Close = true
@@ -248,8 +243,6 @@ func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	if printLog {
 		fmt.Printf("\nEnd downloading")
 	}
-
-	// defer req.Body.Close()
 
 	return
 }
@@ -264,7 +257,6 @@ func download(urlLink string) (string, []string, error) {
 	}
 	logDownload.Printf("\tRequested")
 
-	// resp, err := http.Get(urlLink)
 	resp, err := proxyGet(urlLink, true)
 	if err != nil {
 		logDownload.Printf("\tHttp transport error:\n\t\t%s", err)
@@ -272,7 +264,7 @@ func download(urlLink string) (string, []string, error) {
 		return "", nil, err
 	}
 
-	// Get content
+	// Read the response body.
 	bodyBytes, err := ioutil.ReadAll(io.LimitReader(resp.Body, maxDownloadBytes))
 	if err != nil {
 		logDownload.Printf("\t%s%s", "Read error: ", err)
@@ -280,33 +272,17 @@ func download(urlLink string) (string, []string, error) {
 	}
 	resp.Body.Close() // must close
 	resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-	// fmt.Printf("\n\nresp.Body: %+v", resp.Body)
 
-	// Get links
+	// Extract links from the HTML body.
 	links := collectlinks.All(resp.Body) // Here we use the collectlinks package
-	// fmt.Printf("\n\nlinks: %+v", links)
 
-	// for _, link := range links {
-	// 	fmt.Println(link)
-	// }
-
-	// Save html content to disk
-	// err = ioutil.WriteFile("./output.html", bodyBytes, 0644)
-	// if err != nil {
-	// 	return "", nil, err
-	// 	// panic(fmt.Errorf("Saving html to disk: %s", err))
-	// }
-
-	// Get plain text content
-	// plain, err := html2text.FromString(string(bodyBytes), html2text.Options{PrettyTables: true})
+	// Convert the HTML body to plain text.
 	plain, err := html2text.FromString(string(bodyBytes), html2text.Options{PrettyTables: false})
-	// fmt.Printf("\n\nplain: %+v", plain)
 	if err != nil {
 		logDownload.Printf("\t%s%s", "html2text.FromString fails: ", err)
 		return "", nil, err
 	}
 
-	// fmt.Println(plain)
 	logDownload.Printf("\t%s len(plain): %d len(links): %d", "Ok: ", len(plain), len(links))
 
 	return plain, links, nil
@@ -365,7 +341,6 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 func getDomain(link string) string {
 	u, err := url.Parse(link)
 	if err != nil {
-		// log.Fatal(err)
 		log.Println("getDomain error: ", err)
 		return ""
 	}
@@ -382,7 +357,6 @@ func getDomain(link string) string {
 func getSecondLevelDomain(link string) string {
 	u, err := url.Parse(link)
 	if err != nil {
-		// log.Fatal(err)
 		log.Println("getSecondLevelDomain error: ", err)
 		return ""
 	}
@@ -391,7 +365,6 @@ func getSecondLevelDomain(link string) string {
 	var re = regexp.MustCompile(`^.*?([^\.]+\.[^\.]+)$`)
 	mainDomain = re.ReplaceAllString(mainDomain, `$1`)
 
-	// fmt.Printf("\n########## getSecondLevelDomain: %s", mainDomain)
 	return mainDomain
 }
 
@@ -463,24 +436,17 @@ func logRejectedLink(filename, link string) {
 
 // linkSeemsOk validates a link through the URL and profile filter chain.
 func linkSeemsOk(l string, avoidCustomCheck bool) bool {
-	// fmt.Printf("\n\nlinkSeemsOk(%s , %v)", l, avoidCustomCheck)
 
 	if len(l) < 13 || len(l) > 256 {
 		return false
 	}
 
-	// fmt.Printf("\nlinkSeemsOk 1")
-
-	// Standard URL validation in goLang
 	_, err := url.ParseRequestURI(l)
 	if err != nil {
 		countRejection("invalid_url")
 		logRejectedLink("linksNotOk.ParseRequestURI.log", l)
-		// fmt.Printf("\n\nParseRequestURI error: %s", err)
 		return false
 	}
-
-	// fmt.Printf("\nlinkSeemsOk 2")
 
 	// Additional URL validator to avoid panic error cases like this:
 	// http://(http://health.org/2010/04/17/
@@ -490,13 +456,10 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	if len(matches) < 1 {
 		countRejection("invalid_url")
 		logRejectedLink("linksNotOk.additional.log", l)
-		// fmt.Printf("\n\nAdditional URL validator failed: %s", l)
 		return false
 	}
 
-	// fmt.Printf("\nlinkSeemsOk 3: %d", len(matches))
-
-	// Check url against specific profile config regex
+	// Check the URL against the profile whitelist.
 	if !avoidCustomCheck {
 		r, _ := regexp.Compile(regexLinkOk)
 		match := r.FindStringSubmatch(l)
@@ -506,12 +469,9 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 		} else {
 			countRejection("off_topic_url")
 			logRejectedLink("linksNotOk.log", l)
-			// fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
 			return false
 		}
 	}
-
-	// fmt.Printf("\nlinkSeemsOk 4")
 
 	return true
 }
@@ -537,11 +497,9 @@ func getNextLink() (int, string) {
 			break
 		}
 
-		// fmt.Printf("\n\ni,l = %d, %+v", i, l)
 		priority = float64(l.Count) * float64(l.Count) / (float64(domainCounter[l.Domain]) + 1.0)
 
 		if l.Status == 0 && priority > maxPriority && !isBanned(l.URL, l.Domain) && linkSeemsOk(l.URL, true) {
-			// fmt.Printf("\n\nl.Count=%d, domainCounter[l.Domain]=%d, priority=%f, l.URL=%s", l.Count, domainCounter[l.Domain], priority, l.URL)
 
 			// Set this item as best candidate so far
 			maxi = i
@@ -560,11 +518,9 @@ func getNextLink() (int, string) {
 
 // addLink validates a link and adds or updates it in the pool.
 func addLink(link string, avoidFilters bool) bool {
-	// fmt.Printf("\n\naddLink(%s, %+v)", link, avoidFilters)
 	domain := getDomain(link)
 
 	if !linkSeemsOk(link, avoidFilters) { // Avoid links that do not pass keyword filter
-		// fmt.Println("***** Link seems not ok: ", link)
 		return false
 	}
 
@@ -574,11 +530,10 @@ func addLink(link string, avoidFilters bool) bool {
 		}
 
 		if isBanned(link, domain) { // Avoid banned domains
-			// fmt.Println("***** Banned domain: ", link)
 			return false
 		}
 
-		// into canonical link by removing cgi parameters
+		// Canonicalize the link by removing CGI parameters.
 		regex := `\?.*$`
 		rs := regexp.MustCompile(regex)
 		link2 := rs.ReplaceAllString(link, "")
@@ -588,7 +543,7 @@ func addLink(link string, avoidFilters bool) bool {
 		}
 	}
 
-	// Full scan search for the link
+	// Look for an existing entry in the link pool.
 	for i, l := range lPool {
 		if l.URL == link {
 			lPool[i].Count++
@@ -596,7 +551,7 @@ func addLink(link string, avoidFilters bool) bool {
 		}
 	}
 
-	// Link is new
+	// Register a new link in the pool.
 	if avoidFilters {
 		lPool = append(lPool, aLink{URL: link, Domain: domain, Count: 1, Status: 4})
 	} else {
@@ -621,7 +576,6 @@ func lPoolDump() {
 	if err != nil {
 		fmt.Println("error: ", err)
 	}
-	// fmt.Println(string(jdata))
 	jsonFile, err := os.Create("./output/LPool.json")
 	if err != nil {
 		log.Println(err)
@@ -635,7 +589,6 @@ func domainCounterDump() {
 	if err != nil {
 		fmt.Println("domainCounterDump error: ", err)
 	}
-	// fmt.Println(string(jdata))
 	jsonFile, err := os.Create("./output/domainCounter.json")
 	jsonFile.Write(jdata)
 }
@@ -667,8 +620,6 @@ func domainHadFailed(domain string) bool {
 ****************************************************************************************************************/
 
 // tokenize splits text into tokens on non-alphanumeric characters.
-// Tokenizer
-// The tokenizer is the first step of text analysis. Its job is to convert text into a list of tokens. Our implementation splits the text on a word boundary and removes punctuation marks
 func tokenize(text string) []string {
 	return strings.FieldsFunc(text, func(r rune) bool {
 		// Split on any character that is not a letter or a number.
@@ -685,7 +636,6 @@ func tokensCount(text string) int {
 func splitParagraphs(text string) []string {
 	re := regexp.MustCompile(`[\r\n]+`)
 	ar := re.Split(text, -1)
-	// goDebug.Print(ar)
 
 	return ar
 }
@@ -695,34 +645,21 @@ func rankingByKeywords(text string) float64 {
 	r, _ := regexp.Compile(regexRankingKeywords)
 	rr := r.FindAllStringSubmatch(text, -1)
 
-	// logRanking.Printf("\nlen(r.FindAllStringSubmatch(text, -1)): %d", len(r.FindAllStringSubmatch(text, -1)))
-	// logRanking.Printf("\n1+len(tokenize(text)): %d", 1+len(tokenize(text)))
-	// logRanking.Printf("\nrr: %+v", rr)
-	// if len(text) > 1000 {
-	// 	logRanking.Printf("\n%s", text[:1000])
-	// }
-
 	var uniqueK = make(map[string]int)
 
 	for _, k := range rr {
 		if len(k[1]) < 3 {
 			continue
 		}
-		// logRanking.Printf("\nk: %+v", k)
 		uniqueK[strings.ToLower(k[1])]++
 	}
-
-	// logRanking.Printf("\nuniqueK: %+v", uniqueK)
 
 	var ks []string
 	for kk := range uniqueK {
 		ks = append(ks, kk)
 	}
 
-	// return 100.0 * float64(len(r.FindAllStringSubmatch(text, -1))) / math.Sqrt(float64(1+len(tokenize(text))))
 	rank := 100.0 * float64(len(ks)) / math.Sqrt(float64(1+len(tokenize(text))))
-
-	// logRanking.Printf("\nRank: %f", rank)
 
 	return rank
 }
@@ -758,12 +695,8 @@ func lowercaseFilter(tokens []string) []string {
 // stopWordsCount counts stopwords in a text.
 func stopWordsCount(text string) int {
 	regex := `(?i)\W(` + engStopWords + `)\W`
-	// goDebug.Print(regex)
 	rs := regexp.MustCompile(regex)
-	// t2 := rs.ReplaceAllString(text, " _ ")
-	// goDebug.Print(t2)
 	matches := rs.FindAllStringSubmatch(" "+text+" ", -1)
-	// goDebug.Print(matches)
 
 	return len(matches)
 }
@@ -795,9 +728,7 @@ func lowRelevancyWordsOnBorderCount(text string) int {
 }
 
 // stopwordFilter removes stopwords from a text.
-// Remove stopwords
 func stopwordFilter(text string) string {
-	// fmt.Println("t1: ", text)
 
 	// Words must be separated by 2 spaces to regexp find all stopwords
 	doubleSpace := `(\W+)`
@@ -808,8 +739,6 @@ func stopwordFilter(text string) string {
 	text = fmt.Sprintf(" %s ", text)
 	text2 := rs.ReplaceAllString(text, ` `)
 	text2 = strings.TrimSpace(text2)
-
-	// fmt.Println("t2: ", text2)
 
 	return text2
 }
@@ -826,18 +755,11 @@ func stemmerFilter(tokens []string) []string {
 // analyze lowercases and filters tokens before frequency counting.
 func analyze(t string) []string {
 	tokens := tokenize(t)
-	// fmt.Println(tokens)
 
 	lTokens := lowercaseFilter(tokens)
-	// fmt.Println(lTokens)
 
 	nonstopTokens := tokenize(stopwordFilter(strings.Join(lTokens[:], " ")))
-	// fmt.Println("\nnonstopTokens: ", nonstopTokens)
 
-	// stemmedTokens := stemmerFilter(nonstopTokens)
-	// fmt.Println(stemmedTokens)
-
-	// return stemmedTokens
 	return nonstopTokens
 }
 
@@ -915,9 +837,7 @@ func ngramsOf(t string, n int) []string {
 		// Useful sentences are stored with no duplication on uniqueSentenceSignatures value field
 		if uniqueSentenceSignatures[sentenceSignature] == "" {
 			uniqueSentenceSignatures[sentenceSignature] = p
-			// fmt.Printf("uniqueSentenceSignatures: + %s\n", p)
 		} else {
-			// fmt.Printf("uniqueSentenceSignatures: - %s\n", p)
 		}
 	}
 
@@ -958,7 +878,6 @@ func ngramsOf(t string, n int) []string {
 						ngrams = append(ngrams, ngramCandidate)
 					}
 				}
-				// fmt.Println("ngramCandidate, stopWordsCount: ", ngramCandidate, stopWordsCount(ngramCandidate))
 			}
 
 			for i := n - 1; i > 0; i-- {
@@ -986,7 +905,6 @@ func ngramsFreqsOf(t string, n int) []kv {
 			break
 		}
 		limitedNgramsFreqSorted = append(limitedNgramsFreqSorted, kv{Key: anNgramFreq.Key, Value: anNgramFreq.Value})
-		// fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
 	}
 
 	return limitedNgramsFreqSorted
@@ -1093,26 +1011,32 @@ func ngramsFreqsOfAll(t string, nMax int) []kv { // All n's from nMax to 2 decre
 ****************************************************************************************************************
 ****************************************************************************************************************/
 
-// Logger
+// File loggers are initialized after the logs directory is created.
 var (
-	outfile, _  = os.Create("./logs/download.log")
+	outfile, outfile3, outfile4 *os.File
+	logDownload                 = log.New(io.Discard, "", 0)
+	logCGI                      = log.New(io.Discard, "", 0)
+	logDomainFailed             = log.New(io.Discard, "", 0)
+)
+
+// initFileLoggers opens the log files. It must run after main creates ./logs.
+func initFileLoggers() {
+	outfile, _ = os.Create("./logs/download.log")
 	logDownload = log.New(outfile, "", 0)
-)
-
-// var (
-// 	outfile2, _ = os.Create("./logs/ranking.log")
-// 	logRanking  = log.New(outfile2, "", 0)
-// )
-
-var (
 	outfile3, _ = os.Create("./logs/cgi.log")
-	logCGI      = log.New(outfile3, "", 0)
-)
-
-var (
-	outfile4, _     = os.Create("./logs/domainFailed.log")
+	logCGI = log.New(outfile3, "", 0)
+	outfile4, _ = os.Create("./logs/domainFailed.log")
 	logDomainFailed = log.New(outfile4, "", 0)
-)
+}
+
+// closeFileLoggers flushes and closes the log files.
+func closeFileLoggers() {
+	for _, f := range []*os.File{outfile, outfile3, outfile4} {
+		if f != nil {
+			f.Close()
+		}
+	}
+}
 
 var uniqueSignature = make(map[string]string)
 var corpusFreqs freq = make(freq)
@@ -1122,9 +1046,7 @@ func addLinksOf(nextLink string, links []string) {
 	linksAdded := 0
 	// add links to pool
 	for _, link := range links {
-		// fmt.Printf("\nfor _, link := range links ... =>  %s", link)
 		if strings.Contains(getDomain(link), getSecondLevelDomain(nextLink)) {
-			// fmt.Printf("\nSite link ignored: %s", link)
 		} else {
 			if addLink(link, false) {
 				linksAdded++
@@ -1158,7 +1080,6 @@ func doNextLink(numLinksProcessed int) bool {
 	// download process or the afterward process.
 
 	content, links, err := downloadCached(nextLink)
-	// fmt.Printf("\ncontent, links, err := downloadCached(nextLink) => links = %+v", links)
 	if err != nil {
 		lPool[maxi].Status = 3
 		fmt.Println("\nDownload error: ", strings.Trim(err.Error(), "\n"))
@@ -1173,65 +1094,42 @@ func doNextLink(numLinksProcessed int) bool {
 
 	// Tokenizer url keywords frequencies
 	// f.add(nextLink)
-	// g := rSortFreq(f)
-	// fmt.Println("\n\nTokenizer frequencies: ", g)
 
 	// Split content into paragraphs
 	paragraphs := splitParagraphs(content)
-	// goDebug.Print(paragraphs)
 
 	// Remove urls, imgs, long words and low stopwords paragraphs from text
 	for i, p := range paragraphs {
 		// Language detection
 
-		// regex0 := `(?i)([ñçüịủĐứđượđềộềậệụạă])` // To avoid processing international characters that behave as a word separator, like "ñ"
-		// r0 := regexp.MustCompile(regex0)
-		// matches := r0.FindAllStringSubmatch(p, -1)
-		// if len(matches) > 0 {
-
-		// if strings.ContainsAny(p, `ñçüịủĐứđượđềộềậệụạăšýěůčžČủữăòốêầ`) { // To avoid processing international characters that behave as a word separator, like "ñ"
 		// 	paragraphs[i] = ""
-		// 	continue
-		// }
 
-		// if !isEnglish(p) {
 		// 	paragraphs[i] = ""
-		// 	fmt.Printf("\n\nNOT ENGLISH: %s", p)
-		// 	continue
-		// }
 
 		whatlanggoInfo := whatlanggo.Detect(p)
 		if whatlanggoInfo.Lang.String() != "English" {
 			countRejection("non_english")
 			paragraphs[i] = ""
-			// fmt.Printf("\n\nNOT ENGLISH (%s): %s", whatlanggoInfo.Lang.String(), p)
 			continue
 		}
 
 		regex1 := `(?i)\W([^ \t]*/[^ \t]*)\W`
 		r1 := regexp.MustCompile(regex1)
 		p2 := r1.ReplaceAllString(p, " ")
-		//fmt.Printf("\n\n%s", p2)
 
 		regex2 := `(?i)(<(p|img|div)[^>]*>)`
 		r2 := regexp.MustCompile(regex2)
 		p3 := r2.ReplaceAllString(p2, " ")
 		if p2 != p3 {
-			// fmt.Printf("\n\n***** p2 != p3: \n%s\n%s\n", p2, p3)
 		}
 
 		regex3 := `(?i)\W([^ \t\n]{80,})\W`
 		r3 := regexp.MustCompile(regex3)
 		p4 := r3.ReplaceAllString(p3, " ")
-		// fmt.Printf("\n\n%s", p4)
 
 		regex4 := `(?i)\W(div|img|nofollow|javascript:|(alt|class|style|width|height|onclick)="[^"]*")\W`
 		r4 := regexp.MustCompile(regex4)
-		// p5 := r4.ReplaceAllString(p4, " ")
 		matches4 := r4.FindAllStringSubmatch(p, -1)
-		// if p4 != p5 {
-		// 	// fmt.Printf("\n\n***** p4 != p5: \n%s\n%s\n", p4, p5)
-		// }
 		if len(matches4) > 0 {
 			paragraphs[i] = ""
 			continue
@@ -1241,7 +1139,6 @@ func doNextLink(numLinksProcessed int) bool {
 		numStopWords := stopWordsCount(p5)
 		numTotalWords := len(tokenize(p5))
 		ratioStopWords := float64(numStopWords) / float64(numTotalWords+1)
-		// fmt.Printf("\n\nratioStopWords: %f: %s", ratioStopWords, paragraphs[i])
 		if ratioStopWords < 0.1 {
 			countRejection("stopword_ratio")
 			paragraphs[i] = ""
@@ -1258,14 +1155,7 @@ func doNextLink(numLinksProcessed int) bool {
 			continue
 		}
 		ratio := float64(stopWordsCount(p)) / float64(tokensCount(p)+1)
-		// fmt.Printf("\nratio: %.03f %d %d %d paragraph: %s", ratio, len(p), stopWordsCount(p), tokensCount(p), p)
 		if ratio < 0.1 || ratio > 0.38 {
-			// if ratio < 0.1 {
-			// 	fmt.Printf("\nSMALL ratio: %.03f %d %d %d paragraph: %s", ratio, len(p), stopWordsCount(p), tokensCount(p), p)
-			// }
-			// if ratio > 0.38 {
-			// 	fmt.Printf("\nBIG ratio: %.03f %d %d %d paragraph: %s", ratio, len(p), stopWordsCount(p), tokensCount(p), p)
-			// }
 			continue
 		}
 		curatedContent = curatedContent + "\n" + p
@@ -1293,21 +1183,13 @@ func doNextLink(numLinksProcessed int) bool {
 	// remove "the" frequency
 	fDoc["the"] = 0
 	gDoc := rSortFreq(fDoc)
-	// if nextLink == "https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-daily-deaths/" {
-	// 	fmt.Println("\n\nDoc frequencies: ", gDoc[:1])
-	// 	fmt.Println("\n\nDoc numWords: ", docLen)
-	// 	fmt.Printf("\n\nDoc maxFreq/numWords ratio: %.03f", float64(gDoc[0].Value)/float64(1+docLen))
-	// 	// panic(1)
-	// }
 
-	// fmt.Printf("\n\n%v", fDoc)
 	gDocSignature := ""
 	if len(gDoc) > 7 {
 		gDocSignature = fmt.Sprintf("%v", getKVkeys(gDoc[:7]))
 	} else {
 		gDocSignature = fmt.Sprintf("%v", getKVkeys(gDoc))
 	}
-	// panic(gDocSignature)
 
 	// Ignore when signature is not unique
 	if uniqueSignature[gDocSignature] == "" {
@@ -1327,10 +1209,8 @@ func doNextLink(numLinksProcessed int) bool {
 	}
 
 	iolib.String2fileAppend(nextLink+"\n"+curatedContent+"----\n\n\n\n", "./logs/corpusCuratedText.log")
-	// fmt.Printf("\n\ncuratedContent: %s", curatedContent)
 
 	// Append CSV row
-	// err = csvWriter.Write([]string{gDoc[0].Key, fmt.Sprintf("%d", gDoc[0].Value), fmt.Sprintf("%d", docLen), fmt.Sprintf("%.03f", float64(gDoc[0].Value)/float64(1+docLen)), nextLink})
 	err = csvWriter.Write([]string{fmt.Sprintf("%.02f", rankingByKeywords(curatedContent)), fmt.Sprintf("%d", docLen), gDocSignature, nextLink, bParagraph})
 	if err != nil {
 		log.Fatal("Cannot write to file", err)
@@ -1382,21 +1262,11 @@ func doNextLink(numLinksProcessed int) bool {
 			panic("Error: stopword \"the\" not found!")
 		}
 
-		// keyValue={Key:the Value:5498} [eng: 6187267] [corpusFreqsWithoutEnglish: 0]
-		// keyValue={Key:covid Value:1867} [eng: 0] [corpusFreqsWithoutEnglish: 1867]
-		// keyValue={Key:patients Value:1247} [eng: 17330] [corpusFreqsWithoutEnglish: 0]
-		// keyValue={Key:fda Value:604} [eng: 23] [corpusFreqsWithoutEnglish: 25]
-		// keyValue={Key:disease Value:504} [eng: 8905] [corpusFreqsWithoutEnglish: 0]
-		// keyValue={Key:test Value:436} [eng: 9663] [corpusFreqsWithoutEnglish: 0]
-		// keyValue={Key:sars Value:430} [eng: 17] [corpusFreqsWithoutEnglish: 23]
-		// keyValue={Key:cov Value:389} [eng: 30] [corpusFreqsWithoutEnglish: 12]
-		// keyValue={Key:tests Value:388} [eng: 4681] [corpusFreqsWithoutEnglish: 0]
 		for _, keyValue := range corpusFreqsSorted {
 			// By division:
 			// corpusFreqsWithoutEnglish[keyValue.Key] = int(intercorpusScaleFactor * float64(keyValue.Value) / float64(1+corpusfreqlib.Freq(keyValue.Key)))
 			// By substraction:
 			corpusFreqsWithoutEnglish[keyValue.Key] = keyValue.Value - int(intercorpusContrast*float64(1+corpusfreqlib.Freq(keyValue.Key))/intercorpusScaleFactor)
-			// fmt.Printf("\nkeyValue=%+v [eng: %d] [corpusFreqsWithoutEnglish: %d]", keyValue, corpusfreqlib.Freq(keyValue.Key), corpusFreqsWithoutEnglish[keyValue.Key])
 		}
 		corpusFreqsWithoutEnglishSorted := rSortFreq(corpusFreqsWithoutEnglish)
 		corpusFreqsWithoutEnglishSorted_100 := corpusFreqsWithoutEnglishSorted
@@ -1416,21 +1286,8 @@ func doNextLink(numLinksProcessed int) bool {
 		lPoolDump()
 		domainCounterDump()
 
-		// // Entities for global curated corpus
-		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText.log")
 		// doc, _ := prose.NewDocument(corpusCuratedText)
-		// entityFreq := make(freq)
-		// for _, ent := range doc.Entities() {
 		// 	entityFreq[ent.Text+" :: "+ent.Label]++
-		// 	// fmt.Println(ent.Text, ent.Label)
-		// }
-		// entityFreqSorted := rSortFreq(entityFreq)
-		// for counterEntityFreq, anEntityFreq := range entityFreqSorted {
-		// 	fmt.Println(anEntityFreq.Key, anEntityFreq.Value)
-		// 	if counterEntityFreq > 30 {
-		// 		break
-		// 	}
-		// }
 
 	}
 
@@ -1451,8 +1308,6 @@ func doNextLink(numLinksProcessed int) bool {
 			}
 		}(requestIndexUrl)
 	}
-
-	// os.Exit(1)
 
 	// Adding links of urls passing filters
 	if prevState == 0 && lPool[maxi].Status == 2 {
@@ -1535,7 +1390,6 @@ func yamlInitProxy() {
 
 	fmt.Printf("\n\nproxyHost: %s", proxyHost)
 	fmt.Printf("\n\nproxyUser: %s", proxyUser)
-	// fmt.Printf("\n\nproxyPass: %s", proxyPass)
 }
 
 // yamlInitSpecific loads the profile selected on the command line.
@@ -1657,6 +1511,8 @@ func main() {
 	stopSessionOutput := startSessionOutput(os.Args[1])
 	defer stopSessionOutput()
 
+	initFileLoggers()
+	defer closeFileLoggers()
 	initRejectedLinkSets()
 
 	fmt.Println("* Loading YAML config ...")
@@ -1700,6 +1556,11 @@ func main() {
 
 	fmt.Println("* Init CSV ...")
 	csvInit()
+	defer func() {
+		if csvFile != nil {
+			csvFile.Close()
+		}
+	}()
 
 	if !resumeEnabled {
 		fmt.Println("* Init curated corpus ...")

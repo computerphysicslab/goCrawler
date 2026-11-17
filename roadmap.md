@@ -209,7 +209,7 @@ Add `--version`/`--license` flags, a `VERSION` constant, clean semantic Git tags
 page (`crawler.1`) and `go mod vendor` for offline builds. Verify `CGO_ENABLED=0 go build` and
 document the exact Go toolchain version.
 
-### 21. Fix dependency vulnerabilities (effort: M)
+### 21. Fix dependency vulnerabilities — **DONE (2026-11-17)**
 **Analysis (2026-11-17, via `gh api repos/.../dependabot/alerts`):** all 12 open alerts are for one
 transitive dependency, **`golang.org/x/net`** (5 high, 7 medium); the current pin is the 2020
 pseudo-version `v0.0.0-20200813134508-3edf25e44fcc`. `go mod why` shows the path
@@ -235,10 +235,11 @@ Three possible resolutions:
 - **C — Replace `collectlinks` with a private regex-based href extractor:** would remove x/net from
   the module graph entirely, but lowers parsing quality (regex vs a real HTML parser). Not advised.
 
-Steps in all cases: pin the version explicitly in `go.mod`, run `go mod tidy`, then `go build ./...`,
-`go vet ./...`, `go test ./...` and `go run crawler.go --selftest`. Pushing the updated `go.sum`
-refreshes the Dependabot alerts. Record accepted risks in `SECURITY.md` (new file) and, later, in
-`debian/copyright`.
+**Resolution applied (path B, extended):** installed the `go1.26.11` toolchain via `golang.org/dl`,
+set `go 1.26.0` + `toolchain go1.26.11`, upgraded `golang.org/x/net` to v0.62.0 and
+`gopkg.in/yaml.v2` to v2.4.0, and replaced `golang.org/x/exp/slog` with the standard `log/slog`.
+`govulncheck ./...` now reports **No vulnerabilities found**; `go build`, `go vet`, `go test` and
+`--selftest` all pass. The Makefile defaults to `GO ?= go1.26.11`.
 
 ### 22. Audit dependency packaging for Debian (effort: M)
 Check which Go modules already exist as Debian/Ubuntu packages (`golang-github-*`). Those that do
@@ -274,6 +275,48 @@ and a five-year LTS security commitment. Not recommended for this project in its
 
 ---
 
+## Additional proposals from the function-by-function review (2026-11-17)
+
+Full details in [`docs/FUNCTION_ANALYSIS.md`](docs/FUNCTION_ANALYSIS.md).
+
+### 28. Precompile regular expressions (effort: S) — HIGH PRIORITY
+`linkSeemsOk`, `isBanned`, `getDomain`, `getSecondLevelDomain`, `stopwordFilter` and the border/stopword
+counters compile regexes on every call. Compile constants once at package scope and config-derived
+ones once in `yamlInitGeneral`. Expected: measurable CPU reduction in the 53 %-CPU warm-cache runs.
+
+### 29. Fix `getNextLink` empty-candidate bug (effort: S) — HIGH PRIORITY
+When no link passes `isBanned`/`linkSeemsOk`, `maxURL` stays empty but `increaseDomainCounter` still
+runs for `lPool[0]`, skewing priorities. Guard on `maxURL == ""` before incrementing.
+
+### 30. Replace the O(n^2) failed-domain log scan (effort: S) — HIGH PRIORITY
+`domainHadFailed` reads and splits the whole `domainFailed.log` on every download. Keep an in-memory
+`map[string]int` persisted in `state:crawl`; keep the text log only for humans.
+
+### 31. Reuse one HTTP client in `proxyGet` (effort: S) — MEDIUM PRIORITY
+A new `http.Client` per request plus `req.Close = true` disables keep-alive. Use one package-level
+client with a tuned `http.Transport`.
+
+### 32. Decompose `doNextLink` and index the English corpus (effort: M)
+`doNextLink` is ~330 lines with eight early returns; split it into `filterParagraphs`,
+`buildCuratedContent`, `isUniqueDocument`, `writeDocument` and `dumpFrequencies` (this also fixes
+item 18). Separately, persist a compact frequency index instead of re-reading 700k lines of `all.num`
+at every start.
+
+### 33. Error returns instead of panic/os.Exit; versioned state (effort: M)
+`yamlInit*`, `csvInit` and `main` panic or call `os.Exit`, skipping deferred session/CSV/log closes.
+Extract `run() error` and return errors. Add a `Version` field to `crawlState` and reject unknown
+versions. Handle corrupt cache JSON by re-downloading instead of panicking.
+
+### 34. Index the link pool by URL (effort: M, depends on 14)
+`addLink` performs a linear scan for duplicates and `addLinksOf` has no per-page cap. Maintain a
+`map[string]int` index and a configurable link cap.
+
+### 35. Expand automated tests — **DONE (2026-11-17)**
+Added tests for `iolib`, `stringlib`, `corpusfreqlib`, `isBanned`, stopword counters, stemmer,
+n-grams, link length boundaries, rejection counters, SQLite state round-trip, session-file naming,
+cache hits via a fake store, and a local HTTP server for `proxyGet`/`download`.
+
+
 ## Suggested execution order
 
 1. Items **1–5** (one afternoon): hygiene and crash fixes.
@@ -285,10 +328,12 @@ and a five-year LTS security commitment. Not recommended for this project in its
 
 ## Status
 
-Items **1–6 and 8–12 are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
+Items **1–6, 8–12 and 21 are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
 across runs, not only within a run; item 12 covers robots.txt, User-Agent and Crawl-delay, but not a
 general configurable delay; item 10 adds `slog` structured logging and rejection counters, item 11
-adds SQLite-backed `--resume`). Items **7 and 13–18 remain proposed / not started**.
+adds SQLite-backed `--resume`; item 21 resolved all dependency vulnerabilities with Go 1.26.11;
+item 35 expanded the test suite). Items **7, 13–18 and 28–34 remain proposed / not started**;
+28–30 are the highest-priority quick wins from the function review.
 
-**Ubuntu readiness:** section with items **19–27**. Item 19 (MIT LICENSE) is **DONE**; items
-20–27 remain proposed / not started.
+**Ubuntu readiness:** section with items **19–27**. Items 19 (MIT LICENSE) and 21 (dependency
+vulnerabilities) are **DONE**; the rest remain proposed / not started.

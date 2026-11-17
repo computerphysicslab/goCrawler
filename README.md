@@ -127,8 +127,9 @@ For each downloaded page (`doNextLink`, `crawler.go:1089`):
 
 ## Requirements
 
-- **Go 1.20 or newer** (declared in `go.mod`; verified with Go 1.20.3). Dependencies are downloaded
-  automatically by the Go toolchain.
+- **Go 1.26 or newer** (`go 1.26.0`, toolchain `go1.26.11` in `go.mod`). The Makefile uses
+  `GO ?= go1.26.11`; override it with `make GO=go ...` if your toolchain is newer. Dependencies are
+  downloaded automatically by the Go toolchain.
 - A writable working directory.
 - **No Redis required** for the default setup. Redis 5+ is only needed if `cacheBackend: redis` is
   selected. The SQLite driver (`modernc.org/sqlite v1.31.0`) is pure Go: no CGO or system SQLite
@@ -139,7 +140,7 @@ For each downloaded page (`doNextLink`, `crawler.go:1089`):
 ## Build and test
 
 ```shell
-go build ./...          # compile all packages
+go1.26.11 build ./...   # compile all packages (or: make build)
 go build -o crawler crawler.go
 go vet ./...            # static checks
 go test ./...           # cache backend tests
@@ -331,6 +332,11 @@ SQLite store under `state:crawl` every 50 links and at shutdown. Running with `-
 them, appends to `ranking-URL.csv` and the corpus instead of truncating them, and continues from the
 last processed index. Without `--resume`, any previous state is cleared at startup.
 
+## Security scan
+
+`govulncheck ./...` reports **no vulnerabilities** with the pinned toolchain and dependencies
+(`golang.org/x/net v0.62.0`, `gopkg.in/yaml.v2 v2.4.0`). Re-run it after every dependency update.
+
 ## Distribution and audit readiness
 
 Packaging options (PPA, Snap Store, Debian/Ubuntu Universe, Main) and the work needed before each
@@ -516,6 +522,7 @@ Released under the [MIT License](LICENSE). Copyright (c) 2020-2026 Juan Ignacio 
 ## Roadmap and author
 
 Planned improvements, ordered from simplest to most complex, are listed in [`roadmap.md`](roadmap.md).
+A function-by-function review with proposed refactorings is in [`docs/FUNCTION_ANALYSIS.md`](docs/FUNCTION_ANALYSIS.md).
 
 Author: Juan Ignacio Pérez Sacristán — <computerphysicslab@gmail.com> —
 [LinkedIn](https://www.linkedin.com/in/semanticwebarchitect/).

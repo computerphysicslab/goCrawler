@@ -7,6 +7,7 @@ import (
 	"goCrawler/storelib"
 )
 
+// TestSQLiteStore verifies SQLite persistence, updates and reopening.
 func TestSQLiteStore(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "cache.db")
 
@@ -46,12 +47,14 @@ func TestSQLiteStore(t *testing.T) {
 	}
 }
 
+// TestUnknownBackend verifies that an invalid backend is rejected.
 func TestUnknownBackend(t *testing.T) {
 	if _, err := storelib.Init("mysql", "/tmp/opencode/x.db"); err == nil {
 		t.Fatal("backend desconocido deberia dar error")
 	}
 }
 
+// TestRedisStore verifies the Redis backend when a server is available.
 func TestRedisStore(t *testing.T) {
 	s, err := storelib.Init(storelib.BackendRedis, "")
 	if err != nil {

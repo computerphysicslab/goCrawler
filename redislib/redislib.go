@@ -129,7 +129,6 @@ func GetInterface(key string) interface{} {
 
 // Test shows package functionality
 func Test() {
-	// defer conn.Close()
 
 	err := Ping()
 	if err != nil {

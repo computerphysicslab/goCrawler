@@ -1,11 +1,17 @@
 package main
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
+
+	"goCrawler/storelib"
 )
 
 // withTempWorkDir runs fn in a temporary directory with a logs/ folder.
@@ -187,6 +193,187 @@ func TestLogRejectedLinkDeduplicates(t *testing.T) {
 		}
 		if got := strings.Count(string(b), "https://example.org/bad"); got != 1 {
 			t.Fatalf("link was written %d times, want 1", got)
+		}
+	})
+}
+
+type memoryStore struct {
+	data map[string]string
+}
+
+func (m *memoryStore) Exists(key string) bool      { _, ok := m.data[key]; return ok }
+func (m *memoryStore) Get(key string) string       { return m.data[key] }
+func (m *memoryStore) Set(key, value string) error { m.data[key] = value; return nil }
+func (m *memoryStore) Close() error                { return nil }
+func (m *memoryStore) Name() string                { return "memory" }
+
+func TestIsBanned(t *testing.T) {
+	setupTestConfig()
+	if !isBanned("https://facebook.com/profile", "facebook.com") {
+		t.Fatal("banned domain not detected")
+	}
+	if !isBanned("https://example.org/file.pdf", "example.org") {
+		t.Fatal("banned token not detected")
+	}
+	if isBanned("https://siril.org/tutorials/stacking", "siril.org") {
+		t.Fatal("valid link reported as banned")
+	}
+}
+
+func TestStopwordCounts(t *testing.T) {
+	setupTestConfig()
+	text := "the image and the noise of the stack"
+	if stopWordsCount(text) < 3 {
+		t.Fatalf("stopWordsCount = %d, want >= 3", stopWordsCount(text))
+	}
+	if border := stopWordsOnBorderCount(text); border < 0 {
+		t.Fatalf("stopWordsOnBorderCount = %d", border)
+	}
+	_ = lowRelevancyWordsOnBorderCount(text)
+}
+
+func TestLowercaseAndStemmerFilters(t *testing.T) {
+	got := lowercaseFilter([]string{"IMAGE", "Noise", "42"})
+	if got[0] != "image" || got[1] != "noise" {
+		t.Fatalf("lowercaseFilter = %v", got)
+	}
+	stemmed := stemmerFilter([]string{"stacking", "images"})
+	if len(stemmed) != 2 {
+		t.Fatalf("stemmerFilter = %v", stemmed)
+	}
+}
+
+func TestNgramsFreqsAndRemoveItem(t *testing.T) {
+	setupTestConfig()
+	text := "astrometry calibration astrometry calibration"
+	ngrams := ngramsOf(text, 2)
+	if len(ngrams) == 0 {
+		t.Fatal("expected bigrams from ngramsOf")
+	}
+	freqs := ngramsFreqsOf(text, 2)
+	for _, item := range freqs {
+		if item.Value < 3 {
+			t.Fatalf("ngramsFreqsOf kept low-frequency item: %+v", item)
+		}
+	}
+	items := []kv{{Key: "a", Value: 1}, {Key: "b", Value: 2}}
+	if got := kvSliceRemoveItem(items, 0); len(got) != 1 || got[0].Key != "b" {
+		t.Fatalf("kvSliceRemoveItem = %v", got)
+	}
+	_ = ngramsFreqsOfAll(text, 3)
+}
+
+func TestLinkSeemsOkLengthBoundaries(t *testing.T) {
+	setupTestConfig()
+	withTempWorkDir(t, func() {
+		if linkSeemsOk(strings.Repeat("a", 12), false) {
+			t.Fatal("12-character link must fail")
+		}
+		if !linkSeemsOk("https://siril.org/"+strings.Repeat("a", 13), true) {
+			t.Fatal("14+ character URL must pass syntax checks")
+		}
+	})
+}
+
+func TestIsBannedCountsAreStructured(t *testing.T) {
+	rejectionCounts = make(map[string]int)
+	countRejection("low_relevancy")
+	countRejection("duplicate")
+	countRejection("low_relevancy")
+	summary := rejectionSummary()
+	if len(summary) != 4 {
+		t.Fatalf("rejectionSummary = %v, want 4 values", summary)
+	}
+	if summary[0] != "duplicate" || summary[2] != "low_relevancy" {
+		t.Fatalf("rejectionSummary not sorted: %v", summary)
+	}
+}
+
+func TestSaveLoadCrawlState(t *testing.T) {
+	oldStore := cacheStore
+	defer func() { cacheStore = oldStore }()
+	dir := t.TempDir()
+	store, err := storelib.Init(storelib.BackendLocal, dir+"/cache.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	cacheStore = store
+
+	lPool = []aLink{{URL: "https://siril.org/a", Domain: "siril.org", Count: 2, Status: 0}}
+	domainCounter = map[string]int{"siril.org": 3}
+	uniqueSignature = map[string]string{"sig": "https://siril.org/a"}
+	corpusFreqs = freq{"stack": 7}
+	lastProcessedLink = 42
+	saveCrawlState()
+
+	lPool = nil
+	domainCounter = make(map[string]int)
+	uniqueSignature = make(map[string]string)
+	corpusFreqs = make(freq)
+	lastProcessedLink = 0
+
+	if got := loadCrawlState(); got != 42 {
+		t.Fatalf("loadCrawlState = %d, want 42", got)
+	}
+	if len(lPool) != 1 || domainCounter["siril.org"] != 3 || corpusFreqs["stack"] != 7 {
+		t.Fatal("crawl state was not restored correctly")
+	}
+}
+
+func TestStartSessionOutputNaming(t *testing.T) {
+	withTempWorkDir(t, func() {
+		stop := startSessionOutput("crypto")
+		if stop == nil {
+			t.Fatal("startSessionOutput returned nil")
+		}
+		stop()
+		matches, err := filepath.Glob("logs/Crypto-*-Z??-??-??.txt")
+		if err != nil || len(matches) != 1 {
+			t.Fatalf("session file not created: %v %v", matches, err)
+		}
+	})
+}
+
+func TestDownloadCachedFromFakeStore(t *testing.T) {
+	oldStore := cacheStore
+	defer func() { cacheStore = oldStore }()
+	payload, _ := json.Marshal(CachedData{Content: "cached text", Links: []string{"https://a.org"}})
+	cacheStore = &memoryStore{data: map[string]string{"cache_https://a.org": string(payload)}}
+
+	content, links, err := downloadCached("https://a.org")
+	if err != nil || content != "cached text" || len(links) != 1 {
+		t.Fatalf("downloadCached = %q %v %v", content, links, err)
+	}
+}
+
+func TestProxyGetAndDownloadWithLocalServer(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte("<html><body><a href='https://example.org/stack'>stack</a><p>stack image noise signal siril stacking</p></body></html>"))
+	}))
+	defer srv.Close()
+
+	downloadTimeout = 3 * time.Second
+	proxyHost = ""
+	setupTestConfig()
+
+	withTempWorkDir(t, func() {
+		initFileLoggers()
+		defer closeFileLoggers()
+
+		resp, err := proxyGet(srv.URL, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+
+		content, links, err := download(srv.URL + "/page")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(content, "stack") || len(links) == 0 {
+			t.Fatalf("download = %q, links = %v", content, links)
 		}
 	})
 }

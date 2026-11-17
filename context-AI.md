@@ -619,3 +619,22 @@ que alimenta un canal, N workers que descargan y filtran, y un agregador dueño 
   B) subir toolchain a Go ≥1.23 + x/net v0.38.0 arregla las 12 y permite `log/slog` nativo;
   C) sustituir collectlinks por un extractor propio (no recomendado). Pendiente de decidir.
 - Nota: las alertas se basan en el `go.sum` del último push; el Working tree actual añade `x/exp/slog`.
+
+## 18. Análisis profundo, tests y vulnerabilidades resueltas (2026-11-17)
+
+- **Vulnerabilidades RESUELTAS**: se instaló Go **1.26.11** vía `golang.org/dl`, se fijó
+  `go 1.26.0` + `toolchain go1.26.11`, se subió `golang.org/x/net` a **v0.62.0** y
+  `gopkg.in/yaml.v2` a **v2.4.0**, y se sustituyó `golang.org/x/exp/slog` por `log/slog` nativo.
+  `govulncheck ./...` → **"No vulnerabilities found"**. El Makefile usa `GO ?= go1.26.11` porque el
+  `go` del sistema sigue siendo 1.20.3 y ya no puede leer el `go.mod`.
+- **Análisis function-by-function** en `docs/FUNCTION_ANALYSIS.md` (inglés): revisión de todas las
+  funciones con hallazgos y propuestas. Destacados: regex compiladas en cada llamada (ítem 28),
+  bug en `getNextLink` que incrementa el contador de dominio aunque no haya candidato (29),
+  `domainHadFailed` lee todo el log en cada descarga → O(n²) (30), `proxyGet` crea un cliente por
+  petición y desactiva keep-alive (31), `doNextLink` de ~330 líneas (32), panics/os.Exit que saltan
+  los defers (33), índice O(1) para el pool (34).
+- **Tests nuevos**: `iolib`, `stringlib`, `corpusfreqlib`, `isBanned`, contadores de stopwords,
+  stemmer, n-gramas, longitudes de URL, contadores de rechazo, round-trip de `state:crawl`,
+  nomenclatura del fichero de sesión, cache hit con store falso y servidor HTTP local para
+  `proxyGet`/`download`. Verificado con Go 1.26.11.
+- **Roadmap**: ítems 21 y 35 DONE; nuevos ítems 28–35, con 28–30 como quick wins de prioridad alta.

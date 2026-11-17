@@ -1,4 +1,5 @@
 BINARY := crawler
+GO ?= go1.26.11
 PROFILE ?=
 
 .PHONY: all build run test selftest fmt vet clean
@@ -6,24 +7,24 @@ PROFILE ?=
 all: build
 
 build:
-	go build ./...
-	go build -o $(BINARY) crawler.go
+	$(GO) build ./...
+	$(GO) build -o $(BINARY) crawler.go
 
 run:
 	@test -n "$(PROFILE)" || (echo "Usage: make run PROFILE=<name>" && exit 1)
-	go run crawler.go $(PROFILE)
+	$(GO) run crawler.go $(PROFILE)
 
 test:
-	go test ./...
+	$(GO) test ./...
 
 selftest:
-	go run crawler.go --selftest
+	$(GO) run crawler.go --selftest
 
 fmt:
 	gofmt -w .
 
 vet:
-	go vet ./...
+	$(GO) vet ./...
 
 clean:
 	rm -f $(BINARY)

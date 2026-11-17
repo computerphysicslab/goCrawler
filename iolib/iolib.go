@@ -85,7 +85,3 @@ func File2string(filename string) string {
 
 	return string(b[:])
 }
-
-// // Test shows package functionality
-// func Test() {
-// }
