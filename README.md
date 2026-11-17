@@ -547,6 +547,13 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ---
 
+## Versioning and CI
+
+Releases, version tags and details of every milestone are in [`CHANGELOG.md`](CHANGELOG.md).
+GitHub Actions run build/vet/test/self-test on Linux, Windows and macOS (`.github/workflows/ci.yml`);
+tagging a `v*` version builds cross-platform binaries and a Debian `.deb` package
+(`.github/workflows/release.yml`).
+
 ## License
 
 Released under the [MIT License](LICENSE). Copyright (c) 2020-2026 Juan Ignacio Pérez Sacristán.

@@ -703,3 +703,18 @@ curado correspondiente (o el documento completo si es razonable) además de la U
   tetra3rs, astrometry.net build-index/code, hnsky ASTAP, StarStax, miklosoft), extraído de
   `logs/corpusCuratedText.log` con su score. Los documentos 06 y 07 y el README de research
   referencian este fichero.
+
+## 23. Refactorización del roadmap, auditoría senior, GUI y release (2026-11-17)
+
+- `roadmap.md` reescrito: **sección 1 = único lugar de trabajo**, pendientes ordenados por dificultad
+  creciente (P01–P10 S, P11–P18 M, P19–P20 L, P21 GUI XL); completados agrupados por versión; 26
+  DEFERRED y 27 OUT OF SCOPE como decisiones ya tomadas.
+- `docs/SENIOR_AUDIT.md`: auditoría senior con 21 hallazgos nuevos (A1–A7 corrección, B1–B6
+  robustez, C1–C4 rendimiento, D1–D5 arquitectura, E1 GUI), registrados como P01–P21.
+- `docs/GUI_ANALYSIS.md`: diseño completo del **goCrawler Workbench**. Decisión: UI web local
+  embebida (`go:embed`, stdlib HTTP, bind 127.0.0.1, flag `--gui`) en lugar de Fyne/Wails; 5 pantallas
+  (dashboard, editor de perfil, monitor de ejecución con SSE, visor de corpus con texto curado y
+  copia, y laboratorio de keywords con diff y realimentación al perfil); fases G1–G6.
+- `CHANGELOG.md` con hitos v0.9.0 → v1.5.0; tags de versión en el repo.
+- `.github/workflows/ci.yml` (matriz Linux/Windows/macOS con Go 1.26.11) y `release.yml` (5 binarios
+  + paquete .deb). Verificado localmente: las 5 compilaciones cruzadas y el .deb se generan bien.
