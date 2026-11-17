@@ -726,3 +726,17 @@ curado correspondiente (o el documento completo si es razonable) además de la U
   linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 y `gocrawler_1.5.0_amd64.deb`.
 - Compilación cruzada y .deb verificadas localmente con Go 1.26.11 antes de subirlas.
 - CI en marcha: `.github/workflows/ci.yml` (Linux/Windows/macOS) y `release.yml` (tags v*).
+
+## 25. Corrección CI, About del repo y roadmap v1.6.0 (2026-11-17)
+
+- **CI Windows fallido**: el check de formato fallaba porque la checkout en Windows convertía los
+  ficheros a CRLF y `gofmt -l .` los marcaba todos. Corregido con `.gitattributes`
+  (`* text=auto eol=lf`) y ejecutando el format check solo en Linux.
+- **GitHub About**: descripción actualizada y 20 topics relevantes (golang, crawler, web-crawler,
+  text-mining, nlp, corpus, sqlite, redis, fts5, robots-txt, astrophotography, ubuntu, debian, ...).
+- **Roadmap v1.6.0**: implementados P01–P14 y P18 (HTTP status/content-type, sufijos TLD,
+  sanitización FTS5, loggers fail-fast, CLI con `-config` y argumentos separados, busy_timeout,
+  reserva de hueco robots, índice gzip precompilado, Ctrl-C graceful, crawlDelay genérico, poda del
+  pool, sets acotados, top-K heap, detección de idioma por documento y tests CLI/top-K).
+- Diferidos con decisión registrada: P15, P16, P17, P19, P20 y P21 (GUI: diseño completo en
+  `docs/GUI_ANALYSIS.md`, implementación diferida a v2.x).

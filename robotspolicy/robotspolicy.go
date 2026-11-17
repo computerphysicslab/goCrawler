@@ -119,14 +119,15 @@ func (p *Policy) Wait(rawURL string) {
 	}
 
 	p.mu.Lock()
-	var sleep time.Duration
-	if last, ok := p.lastReq[hostKey]; ok {
-		sleep = r.delay - time.Since(last)
+	now := time.Now()
+	next := now
+	if last, ok := p.lastReq[hostKey]; ok && last.After(now) {
+		next = last
 	}
-	p.lastReq[hostKey] = time.Now()
+	p.lastReq[hostKey] = next.Add(r.delay)
 	p.mu.Unlock()
 
-	if sleep > 0 {
+	if sleep := time.Until(next); sleep > 0 {
 		time.Sleep(sleep)
 	}
 }

@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"container/heap"
 	"database/sql"
 	"encoding/csv"
 	"encoding/json"
@@ -15,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -57,6 +59,9 @@ var maxDownloadBytes int64 = 5 << 20
 var bootstrapingLinks []string
 var minDocLen, maxDocLen int
 var maxLinksPerPage int
+var crawlDelay time.Duration
+var domainLastReq = make(map[string]time.Time)
+var domainDelayMu sync.Mutex
 var rankingStrategy = "hybrid"
 var synonyms = make(map[string][]string)
 var reRankingExtended *regexp.Regexp
@@ -301,6 +306,25 @@ func listUnique(in []string) []string {
 	return out
 }
 
+// respectCrawlDelay applies a generic per-domain delay between requests.
+func respectCrawlDelay(rawURL string) {
+	if crawlDelay <= 0 {
+		return
+	}
+	domain := getDomain(rawURL)
+	domainDelayMu.Lock()
+	now := time.Now()
+	next := now
+	if last, ok := domainLastReq[domain]; ok && last.After(now) {
+		next = last
+	}
+	domainLastReq[domain] = next.Add(crawlDelay)
+	domainDelayMu.Unlock()
+	if sleep := time.Until(next); sleep > 0 {
+		time.Sleep(sleep)
+	}
+}
+
 // countRejection increments the counter for one rejection reason.
 func countRejection(reason string) {
 	crawlMu.Lock()
@@ -377,6 +401,13 @@ type CachedData struct {
 var domainCounter = make(map[string]int)
 var failedDomains = make(map[string]int)
 
+var commonSecondLevelSuffixes = map[string]bool{
+	"co.uk": true, "org.uk": true, "ac.uk": true, "gov.uk": true,
+	"com.au": true, "net.au": true, "org.au": true, "co.nz": true,
+	"co.jp": true, "co.in": true, "com.br": true, "com.mx": true,
+	"co.za": true, "com.sg": true, "co.kr": true, "com.hk": true,
+}
+
 // proxyGet performs an HTTP GET with the shared client and optional proxy.
 func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	req, err := http.NewRequest("GET", urlLink, nil)
@@ -408,6 +439,20 @@ func download(urlLink string) (string, []string, error) {
 		logDownload.Printf("\tHttp transport error:\n\t\t%s", err)
 		domainReportFailed(domain)
 		return "", nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		logDownload.Printf("\tHTTP status: %d", resp.StatusCode)
+		if resp.StatusCode >= 500 {
+			domainReportFailed(domain)
+		}
+		resp.Body.Close()
+		return "", nil, fmt.Errorf("download: HTTP %d", resp.StatusCode)
+	}
+	if ct := resp.Header.Get("Content-Type"); ct != "" &&
+		!strings.Contains(ct, "html") && !strings.Contains(ct, "text") && !strings.Contains(ct, "xml") {
+		logDownload.Printf("\tUnsupported content type: %s", ct)
+		resp.Body.Close()
+		return "", nil, fmt.Errorf("download: unsupported content type %s", ct)
 	}
 
 	// Read the response body.
@@ -460,6 +505,7 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 		}
 		robotsPolicy.Wait(urlLink)
 	}
+	respectCrawlDelay(urlLink)
 
 	cached.Content, cached.Links, err = download(urlLink)
 	if err != nil {
@@ -499,7 +545,15 @@ func getSecondLevelDomain(link string) string {
 	}
 
 	mainDomain := u.Hostname()
-	mainDomain = reSecondLevel.ReplaceAllString(mainDomain, `$1`)
+	labels := strings.Split(mainDomain, ".")
+	if len(labels) > 2 {
+		lastTwo := labels[len(labels)-2] + "." + labels[len(labels)-1]
+		if commonSecondLevelSuffixes[lastTwo] && len(labels) > 2 {
+			mainDomain = labels[len(labels)-3] + "." + lastTwo
+		} else {
+			mainDomain = lastTwo
+		}
+	}
 
 	return mainDomain
 }
@@ -986,6 +1040,36 @@ type kv struct {
 	Value int
 }
 
+type kvHeap []kv
+
+func (h kvHeap) Len() int            { return len(h) }
+func (h kvHeap) Less(i, j int) bool  { return h[i].Value < h[j].Value }
+func (h kvHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
+func (h *kvHeap) Push(x interface{}) { *h = append(*h, x.(kv)) }
+func (h *kvHeap) Pop() interface{}   { old := *h; n := len(old); v := old[n-1]; *h = old[:n-1]; return v }
+
+// topKFreq returns the k highest-frequency items without sorting the whole map.
+func topKFreq(f freq, k int) []kv {
+	if k <= 0 || len(f) == 0 {
+		return nil
+	}
+	h := &kvHeap{}
+	heap.Init(h)
+	for key, value := range f {
+		if h.Len() < k {
+			heap.Push(h, kv{Key: key, Value: value})
+		} else if value > (*h)[0].Value {
+			heap.Pop(h)
+			heap.Push(h, kv{Key: key, Value: value})
+		}
+	}
+	result := make([]kv, h.Len())
+	for i := h.Len() - 1; i >= 0; i-- {
+		result[i] = heap.Pop(h).(kv)
+	}
+	return result
+}
+
 // rSortFreq sorts token frequencies from highest to lowest.
 func rSortFreq(f freq) (ss []kv) {
 	for k, v := range f {
@@ -1213,14 +1297,22 @@ var (
 )
 
 // initFileLoggers opens the log files. It must run after main creates ./logs.
-func initFileLoggers() {
-	outfile, _ = os.Create("./logs/download.log")
+func initFileLoggers() error {
+	var err error
+	if outfile, err = os.Create("./logs/download.log"); err != nil {
+		return fmt.Errorf("download log: %w", err)
+	}
 	logDownload = log.New(outfile, "", 0)
-	outfile3, _ = os.Create("./logs/cgi.log")
+	if outfile3, err = os.Create("./logs/cgi.log"); err != nil {
+		return fmt.Errorf("cgi log: %w", err)
+	}
 	logCGI = log.New(outfile3, "", 0)
-	outfile4, _ = os.Create("./logs/domainFailed.log")
+	if outfile4, err = os.Create("./logs/domainFailed.log"); err != nil {
+		return fmt.Errorf("domainFailed log: %w", err)
+	}
 	logDomainFailed = log.New(outfile4, "", 0)
 	initFailedDomains()
+	return nil
 }
 
 // closeFileLoggers flushes and closes the log files.
@@ -1262,13 +1354,24 @@ func addLinksOf(nextLink string, links []string) {
 
 // filterParagraphs drops non-English, markup-heavy and low-stopword paragraphs.
 func filterParagraphs(paragraphs []string) []string {
-	for i, p := range paragraphs {
-		info := whatlanggo.Detect(p)
-		if info.Lang.String() != targetLanguage || info.Confidence < minLanguageConfidence {
-			countRejection("non_english")
-			paragraphs[i] = ""
-			continue
+	documentLanguage := ""
+	for _, p := range paragraphs {
+		if len(p) > 80 {
+			documentLanguage = whatlanggo.Detect(p).Lang.String()
+			break
 		}
+	}
+	if documentLanguage == "" && len(paragraphs) > 0 {
+		documentLanguage = whatlanggo.Detect(paragraphs[0]).Lang.String()
+	}
+	if documentLanguage != "" && documentLanguage != targetLanguage {
+		for i := range paragraphs {
+			paragraphs[i] = ""
+		}
+		countRejection("non_english")
+		return paragraphs
+	}
+	for i, p := range paragraphs {
 		p2 := reRemoveUrls.ReplaceAllString(p, " ")
 		p3 := reRemoveHtml.ReplaceAllString(p2, " ")
 		p4 := reLongWords.ReplaceAllString(p3, " ")
@@ -1340,11 +1443,56 @@ func writeDocument(url, content, signature, bestParagraph string, score float64)
 	return nil
 }
 
+// pruneTerminalLinks removes finished links from the pool while keeping counters.
+func pruneTerminalLinks() {
+	poolMu.Lock()
+	defer poolMu.Unlock()
+	kept := make([]aLink, 0, len(lPool))
+	for _, link := range lPool {
+		if link.Status == 2 || link.Status == 3 {
+			continue
+		}
+		kept = append(kept, link)
+	}
+	if len(kept) == len(lPool) {
+		return
+	}
+	lPool = kept
+	linkIndex = make(map[string]int, len(lPool))
+	for i, link := range lPool {
+		linkIndex[link.URL] = i
+	}
+}
+
+// capAuxiliarySets bounds memory used by deduplication structures.
+func capAuxiliarySets() {
+	const cap = 100000
+	crawlMu.Lock()
+	if len(uniqueSignature) > cap {
+		uniqueSignature = make(map[string]string)
+	}
+	crawlMu.Unlock()
+	rejectMu.Lock()
+	for _, set := range rejectedLinkSets {
+		if len(set) > cap {
+			for key := range set {
+				delete(set, key)
+				if len(set) <= cap/2 {
+					break
+				}
+			}
+		}
+	}
+	rejectMu.Unlock()
+}
+
 // dumpFrequencies writes frequency files and JSON dumps every 50 links, or when forced.
 func dumpFrequencies(numLinksProcessed int, force bool) {
 	if !force && numLinksProcessed%50 != 0 {
 		return
 	}
+	pruneTerminalLinks()
+	capAuxiliarySets()
 	saveCrawlState()
 	logger.Info("progress", "processed", numLinksProcessed, "accepted", acceptedDocs,
 		"rejections", rejectionSummary())
@@ -1355,19 +1503,20 @@ func dumpFrequencies(numLinksProcessed int, force bool) {
 		freqCopy[k] = v
 	}
 	crawlMu.Unlock()
-	sorted := rSortFreq(freqCopy)
+	allSorted := rSortFreq(freqCopy)
+	top := topKFreq(freqCopy, 100)
 	output := ""
-	for _, item := range sorted {
+	for _, item := range allSorted {
 		output += fmt.Sprintf("%d %s %s %d\n", item.Value, item.Key, "none", 0)
 	}
 	iolib.String2file(output, "./output/corpusFrequencies.txt")
 
 	withoutEnglish := make(freq)
-	if len(sorted) > 0 {
-		theValue := sorted[0].Value
-		if sorted[0].Key == "the" && theValue > 0 {
+	if len(top) > 0 {
+		theValue := freqCopy["the"]
+		if theValue > 0 {
 			scale := float64(1+corpusfreqlib.Freq("the")) / float64(theValue)
-			for _, item := range sorted {
+			for _, item := range top {
 				withoutEnglish[item.Key] = item.Value - int(20.0*float64(1+corpusfreqlib.Freq(item.Key))/scale)
 			}
 		}
@@ -1409,6 +1558,9 @@ func doNextLink(numLinksProcessed int) bool {
 	poolMu.Lock()
 	prevState := lPool[maxi].Status
 	poolMu.Unlock()
+	if stopRequested.Load() {
+		return false
+	}
 	fmt.Printf("\n\n* Downloading url: %s", nextLink)
 
 	content, links, err := downloadCached(nextLink)
@@ -1461,7 +1613,9 @@ func doNextLink(numLinksProcessed int) bool {
 	}
 
 	if err := writeDocument(nextLink, curated, signature, best, score); err != nil {
-		log.Fatal("Cannot write to file", err)
+		countRejection("output_error")
+		logger.Error("cannot write document", "url", nextLink, "error", err)
+		return true
 	}
 	indexDocument(nextLink, curated)
 	crawlMu.Lock()
@@ -1484,10 +1638,14 @@ func doNextLink(numLinksProcessed int) bool {
 
 // yamlInitGeneral loads the shared crawler.yaml configuration.
 func yamlInitGeneral() error {
-	viper.SetConfigName("crawler") // name of config file (without extension)
-	viper.AddConfigPath(".")       // look for config in the working directory
-	err := viper.ReadInConfig()    // Find and read the config file
-	if err != nil {                // Handle errors reading the config file
+	if configFile != "" {
+		viper.SetConfigFile(configFile)
+	} else {
+		viper.SetConfigName("crawler")
+		viper.AddConfigPath(".")
+	}
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
 		return fmt.Errorf("fatal error config file: %w", err)
 	}
 	regexBannedDomains = stringlib.RmNewLines(viper.GetString("regexBannedDomains"))
@@ -1582,6 +1740,9 @@ func yamlInitSpecific() error {
 	maxDocLen = vp.GetInt("maxDocLen")
 	scoreThreshold = float64(vp.GetInt("scoreThreshold"))
 	maxLinksPerPage = vp.GetInt("maxLinksPerPage")
+	if ms := vp.GetInt("crawlDelayMs"); ms > 0 {
+		crawlDelay = time.Duration(ms) * time.Millisecond
+	}
 	language := strings.TrimSpace(vp.GetString("language"))
 	if language != "" {
 		targetLanguage = language
@@ -1612,7 +1773,7 @@ func initSearchIndex() error {
 	if searchDB != nil {
 		return nil
 	}
-	db, err := sql.Open("sqlite", cachePath)
+	db, err := sql.Open("sqlite", cachePath+"?_pragma=busy_timeout(5000)")
 	if err != nil {
 		return err
 	}
@@ -1640,8 +1801,20 @@ func runSearch(query string) error {
 	if err := initSearchIndex(); err != nil {
 		return err
 	}
+	terms := []string{}
+	for _, word := range strings.FieldsFunc(query, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsNumber(r)
+	}) {
+		if len(word) > 1 {
+			terms = append(terms, `"`+word+`"`)
+		}
+	}
+	if len(terms) == 0 {
+		return fmt.Errorf("no searchable terms in query: %q", query)
+	}
+	match := strings.Join(terms, " AND ")
 	rows, err := searchDB.Query(`SELECT url, snippet(corpus_fts, 1, '[', ']', ' ... ', 16)
-		FROM corpus_fts WHERE corpus_fts MATCH ? ORDER BY rank LIMIT 20`, query)
+		FROM corpus_fts WHERE corpus_fts MATCH ? ORDER BY rank LIMIT 20`, match)
 	if err != nil {
 		return err
 	}
@@ -1671,13 +1844,28 @@ var cliQuery string
 var cliExplore bool
 var cliGenerate string
 var cliWorkers = 1
+var configFile string
+var stopRequested atomic.Bool
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
-	for _, arg := range os.Args[1:] {
+	args := make([]string, 0, len(os.Args)-1)
+	for i := 1; i < len(os.Args); i++ {
+		arg := os.Args[i]
+		if strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") {
+			if i+1 < len(os.Args) && !strings.HasPrefix(os.Args[i+1], "-") {
+				arg += "=" + os.Args[i+1]
+				i++
+			}
+		}
+		args = append(args, arg)
+	}
+	for _, arg := range args {
 		switch {
 		case arg == "--selftest", arg == "-h", arg == "--help", arg == "--resume", arg == "-resume":
 			continue
+		case strings.HasPrefix(arg, "-config="), strings.HasPrefix(arg, "--config="):
+			configFile = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-profile="), strings.HasPrefix(arg, "--profile="):
 			profileName = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-backend="), strings.HasPrefix(arg, "--backend="):
@@ -1898,7 +2086,9 @@ func run() error {
 	stopSessionOutput := startSessionOutput(os.Args[1])
 	defer stopSessionOutput()
 
-	initFileLoggers()
+	if err := initFileLoggers(); err != nil {
+		return err
+	}
 	defer closeFileLoggers()
 	initRejectedLinkSets()
 
@@ -1978,6 +2168,16 @@ func run() error {
 		iolib.String2file("\n", "./logs/corpusCuratedText.log")
 	}
 
+	// Graceful stop on Ctrl-C: workers finish the current page and persist state.
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+	defer signal.Stop(sigCh)
+	go func() {
+		<-sigCh
+		fmt.Println("\nInterrupt received, saving state...")
+		stopRequested.Store(true)
+	}()
+
 	// Loop: one goroutine per worker; downloads overlap, shared state is mutex-protected.
 	var nextIndex atomic.Int64
 	nextIndex.Store(int64(startIndex))
@@ -1987,6 +2187,9 @@ func run() error {
 		go func() {
 			defer wg.Done()
 			for {
+				if stopRequested.Load() {
+					return
+				}
 				index := int(nextIndex.Add(1) - 1)
 				crawlMu.Lock()
 				lastProcessedLink = index

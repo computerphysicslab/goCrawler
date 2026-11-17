@@ -24,6 +24,7 @@ jobs:
           cache: true
 
       - name: Format check
+        if: runner.os == 'Linux'
         run: |
           $files = gofmt -l .
           if ($files) { Write-Error "Not gofmt'd: $files"; exit 1 }

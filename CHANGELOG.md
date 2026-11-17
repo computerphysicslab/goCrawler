@@ -3,6 +3,24 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
+## [v1.6.0] - 2026-11-17
+
+### Added
+- Prebuilt gzip frequency index (`corpusfreqlib/freq-index.json.gz`) for O(1) cold start.
+- Graceful Ctrl-C shutdown that saves crawl state; generic per-domain `crawlDelayMs`.
+- `-config=PATH`, space-separated CLI flags, `-flag value`, and CLI/top-K tests.
+
+### Fixed
+- Windows CI format check (CRLF via `.gitattributes`; format check runs only on Linux).
+- Non-2xx HTTP responses and binary content types no longer enter the curated pipeline.
+- Multi-label TLDs (`example.co.uk`) in `getSecondLevelDomain`.
+- FTS5 query sanitisation; `SQLITE_BUSY` via busy_timeout; robots multi-worker slot reservation.
+- `writeDocument` no longer calls `log.Fatal`; loggers fail fast when files cannot be created.
+
+### Changed
+- Pool pruning and bounded dedup sets for long crawls; top-K heap for frequency display.
+- Language detection once per document instead of per paragraph.
+
 ## [v1.5.0] - 2026-11-17
 
 ### Added

@@ -10,8 +10,11 @@ package corpusfreqlib
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
@@ -91,11 +94,23 @@ func loadCorpus(filename string) map[string]WordInfo {
 }
 
 const freqIndexFile = "./corpusfreqlib/freq-index.json"
+const freqIndexGzFile = "./corpusfreqlib/freq-index.json.gz"
 
 // loadFreqIndex loads the compact JSON index when it is available.
 func loadFreqIndex() bool {
-	b, err := os.ReadFile(freqIndexFile)
-	if err != nil {
+	var b []byte
+	if file, err := os.Open(freqIndexGzFile); err == nil {
+		reader, err := gzip.NewReader(file)
+		if err == nil {
+			b, err = io.ReadAll(reader)
+			reader.Close()
+		}
+		file.Close()
+	}
+	if len(b) == 0 {
+		b, _ = os.ReadFile(freqIndexFile)
+	}
+	if len(b) == 0 {
 		return false
 	}
 	index := make(map[string]int)
@@ -122,6 +137,13 @@ func saveFreqIndex() {
 	}
 	if err := os.WriteFile(freqIndexFile, b, 0644); err != nil {
 		log.Println("cannot write frequency index:", err)
+	}
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	if _, err := zw.Write(b); err == nil {
+		if err := zw.Close(); err == nil {
+			os.WriteFile(freqIndexGzFile, buf.Bytes(), 0644)
+		}
 	}
 }
 

@@ -408,3 +408,51 @@ func TestFTS5IndexAndSearch(t *testing.T) {
 		t.Fatalf("search result = %q", got)
 	}
 }
+
+func TestParseCLISpaceSeparated(t *testing.T) {
+	oldArgs, oldProfile, oldWorkers, oldDry, oldBackend, oldCache := os.Args, profileName, cliWorkers, cliDryRun, cacheBackend, cachePath
+	defer func() {
+		os.Args = oldArgs
+		profileName, cliWorkers, cliDryRun, cacheBackend, cachePath = oldProfile, oldWorkers, oldDry, oldBackend, oldCache
+	}()
+	os.Args = []string{"crawler", "-profile", "crypto", "-workers", "4", "-dry-run", "-backend", "redis"}
+	if err := parseCLI(); err != nil {
+		t.Fatal(err)
+	}
+	if profileName != "crypto" || cliWorkers != 4 || !cliDryRun || cacheBackend != "redis" {
+		t.Fatalf("parseCLI: profile=%s workers=%d dry=%v backend=%s", profileName, cliWorkers, cliDryRun, cacheBackend)
+	}
+}
+
+func TestTopKFreq(t *testing.T) {
+	f := freq{"a": 1, "b": 5, "c": 3, "d": 9, "e": 2}
+	got := topKFreq(f, 2)
+	if len(got) != 2 || got[0].Key != "d" || got[1].Key != "b" {
+		t.Fatalf("topKFreq = %v", got)
+	}
+}
+
+func TestGetSecondLevelDomainMultiLabelTLD(t *testing.T) {
+	got := getSecondLevelDomain("https://www.example.co.uk/page")
+	if got != "example.co.uk" {
+		t.Fatalf("getSecondLevelDomain = %q, want example.co.uk", got)
+	}
+}
+
+func TestPruneTerminalLinks(t *testing.T) {
+	oldPool, oldIndex := lPool, linkIndex
+	defer func() { lPool, linkIndex = oldPool, oldIndex }()
+	lPool = []aLink{
+		{URL: "https://a.org", Status: 2},
+		{URL: "https://b.org", Status: 0},
+		{URL: "https://c.org", Status: 3},
+	}
+	linkIndex = map[string]int{"https://a.org": 0, "https://b.org": 1, "https://c.org": 2}
+	pruneTerminalLinks()
+	if len(lPool) != 1 || lPool[0].URL != "https://b.org" {
+		t.Fatalf("pruned pool = %v", lPool)
+	}
+	if linkIndex["https://b.org"] != 0 {
+		t.Fatalf("index not rebuilt: %v", linkIndex)
+	}
+}
