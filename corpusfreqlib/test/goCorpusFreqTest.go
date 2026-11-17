@@ -8,7 +8,7 @@
 package main
 
 import (
-	goCorpusFreqLib "goCrawler/goCorpusFreqLib"
+	goCorpusFreqLib "goCrawler/corpusfreqlib"
 )
 
 func main() {

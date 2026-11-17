@@ -32,7 +32,7 @@ import (
 
 	"goCrawler/corpusfreqlib"
 	"goCrawler/iolib"
-	"goCrawler/redislib"
+	"goCrawler/storelib"
 	"goCrawler/stringlib"
 )
 
@@ -50,6 +50,8 @@ var bootstrapingLinks []string
 var minDocLen, maxDocLen int
 var scoreThreshold float64
 var addUrl string
+var cacheBackend, cachePath string
+var cacheStore storelib.Store
 
 /***************************************************************************************************************
 ****************************************************************************************************************
@@ -249,27 +251,32 @@ func download(urlLink string) (string, []string, error) {
 func downloadCached(urlLink string) (content string, links []string, err error) {
 	var ACachedData CachedData
 
-	// Get results from cache if available
-	// b, found := myCache.Get(urlLink)
-	// Get results from Redis cache if available
-	found := redislib.Exists("cache_" + urlLink)
+	// Get results from the configured cache store (SQLite by default).
+	cacheKey := "cache_" + urlLink
+	found := cacheStore.Exists(cacheKey)
 	if found {
-		// b := redislib.GetInterface("cache_" + urlLink)
-		// ACachedData = b.(CachedData)
-		err = json.Unmarshal([]byte(redislib.Get("cache_"+urlLink)), &ACachedData)
-		if err != nil {
-			panic(err)
-		}
+		cachedValue := cacheStore.Get(cacheKey)
+		if cachedValue == "" {
+			found = false
+		} else {
+			err = json.Unmarshal([]byte(cachedValue), &ACachedData)
+			if err != nil {
+				panic(err)
+			}
 
-		fmt.Printf(" [CACHE]")
-		// fmt.Println("ACachedData: ", ACachedData)
-		err = nil
-	} else {
+			fmt.Printf(" [CACHE]")
+			err = nil
+		}
+	}
+	if !found {
 		ACachedData.Content, ACachedData.Links, err = download(urlLink)
 		if err == nil {
-			// myCache.Set(urlLink, ACachedData, cache.NoExpiration) // Store download results in cache
-			redislib.SetInterface("cache_"+urlLink, ACachedData) // Store download results in Redis cache
-			// cacheSave()                                           // Save cache to disk
+			encoded, marshalErr := json.Marshal(ACachedData)
+			if marshalErr != nil {
+				fmt.Printf(" [CACHE MARSHAL ERROR: %v]", marshalErr)
+			} else if setErr := cacheStore.Set(cacheKey, string(encoded)); setErr != nil {
+				fmt.Printf(" [CACHE WRITE ERROR: %v]", setErr)
+			}
 			fmt.Printf(" [ONLINE]")
 		}
 	}
@@ -1420,7 +1427,17 @@ func yamlInitGeneral() {
 	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + stringlib.RmNewLines(viper.GetString("specialStopwords")) + `)\W`
 	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
 	addUrl = strings.TrimSpace(viper.GetString("addUrl"))
+	cacheBackend = strings.TrimSpace(viper.GetString("cacheBackend"))
+	if cacheBackend == "" {
+		cacheBackend = storelib.BackendLocal
+	}
+	cachePath = strings.TrimSpace(viper.GetString("cachePath"))
+	if cachePath == "" {
+		cachePath = "./cache/cache.db"
+	}
 
+	fmt.Printf("\n\ncacheBackend: %s", cacheBackend)
+	fmt.Printf("\ncachePath: %s", cachePath)
 	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
 	fmt.Printf("\n\nregexLinkBannedTokens: %s", regexLinkBannedTokens)
 	fmt.Printf("\n\nengStopWordsWOthe: %s", engStopWordsWOthe)
@@ -1487,17 +1504,20 @@ func main() {
 		os.MkdirAll("./output", os.ModePerm)
 	}
 
-	// Check redislib is working ok
-	fmt.Println("* Checking Redis service ...")
-	err := redislib.Ping()
-	if err != nil {
-		fmt.Println("Redis service reverts error: ", err)
-	}
-
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
 	yamlInitProxy()
 	yamlInitSpecific()
+
+	fmt.Println("* Init cache store ...")
+	var err error
+	cacheStore, err = storelib.Init(cacheBackend, cachePath)
+	if err != nil {
+		fmt.Println("Cache store error: ", err)
+		os.Exit(1)
+	}
+	defer cacheStore.Close()
+	fmt.Printf("Cache backend: %s\n", cacheStore.Name())
 
 	fmt.Println("* Init English corpus ...")
 	corpusfreqlib.Init()

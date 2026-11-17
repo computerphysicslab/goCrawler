@@ -1,133 +1,418 @@
-goCrawler
-=========
+# goCrawler
 
-Text-mining topic relevant sources
-----------------------------------
+**Topic-restricted web crawler and text-mining tool for building curated English corpora.**
 
-- [About goCrawler](#About-goCrawler)
-- [Install](#install)
-- [Run](#run)
-- [Output](#output)
-- [About the author](#About-the-author)
-- [Redis Install](#Redis-Install)
+goCrawler does not crawl the web indiscriminately. Starting from a small set of seed URLs, it
+downloads pages, extracts links and plain text, and keeps **only the documents that pass a chain of
+language, length, relevance, uniqueness and topic filters**. The result is a curated, topic-specific
+text corpus plus token-frequency statistics and (optionally) n-gram analysis.
 
-#### About goCrawler
+By default, downloaded pages are cached in a **local SQLite database**, so no external service is
+required. Redis remains supported as an alternative cache backend.
 
-goLang crawler restricted to only topic relevant/curated URLs. It includes token frequency analysis and NLP nGram detection
+- Demo video: <https://youtu.be/7IDkNYcMXxU>
+- Author: Juan Ignacio Pérez Sacristán (`computerphysicslab`)
+- Module: `goCrawler` · Go 1.20
 
-Watch goLang goCrawler running at https://youtu.be/7IDkNYcMXxU
+---
 
+## Table of contents
 
-#### Install
+1. [Features](#features)
+2. [How it works](#how-it-works)
+3. [Project layout](#project-layout)
+4. [Requirements](#requirements)
+5. [Build and test](#build-and-test)
+6. [Configuration](#configuration)
+7. [Running the crawler](#running-the-crawler)
+8. [Cache backends](#cache-backends)
+9. [Outputs](#outputs)
+10. [Logs](#logs)
+11. [Algorithms and NLP details](#algorithms-and-nlp-details)
+12. [Package reference](#package-reference)
+13. [Example: astrophotography image stacking](#example-astrophotography-image-stacking)
+14. [Troubleshooting](#troubleshooting)
+15. [Known limitations and inactive code](#known-limitations-and-inactive-code)
+16. [Optional: installing Redis](#optional-installing-redis)
+17. [Roadmap and author](#roadmap-and-author)
 
-By using go.mod needed libraries are automagically downloaded on first run. Add Redis service. Check this document at the end of it.
+---
 
+## Features
 
-#### Run
+- **Topic-focused crawling**: a per-profile whitelist of URL tokens (`linkOk`) and trusted domains
+  (`curatedDomains`) decides which links are followed.
+- **Language filtering**: paragraphs are classified with `whatlanggo`; non-English paragraphs are
+  dropped, so the resulting corpus is English-only.
+- **Multi-stage quality filters**: stopword ratio, minimum/maximum document length, keyword score,
+  near-duplicate detection and token-distribution checks.
+- **Ranking and selection**: the best paragraph of each document is selected and an overall
+  relevance score is computed and written to `output/ranking-URL.csv`.
+- **Intercorpus contrast**: frequencies of general English (British National Corpus + contemporary
+  English) are subtracted to surface *topic-specific* terms.
+- **Persistent page cache**: SQLite (default) or Redis; repeated runs reuse downloaded pages and
+  avoid network load.
+- **Zero required services**: the default setup needs only Go and a writable working directory.
 
-Create myTopic.yaml using covid-19.yaml or blockchain.yaml as template
+---
+
+## How it works
+
+`main()` (`crawler.go:1494`) performs the following steps:
+
+1. Create `./logs` and `./output` if missing.
+2. Load `crawler.yaml` (general config), optional `proxy.yaml`, and `<profile>.yaml`.
+3. Initialize the configured cache store (SQLite by default).
+4. Initialize the English reference corpus (`corpusfreqlib.Init`).
+5. Add the profile's seed URLs to the link pool (`linkBootstraping`).
+6. Initialize `output/ranking-URL.csv` and truncate `logs/corpusCuratedText.log`.
+7. Loop calling `doNextLink()` (`crawler.go:1089`) until the pool is empty.
+
+### Link validation funnel
+
+Every discovered link passes through `linkSeemsOk()` (`crawler.go:340`):
+
+| # | Check | Failure destination |
+|---|---|---|
+| 1 | Length between 13 and 256 characters | discarded silently |
+| 2 | `net/url.ParseRequestURI` | `logs/linksNotOk.ParseRequestURI.log` |
+| 3 | Strict URL regex (scheme, host, port, safe path characters only) | `logs/linksNotOk.additional.log` |
+| 4 | Profile whitelist: `linkOk` or `curatedDomains` | `logs/linksNotOk.log` |
+| 5 | Blacklists (`regexBannedDomains`, `regexLinkBannedTokens`) and empty domain | discarded silently |
+
+The strict validator was added after malformed values such as `http://(http://...` caused panics;
+its log also captures `javascript:`, `mailto:`, `tel:`, relative paths and URLs with query strings.
+
+### Link scheduling
+
+`getNextLink()` (`crawler.go:391`) prioritizes links by `Count² / (domainCounter[domain] + 1)`,
+so less-crawled domains and frequently seen URLs win. Seed links are processed first. A domain with
+more than six transport failures is permanently skipped for that run. Links belonging to the same
+second-level domain as the current page are not added (`addLinksOf`, `crawler.go:1070`).
+
+### Document processing
+
+For each downloaded page (`doNextLink`, `crawler.go:1089`):
+
+1. Split into paragraphs; drop paragraphs not detected as English.
+2. Strip URLs, HTML tags, very long tokens (> 80 chars) and markup leftovers.
+3. Compute the stopword ratio; drop paragraphs below 0.1.
+4. Build `curatedContent` from paragraphs of at least 200 characters with stopword ratio 0.1–0.38.
+5. Apply `minDocLen` / `maxDocLen`.
+6. Reject near-duplicates using a signature of the seven most frequent tokens.
+7. Apply `scoreThreshold`.
+8. Check `maxFreq / numWords` in the 0.002–0.1 range.
+9. Append the document to the corpus and write a row to the ranking CSV.
+10. Every 50 processed links, refresh the frequency files and JSON dumps.
+
+---
+
+## Project layout
+
+| Path | Purpose |
+|---|---|
+| `crawler.go` | Single `package main` entry point (~1560 lines): downloading, filtering, scoring, output. |
+| `storelib/` | Pluggable cache interface (`Exists`, `Get`, `Set`, `Close`) with SQLite and Redis backends. |
+| `redislib/` | Redis client wrapper built on `redigo` (single shared connection, TCP `:6379`). |
+| `corpusfreqlib/` | English reference frequencies from the British National Corpus (`all.num`) and a contemporary English corpus; `Freq(token)` exposes standard word frequencies. |
+| `iolib/` | File helpers: `FileExists`, `CopyFileContents`, `String2file`, `String2fileAppend`, `File2string`. |
+| `stringlib/` | String helpers: `RmNewLines`, `IsNumeric`. |
+| `profiles/` | Example per-topic YAML profiles (Crypto, Litecoin, COVID-19, VAERS, Machine Learning, Revolution, astrophotography, ...). |
+| `crawler.yaml` | General configuration shared by all profiles. |
+| `logs/` | Runtime logs and curated corpus (ignored by Git). |
+| `output/` | Ranking CSV, frequency lists and JSON dumps (ignored by Git). |
+| `storelib/store_test.go` | Tests for both cache backends. |
+
+---
+
+## Requirements
+
+- **Go 1.20 or newer** (declared in `go.mod`; verified with Go 1.20.3). Dependencies are downloaded
+  automatically by the Go toolchain.
+- A writable working directory.
+- **No Redis required** for the default setup. Redis 5+ is only needed if `cacheBackend: redis` is
+  selected. The SQLite driver (`modernc.org/sqlite v1.31.0`) is pure Go: no CGO or system SQLite
+  library is needed.
+
+---
+
+## Build and test
 
 ```shell
-    $ go run crawler.go <myTopic>
+go build ./...          # compile all packages
+go build -o crawler crawler.go
+go vet ./...            # static checks
+go test ./...           # cache backend tests
+gofmt -l .              # formatting check (should print nothing)
 ```
 
-neutral.yaml is a non-topic crawling profile to get a non-topic english corpus
+There is currently no `Makefile`; the commands above are the canonical build/test flow.
+
+---
+
+## Configuration
+
+### General configuration (`crawler.yaml`, in the working directory)
+
+| Key | Meaning |
+|---|---|
+| `regexBannedDomains` | Domains never followed (social networks, search engines, GitHub, Wikipedia, etc.). |
+| `regexLinkBannedTokens` | URL tokens/extensions rejected (login, search, PDF, images, archives, ...). |
+| `engStopWordsWOthe` | English stopword list; `"the"` is prepended automatically. |
+| `engLowRelevancyWords` | Low-information words added to the stopword regex. |
+| `specialStopwords` | URL parts, months, file extensions and TLDs for cleaning. |
+| `downloadTimeout` | HTTP timeout in seconds (default `8`). |
+| `addUrl` | Optional external indexer endpoint (currently commented out). |
+| `cacheBackend` | `local` (SQLite, default) or `redis`. |
+| `cachePath` | SQLite database path (default `./cache/cache.db`). |
+
+### Profile configuration (`<profile>.yaml`)
+
+```yaml
+curatedDomains: |        # trusted domains (regex alternation)
+  example\.com|other\.org
+
+linkOk: |                # tokens that must appear in a URL
+  stack|stacking|imaging
+
+regexRankingKeywords: |  # case-insensitive regex used to score paragraph content
+  (?i)\W(stack|imaging|sensor)\W
+
+minDocLen: 50            # minimum curated text length
+maxDocLen: 100000        # maximum curated text length
+scoreThreshold: 20       # minimum relevance score (default 0 if omitted)
+
+bootstrapingLinks:       # seed URLs
+- "https://example.com/start/here"
+```
+
+The effective URL whitelist is built as
+`(?i)^https*://.*(<linkOk>|<curatedDomains>)` in `yamlInitSpecific()` (`crawler.go:1471`).
+
+**Important:** profiles stored in `profiles/` are *not* read from that directory. The profile YAML
+must be copied to the working directory, because the program opens `<name>.yaml` relative to `.`:
+the argument to `go run crawler.go <name>` is the profile filename without its extension.
+
+### Proxy (optional)
+
+If `proxy.yaml` exists in the working directory, `proxyHost`, `proxyUser` and `proxyPass` are read
+and used for HTTP requests. It is not included in the repository.
+
+---
+
+## Running the crawler
 
 ```shell
-    $ go run crawler.go neutral
+# 1. copy the profile you want to the working directory
+cp profiles/crypto.yaml ./
+
+# 2. run it (the argument is the YAML filename without extension)
+go run crawler.go crypto
+
+# other bundled examples
+go run crawler.go neutral           # general English corpus, no specific topic
+go run crawler.go machineLearning
+go run crawler.go astrophotography
 ```
 
+The crawler runs until its link pool is exhausted. Progress is printed to stdout, including
+`[ONLINE]` (fetched) or `[CACHE]` (served from the cache) for each URL, and a summary every 50
+links. The profile argument is mandatory: omitting it currently causes a panic.
 
-#### Output
+---
 
-From time to time, you will get an on-screen summary of relevant kwywords found so far like this:
+## Cache backends
 
-```text
-    numLinksProcessed: 150
+The cache stores downloaded pages under the key `cache_<URL>` with a JSON value of
+`{"Content": "...", "Links": [...]}`.
 
-    Corpus frequencies:  [{the 5191} {note 637} {convoy 503} {ottawa 426} {canada 395} {police 336} {covid 327} {canadian 325} {protest 277} {truckers 244} {protesters 243} {vaccine 231} {freedom 190} {government 183} {protests 181} {border 172} {mandates 170} {trudeau 134} {health 130} {vaccinated 127} {right 115} {city 114} {trucks 113} {ontario 111} {restrictions 109} {vehicles 108} {minister 106} {truck 105} {retrieved 100} {toronto 99} {media 97} {last 96} {gofundme 95} {country 91} {pandemic 89} {organizers 88} {end 88} {downtown 88} {vaccination 86} {federal 85} {canadians 83} {far 82} {parliament 81} {called 80} {global 78} {united 76} {party 76} {drivers 75} {cross 75} {several 74} {cbc 74} {service 73} {states 72} {measures 72} {mandate 72} {statement 71} {prime 70} {conservative 70} {act 70} {supporters 69} {justin 69} {movement 66} {groups 64} {hill 63} {street 62} {law 62} {traffic 61} {friday 60} {down 60} {trucking 59} {president 59} {reported 58} {funds 58} {fully 58} {bridge 58} {capital 57} {sunday 56} {saturday 56} {demonstrators 56} {trucker 55} {political 55} {king 55} {highway 55} {press 54} {monday 54} {jan 54} {began 54} {occupation 53} {trump 52} {court 52} {area 52} {provincial 51} {saying 50} {members 50} {emergency 50} {workers 49} {security 49} {off 49} {chief 49} {american 49}]
+### SQLite (default)
 
-
-    Corpus frequencies w/o Eng.:  [{convoy 499} {ottawa 414} {canadian 294} {canada 258} {protest 253} {truckers 244} {protesters 238} {note 219} {vaccine 216} {mandates 168} {protests 160} {trudeau 134} {vaccinated 127} {covid 116} {trucks 107} {freedom 103} {gofundme 95} {retrieved 92} {truck 89} {vaccination 83} {ontario 81} {organizers 80} {canadians 80} {downtown 79} {vehicles 76} {cbc 74} {police 70} {mandate 68} {trucking 59} {trucker 55} {toronto 53} {justin 52} {demonstrators 50} {highway 46} {cent 41} {unvaccinated 40} {rcmp 40} {blockade 40} {windsor 37} {supporters 36} {organizer 36} {ctv 36} {postmedia 35} {lich 35} {givesendgo 34} {emergencies 34} {blockades 33} {provincial 31} {occupation 31} {alberta 31} {sloly 30} {protestors 30} {crowdfunding 30} {protesting 29} {conservative 29} {jan 26} {vancouver 23} {vaccines 23} {tamara 23} {feb 23} {ukraine 22} {omicron 22} {crossings 22} {tweeted 21} {provinces 21} {horns 21} {toole 20} {rally 20} {nova 19} {donations 19} {scotia 18} {pressprogress 18} {ops 18} {crossing 18} {convoys 18} {confederate 18} {passports 17} {ndp 17} {bergen 17} {variant 16} {saskatchewan 16} {opp 16} {occupiers 16} {mou 16} {invoked 16} {fundraiser 16} {demonstrations 16} {coutts 16} {arrests 16} {peaceful 15} {zello 14} {watson 14} {invocation 14} {insurrection 14} {hospitalized 14} {honking 14} {freeland 14} {extremists 14} {drivers 14} {bloor 14}]
+```yaml
+cacheBackend: local
+cachePath: ./cache/cache.db
 ```
 
-You may find topic relevant text at logs/corpusCuratedText.log
+- Pure-Go driver `modernc.org/sqlite`, no external service and no CGO.
+- Creates the parent directory and the `cache` table automatically
+  (`key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at DATETIME`).
+- WAL journal mode, `synchronous=FULL` (disk-synchronized commits), `busy_timeout=5000`, one open
+  connection.
+- `Set` uses `INSERT ... ON CONFLICT(key) DO UPDATE`, so repeated runs update existing entries.
+- The cache is persistent across restarts; delete the file to start from scratch.
 
-Other interesting results produced by computerphysicslab/goCrawler:
-- Most frequent nGrams for COVID-19.txt: https://gist.github.com/computerphysicslab/49c6366f501c81a36a2cd15e25c3d386
-- 500 covid-19 keywords frequencies.txt: https://gist.github.com/computerphysicslab/e3fbbf6d8b3e5be9048f70f872467617
-- 500 best COVID-19 relevant links.md: https://gist.github.com/computerphysicslab/86ca73169279f9af24d9739d53ed4e35
+### Redis (optional)
 
+```yaml
+cacheBackend: redis
+```
 
-#### About the author
+- Requires a Redis server on `127.0.0.1:6379` (see [Optional: installing Redis](#optional-installing-redis)).
+- If Redis is unavailable, `storelib.Init` returns an error and the program exits with a clear
+  message instead of panicking.
+- `redislib` no longer calls `panic` or `log.Fatal` on connection failures.
 
-Find me at https://www.linkedin.com/in/semanticwebarchitect/ or computerphysicslab@gmail.com
+Both backends implement the same four operations, so switching requires no code changes.
 
-I am very interested on Text-Mining, Natural Language Processing, Named Entity Recognition and building textual corpora and search apps for Health/Biomedical/Clinical domain
+---
 
+## Outputs
 
-#### Redis Install
+All files live in `output/` and are ignored by Git.
 
-Appendix: How to install Redis service on Linux Ubuntu
+| File | Content |
+|---|---|
+| `ranking-URL.csv` | Tab-separated: score, curated document length, signature (7 top tokens), URL, best paragraph. |
+| `corpusFrequencies.txt` | Raw token frequencies in British National Corpus format: `frequency word none 0`. |
+| `corpusNoEngFrequencies.txt` | Topic-specific frequencies after subtracting standard English (`intercorpusContrast = 20`). |
+| `LPool.json` | Snapshot of the link pool (`aLink` records: URL, domain, count, status). |
+| `domainCounter.json` | Per-domain visit counters. |
+| `*_keywords.txt` | Manually exported keyword lists for some historical topics (not generated by the code). |
 
-goCrwaler uses Redis noSQL local database to cache visited urls and avoid unnecessary network overload. So you need to install it prior to running the crawler.
+The curated text itself is written to `logs/corpusCuratedText.log`: each document is the URL, a blank
+line, the curated text, and a `----` separator.
 
-"Redis is very fast and can perform about 110000 SETs per second, about 81000 GETs per second."
+---
 
-https://www.tutorialspoint.com/redis/redis_overview.htm
+## Logs
 
-#redis #nosql #performance #benchmarks
+| Log | Behaviour | Meaning |
+|---|---|---|
+| `corpusCuratedText.log` | truncated at startup | Current run's curated corpus. |
+| `corpusCuratedText-*.log` | manual | Renamed corpora from previous runs (Crypto, Litecoin, VAERS, ...). |
+| `download.log` | truncated at startup | One entry per download: URL, status, plain-text and link counts. |
+| `domainFailed.log` | truncated at startup | Domains with transport errors; more than 6 failures discards a domain. |
+| `cgi.log` | truncated at startup | Links whose query string was removed during canonicalization. |
+| `linksNotOk.log` | **append-only** | Links failing the profile whitelist. |
+| `linksNotOk.additional.log` | **append-only** | Links failing the strict URL regex. |
+| `linksNotOk.ParseRequestURI.log` | **append-only** | Links failing Go's URI parser. |
+
+> **Warning:** the three `linksNotOk*.log` files grow without limit and are never deduplicated. In
+> historical runs they reached about 1.9 GB (over 45 million lines), mostly repeated social-share and
+> navigation links. They are safe to delete; the useful knowledge extracted from them is recorded
+> in `context-ai.md` (in the repository root of the workspace).
+
+---
+
+## Algorithms and NLP details
+
+- **Tokenization** (`tokenize`, `crawler.go:535`): split on every non-alphanumeric character.
+- **Stopword filtering** (`analyze`, `crawler.go:679`): lowercase and remove stopwords; the Snowball
+  stemmer is implemented but disabled.
+- **Relevance scoring** (`rankingByKeywords`, `crawler.go:554`):
+  `100 * uniqueMatchingKeywords / sqrt(1 + tokenCount)`. Because of the divisor, long documents
+  score lower even when they are highly relevant.
+- **Best paragraph** (`bestParagraph`, `crawler.go:590`): the highest-ranked paragraph, capped at
+  2000 characters.
+- **Uniqueness**: a document is rejected if its seven most frequent tokens match an already accepted
+  document.
+- **Frequency contrast**: standard English frequencies (BNC + contemporary) are normalized to
+  `"the"` and subtracted with a contrast factor of 20 to highlight topic-specific vocabulary.
+- **N-grams**: `ngramsOf`, `ngramsFreqsOf` and `ngramsFreqsOfAll` are implemented, but the global
+  n-gram block in `main()` is disabled behind `if false`. `bigramsOf` is fully commented out.
+
+---
+
+## Package reference
+
+**`crawler.go` (main)**
+
+- Configuration: `yamlInitGeneral`, `yamlInitProxy`, `yamlInitSpecific`
+- Fetching: `proxyGet`, `download`, `downloadCached`
+- Links: `linkSeemsOk`, `getNextLink`, `addLink`, `linkBootstraping`, `addLinksOf`,
+  `isBanned`, `getDomain`, `getSecondLevelDomain`, `domainReportFailed`, `domainHadFailed`
+- Text: `tokenize`, `splitParagraphs`, `rankingByKeywords`, `bestParagraph`, `analyze`,
+  `stopwordFilter`, `stemmerFilter`, `freq.add`, `rSortFreq`
+- Output: `csvInit`, `lPoolDump`, `domainCounterDump`
+- N-grams: `ngramsOf`, `ngramsFreqsOf`, `ngramsFreqsOfAll`
+- Main loop: `doNextLink`, `main`
+
+**Libraries**
+
+- `storelib`: `Init(backend, path)` plus the `Store` interface.
+- `redislib`: `Ping`, `Set`, `Get`, `Exists`, `SetInterface`, `GetInterface`.
+- `corpusfreqlib`: `Init`, `Freq`, `Test`.
+- `iolib`: `FileExists`, `CopyFileContents`, `String2file`, `String2fileAppend`, `File2string`.
+- `stringlib`: `RmNewLines`, `IsNumeric`.
+
+---
+
+## Example: astrophotography image stacking
+
+A ready-to-use English profile is included as `profiles/astrophotography.yaml`. It targets
+alignment/registration and integration/stacking of astronomical images with keywords such as
+`stack`, `registration`, `integration`, `subframe`, `signal-to-noise`, `dither`, `drizzle`, `fwhm`,
+`pixinsight` and `siril`.
+
+```shell
+cp profiles/astrophotography.yaml ./
+go run crawler.go astrophotography
+```
+
+In a 2026-11-17 test run, the crawler produced 29 English documents (272 KB corpus) from seeds on
+Sky at Night, Siril, DeepSkyStacker, Cloudy Nights and AstroBackyard. Top-ranked sources were the
+Sky at Night stacking guide (129.6), Miklosoft stacking & rejection (117.2) and Siril tutorials
+(113.2). Topic-specific frequencies included `stacking`, `frames`, `histogram`, `siril`,
+`deepskystacker` and `pixinsight`.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+|---|---|
+| `panic: runtime error: index out of range` at startup | Profile argument missing; run `go run crawler.go <profile>`. |
+| `unknown cacheBackend "..."` | Fix `cacheBackend` in `crawler.yaml`: use `local` or `redis`. |
+| `Cache store error: ... permission denied` | The process cannot create `cache/`; fix directory permissions or set `cachePath` to a writable path. |
+| Pages download as ~125 characters with 0 links | The site blocked the request or requires JavaScript. Replace the seed URL with a crawler-friendly page. |
+| No documents in the corpus | Lower `scoreThreshold`, loosen `linkOk`, or add better seed URLs. |
+| `linksNotOk*.log` growing quickly | Expected: social-share and navigation links are rejected in bulk. Delete the logs; consider the deduplication item in `roadmap.md`. |
+| Redis connection errors with `cacheBackend: redis` | Start Redis (`redis-cli ping` should print `PONG`) or switch to `local`. |
+
+---
+
+## Known limitations and inactive code
+
+- Single-threaded crawling; no `robots.txt` handling and no politeness delay between requests.
+- No CLI flags; configuration is YAML plus the single positional profile argument.
+- No resume support: `LPool.json` and `domainCounter.json` are written but never read back.
+- No formal tests for the crawling/filtering logic; only the cache backends are tested.
+- No license file in the repository.
+- Inactive code: global n-gram block (`if false`), `bigramsOf()` commented out, legacy
+  `go-cache`/gob cache functions, `gob.Register(CachedData{})`, and a commented stack trace at the
+  end of `crawler.go`.
+- The legacy `cacheInit`/`cacheSave` functions and the `go-cache` dependency are kept for reference
+  but are not used by the running program.
+
+---
+
+## Optional: installing Redis
+
+Redis is only needed when `cacheBackend: redis` is configured. On Ubuntu/Debian:
 
 ```shell
 sudo apt-get update
 sudo apt-get install redis-server
 
-redis-server
-	770156:C 03 Sep 2020 08:11:43.794 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
-	770156:C 03 Sep 2020 08:11:43.794 # Redis version=5.0.7, bits=64, commit=00000000, modified=0, pid=770156, just started
-	770156:C 03 Sep 2020 08:11:43.794 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
-	770156:M 03 Sep 2020 08:11:43.795 * Increased maximum number of open files to 10032 (it was originally set to 1024).
-	770156:M 03 Sep 2020 08:11:43.796 # Could not create server TCP listening socket *:6379: bind: Address already in use
+sudo systemctl start redis        # or: sudo /etc/init.d/redis-server start
+redis-cli ping                    # expected: PONG
 
-redis-cli
-redis 127.0.0.1:6379>
-redis 127.0.0.1:6379> ping
-	PONG
-
-sudo /etc/init.d/redis-server restart
-sudo /etc/init.d/redis-server stop
-sudo /etc/init.d/redis-server start
-
-	772459:C 03 Sep 2020 08:22:37.635 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
-	772459:C 03 Sep 2020 08:22:37.635 # Redis version=5.0.7, bits=64, commit=00000000, modified=0, pid=772459, just started
-	772459:C 03 Sep 2020 08:22:37.635 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
-	772459:M 03 Sep 2020 08:22:37.637 * Increased maximum number of open files to 10032 (it was originally set to 1024).
-					_._                                                  
-			_.-``__ ''-._                                             
-		_.-``    `.  `_.  ''-._           Redis 5.0.7 (00000000/0) 64 bit
-	.-`` .-```.  ```\/    _.,_ ''-._                                   
-	(    '      ,       .-`  | `,    )     Running in standalone mode
-	|`-._`-...-` __...-.``-._|'` _.-'|     Port: 6379
-	|    `-._   `._    /     _.-'    |     PID: 772459
-	`-._    `-._  `-./  _.-'    _.-'                                   
-	|`-._`-._    `-.__.-'    _.-'_.-'|                                  
-	|    `-._`-._        _.-'_.-'    |           http://redis.io        
-	`-._    `-._`-.__.-'_.-'    _.-'                                   
-	|`-._`-._    `-.__.-'    _.-'_.-'|                                  
-	|    `-._`-._        _.-'_.-'    |                                  
-	`-._    `-._`-.__.-'_.-'    _.-'                                   
-		`-._    `-.__.-'    _.-'                                       
-			`-._        _.-'                                           
-				`-.__.-'                                               
-
-	772459:M 03 Sep 2020 08:22:37.639 # Server initialized
-    ...
-	772459:M 03 Sep 2020 08:22:37.639 * Ready to accept connections
-```
-
-Checking Redis server is an active system process:
-
-```shell
+# useful commands
+sudo systemctl stop redis
+sudo systemctl restart redis
 ps aux | grep redis
-	redis     653361  0.1  0.0  55332  5048 ?        Ssl  18:11   0:00 /usr/bin/redis-server 127.0.0.1:6379
 ```
+
+By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint in `redislib`.
+
+---
+
+## Roadmap and author
+
+Planned improvements, ordered from simplest to most complex, are listed in [`roadmap.md`](roadmap.md).
+
+Author: Juan Ignacio Pérez Sacristán — <computerphysicslab@gmail.com> —
+[LinkedIn](https://www.linkedin.com/in/semanticwebarchitect/).
+
+Interests: text mining, NLP, named entity recognition, and building text corpora and search
+applications for the health/biomedical/clinical domain.

@@ -4,7 +4,6 @@ package redislib
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -26,8 +25,7 @@ func newPool() *redis.Pool {
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.Dial("tcp", ":6379")
 			if err != nil {
-				fmt.Printf("Redis seems not responding to TCP call\n")
-				panic(err.Error())
+				fmt.Printf("Redis seems not responding to TCP call: %v\n", err)
 			}
 			return c, err
 		},
@@ -81,8 +79,7 @@ func Set(key string, value string) error {
 func SetInterface(key string, payload interface{}) error {
 	value, err := json.Marshal(payload)
 	if err != nil {
-		log.Fatal("Redis setInterface error: ", err)
-		panic(err)
+		return err
 	}
 
 	return Set(key, string(value))
@@ -94,7 +91,8 @@ func Exists(key string) bool {
 	if err == redis.ErrNil {
 		return false
 	} else if err != nil {
-		log.Fatal("Redis exists error: ", err)
+		fmt.Printf("Redis exists error: %v\n", err)
+		return false
 	}
 
 	return true
@@ -104,9 +102,10 @@ func Exists(key string) bool {
 func Get(key string) string {
 	s, err := redis.String(defaultConn().Do("GET", key))
 	if err == redis.ErrNil {
-		fmt.Printf("Redis get error: %s does not exist\n", key)
+		return ""
 	} else if err != nil {
-		log.Fatal("Redis get error: ", err)
+		fmt.Printf("Redis get error: %v\n", err)
+		return ""
 	}
 
 	return s
@@ -117,11 +116,12 @@ func GetInterface(key string) interface{} {
 	var payload interface{}
 
 	value := Get(key)
-	fmt.Printf("DEBUG: %s\n", value)
-	err := json.Unmarshal([]byte(value), &payload)
-	if err != nil {
-		log.Fatal("Redis getInterface error: ", err)
-		panic(err)
+	if value == "" {
+		return nil
+	}
+	if err := json.Unmarshal([]byte(value), &payload); err != nil {
+		fmt.Printf("Redis getInterface error: %v\n", err)
+		return nil
 	}
 
 	return payload

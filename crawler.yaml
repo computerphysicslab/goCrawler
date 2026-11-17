@@ -23,6 +23,10 @@ specialStopwords: |
 
 downloadTimeout: 8
 
+# Cache for downloaded pages: "local" (SQLite file, no service needed) or "redis"
+cacheBackend: local
+cachePath: ./cache/cache.db
+
 # // Search engine to feed w/ new URLs
 # addUrl: https://search.aibull.io/addUrlPost.php?sender=goCrawler&url=
 
