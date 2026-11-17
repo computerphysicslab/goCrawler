@@ -8,7 +8,6 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/jackdanger/collectlinks v0.0.0-20160421202702-24c4ee2870ba
 	github.com/kljensen/snowball v0.6.0
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/spf13/viper v1.7.1
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
 	modernc.org/sqlite v1.31.0

@@ -4,10 +4,10 @@ package main
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math"
@@ -22,7 +22,6 @@ import (
 
 	"github.com/jackdanger/collectlinks"
 	snowballeng "github.com/kljensen/snowball/english"
-	"github.com/patrickmn/go-cache"
 	"github.com/spf13/viper"
 	"jaytaylor.com/html2text"
 
@@ -46,6 +45,7 @@ var regexBannedDomains, regexLinkBannedTokens, curatedDomains, regexLinkOk strin
 var engStopWordsWOthe, engStopWords, engLowRelevancyWords, regexStopwords string
 var regexRankingKeywords, proxyHost, proxyUser, proxyPass string
 var downloadTimeout time.Duration
+var maxDownloadBytes int64 = 5 << 20
 var bootstrapingLinks []string
 var minDocLen, maxDocLen int
 var scoreThreshold float64
@@ -98,59 +98,6 @@ type CachedData struct {
 }
 
 var domainCounter = make(map[string]int)
-
-// A cache to avoid repeated HTTP calls from crawlers
-var myCache *cache.Cache
-
-func cacheInit() {
-	// Load serialized cache from file if exists
-	b, err := ioutil.ReadFile("./cache/cachePersistent.dat")
-	if err != nil {
-		myCache = cache.New(5*time.Minute, 10*time.Minute)
-		return
-	}
-
-	// Deserialize
-	decodedMap := make(map[string]cache.Item, 500)
-	d := gob.NewDecoder(bytes.NewBuffer(b))
-	err = d.Decode(&decodedMap)
-	if err != nil {
-		panic(err)
-	}
-
-	myCache = cache.NewFrom(5*time.Minute, 10*time.Minute, decodedMap)
-}
-
-var saveBackupCount int // to static...
-
-// Store cache into persistent file
-func cacheSave() {
-	// save a backup from time to time
-	saveBackupCount++
-	if saveBackupCount%10 == 0 {
-		err := iolib.CopyFileContents("./cache/cachePersistent.dat", "./cache/cachePersistent.backup")
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("\n\n##################################### BACKUP ##########################################\n")
-	}
-
-	// Serialize cache
-	b := new(bytes.Buffer)
-	e := gob.NewEncoder(b)
-	// Encoding the map
-	err := e.Encode(myCache.Items())
-	// goDebug.Print(myCache.Items())
-	if err != nil {
-		panic(err)
-	}
-
-	// Save serialized cache into file
-	err = ioutil.WriteFile("./cache/cachePersistent.dat", b.Bytes(), 0644)
-	if err != nil {
-		panic(err)
-	}
-}
 
 func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	var client *http.Client
@@ -209,7 +156,7 @@ func download(urlLink string) (string, []string, error) {
 	}
 
 	// Get content
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := ioutil.ReadAll(io.LimitReader(resp.Body, maxDownloadBytes))
 	if err != nil {
 		logDownload.Printf("\t%s%s", "Read error: ", err)
 		return "", nil, err
@@ -337,6 +284,29 @@ func isBanned(link string, domain string) bool {
 	return false
 }
 
+const maxUniqueRejectedLinks = 1000000
+
+var rejectedLinkSets = map[string]map[string]struct{}{
+	"linksNotOk.log":                 {},
+	"linksNotOk.additional.log":      {},
+	"linksNotOk.ParseRequestURI.log": {},
+}
+
+func logRejectedLink(filename, link string) {
+	set, ok := rejectedLinkSets[filename]
+	if !ok {
+		return
+	}
+	if _, seen := set[link]; seen {
+		return
+	}
+	if len(set) >= maxUniqueRejectedLinks {
+		return
+	}
+	set[link] = struct{}{}
+	iolib.String2fileAppend(link, "./logs/"+filename)
+}
+
 func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	// fmt.Printf("\n\nlinkSeemsOk(%s , %v)", l, avoidCustomCheck)
 
@@ -349,7 +319,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	// Standard URL validation in goLang
 	_, err := url.ParseRequestURI(l)
 	if err != nil {
-		iolib.String2fileAppend(l, "./logs/linksNotOk.ParseRequestURI.log")
+		logRejectedLink("linksNotOk.ParseRequestURI.log", l)
 		// fmt.Printf("\n\nParseRequestURI error: %s", err)
 		return false
 	}
@@ -362,7 +332,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	rURL := regexp.MustCompile(regexURL)
 	matches := rURL.FindAllStringSubmatch(l, -1)
 	if len(matches) < 1 {
-		iolib.String2fileAppend(l, "./logs/linksNotOk.additional.log")
+		logRejectedLink("linksNotOk.additional.log", l)
 		// fmt.Printf("\n\nAdditional URL validator failed: %s", l)
 		return false
 	}
@@ -377,7 +347,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 			fmt.Printf("\nlinkSeemsOk: -%s- matches regexLinkOk: %s", match[1], l)
 			return true
 		} else {
-			iolib.String2fileAppend(l, "./logs/linksNotOk.log")
+			logRejectedLink("linksNotOk.log", l)
 			// fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
 			return false
 		}
@@ -512,16 +482,17 @@ func domainReportFailed(domain string) {
 }
 
 func domainHadFailed(domain string) bool {
-	re := regexp.MustCompile(`(?i)\W(` + domain + `)\W`)
-	// fmt.Printf("\n\nregexp: %s", `(?i)\W(`+domain+`)\W`)
-	matches := re.FindAllStringSubmatch(iolib.File2string("./logs/domainFailed.log"), -1)
-	// fmt.Printf("\n\nmatches: %+v", matches)
-	// fmt.Printf("\nlen(matches): %d", len(matches))
-	if len(matches) > 6 {
-		return true
+	if domain == "" {
+		return false
 	}
-
-	return false
+	target := strings.ToLower(domain)
+	count := 0
+	for _, line := range strings.Split(iolib.File2string("./logs/domainFailed.log"), "\n") {
+		if strings.ToLower(strings.TrimSpace(line)) == target {
+			count++
+		}
+	}
+	return count > 6
 }
 
 /***************************************************************************************************************
@@ -732,111 +703,6 @@ func getKVkeys(aMapArray []kv) []string {
 
 	return keys
 }
-
-// func bigramsOf(t string) []string {
-// 	// var unigrams = []string{}
-// 	var bigrams = []string{}
-// 	var trigrams = []string{}
-
-// 	// Regard each sentence as a paragraph
-// 	t = strings.ReplaceAll(t, ".\n", "\n")
-// 	t = strings.ReplaceAll(t, ". ", "\n")
-// 	paragraphs := splitParagraphs(t)
-
-// 	// Ignore repeated/similar sentences
-// 	var uniqueSentenceSignatures = make(map[string]string)
-// 	for _, p := range paragraphs {
-// 		// remove stopwords from sentence
-// 		p2 := stopwordFilter(p)
-
-// 		// Find high frequency meaningful tokens
-// 		sentenceTokenFreqs := make(freq)
-// 		sentenceTokenFreqs.add(p2)
-// 		sentenceTokenFreqsSorted := rSortFreq(sentenceTokenFreqs)
-
-// 		// Build sentence signature w/ highest frequency meaningful tokens
-// 		sentenceSignature := ""
-// 		if len(sentenceTokenFreqsSorted) > 7 {
-// 			sentenceSignature = fmt.Sprintf("%v", getKVkeys(sentenceTokenFreqsSorted[:7]))
-// 		} else {
-// 			sentenceSignature = fmt.Sprintf("%v", getKVkeys(sentenceTokenFreqsSorted))
-// 		}
-
-// 		// Useful sentences are stored with no duplication on uniqueSentenceSignatures value field
-// 		if uniqueSentenceSignatures[sentenceSignature] == "" {
-// 			uniqueSentenceSignatures[sentenceSignature] = p
-// 			// fmt.Printf("uniqueSentenceSignatures: + %s\n", p)
-// 		} else {
-// 			// fmt.Printf("uniqueSentenceSignatures: - %s\n", p)
-// 		}
-// 	}
-
-// 	// Words must be separated by 2 spaces to regexp find all matches
-// 	r0 := regexp.MustCompile(`(\W+)`)
-
-// 	// Avoid meaningless characters
-// 	r1 := regexp.MustCompile(`([*\(\)\?\-\,\:\#\[\]\"\“]+)`)
-
-// 	// Remove double spaces
-// 	rf := regexp.MustCompile(`(\W)\W`)
-
-// 	// Find bigrams
-// 	re := regexp.MustCompile(`(?i)\W([^\W]+)\W`)
-
-// 	for _, p := range uniqueSentenceSignatures {
-// 		// Prepare text
-// 		p = r0.ReplaceAllString(" "+p+" ", `$1$1`)
-// 		p = r1.ReplaceAllString(p, ` `)
-
-// 		// Find bigrams
-// 		matches := re.FindAllStringSubmatch(p, -1)
-
-// 		previousToken := ""
-// 		previousToken2 := ""
-// 		for _, m := range matches {
-// 			// unigrams = append(unigrams, m[1])
-// 			// if previousToken2 != "" {
-// 			if len(tokenize(previousToken2)) == 2 {
-// 				trigramCandidate := strings.TrimSpace(previousToken2 + m[0])
-
-// 				// Remove double spaces
-// 				trigramCandidate = rf.ReplaceAllString(trigramCandidate, `$1`)
-
-// 				// avoid trigrams containing stopwords
-// 				if stopWordsCount(trigramCandidate) == 0 {
-// 					trigrams = append(trigrams, trigramCandidate)
-// 				}
-// 				// fmt.Println("T: ", trigramCandidate, stopWordsCount(trigramCandidate))
-// 			}
-// 			if previousToken != "" {
-// 				bigramCandidate := strings.TrimSpace(previousToken + m[0])
-
-// 				// Remove double spaces
-// 				bigramCandidate = rf.ReplaceAllString(bigramCandidate, `$1`)
-
-// 				// avoid bigrams containing stopwords
-// 				if stopWordsCount(bigramCandidate) == 0 {
-// 					bigrams = append(bigrams, bigramCandidate)
-// 				}
-// 				// fmt.Println("B: ", bigramCandidate, stopWordsCount(bigramCandidate))
-// 			}
-// 			// fmt.Printf("previousToken2: #%s#\n", previousToken2)
-// 			// fmt.Printf("previousToken: #%s#\n", previousToken)
-// 			previousToken2 = previousToken + m[0]
-// 			// if len(tokenize(previousToken2)) != 2 {
-// 			// 	//fmt.Println("T: ", trigramCandidate)
-// 			// 	fmt.Println("previousToken2: ", previousToken2)
-// 			// 	fmt.Println("previousToken: ", previousToken)
-// 			// 	fmt.Println("m[0]: ", m[0])
-// 			// }
-
-// 			previousToken = m[0]
-// 			// fmt.Printf("previousToken2: #%s#\n", previousToken2)
-// 			// fmt.Printf("previousToken: #%s#\n", previousToken)
-// 		}
-// 	}
-// 	return trigrams
-// }
 
 func ngramsOf(t string, n int) []string {
 	var ngrams = []string{}
@@ -1367,21 +1233,6 @@ func doNextLink(numLinksProcessed int) bool {
 		// 	}
 		// }
 
-		// Entities/Bigrams for global curated corpus
-		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText.log")
-		// // ngramsOf
-		// corpusCuratedBigrams := bigramsOf(corpusCuratedText)
-		// entityFreq := make(freq)
-		// for _, ent := range corpusCuratedBigrams {
-		// 	entityFreq[ent]++
-		// }
-		// entityFreqSorted := rSortFreq(entityFreq)
-		// for counterEntityFreq, anEntityFreq := range entityFreqSorted {
-		// 	fmt.Println("BIGRAM: ", anEntityFreq.Key, anEntityFreq.Value)
-		// 	if counterEntityFreq > 100 {
-		// 		break
-		// 	}
-		// }
 	}
 
 	// push content into persitent ddbb
@@ -1426,6 +1277,9 @@ func yamlInitGeneral() {
 	engLowRelevancyWords = `|` + stringlib.RmNewLines(viper.GetString("engLowRelevancyWords"))
 	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + stringlib.RmNewLines(viper.GetString("specialStopwords")) + `)\W`
 	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
+	if maxDownloadMB := viper.GetInt("maxDownloadMB"); maxDownloadMB > 0 {
+		maxDownloadBytes = int64(maxDownloadMB) << 20
+	}
 	addUrl = strings.TrimSpace(viper.GetString("addUrl"))
 	cacheBackend = strings.TrimSpace(viper.GetString("cacheBackend"))
 	if cacheBackend == "" {
@@ -1469,11 +1323,11 @@ func yamlInitProxy() {
 }
 
 func yamlInitSpecific() {
-	argsWithoutProg := os.Args[1:]
-	viper.SetConfigName(argsWithoutProg[0]) // name of config file (without extension)
-	viper.AddConfigPath(".")                // look for config in the working directory
-	err := viper.ReadInConfig()             // Find and read the config file
-	if err != nil {                         // Handle errors reading the config file
+	profileName := os.Args[1]
+	viper.SetConfigName(profileName) // name of config file (without extension)
+	viper.AddConfigPath(".")         // look for config in the working directory
+	err := viper.ReadInConfig()      // Find and read the config file
+	if err != nil {                  // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s", err))
 	}
 	curatedDomains = stringlib.RmNewLines(viper.GetString("curatedDomains"))
@@ -1484,14 +1338,28 @@ func yamlInitSpecific() {
 	maxDocLen = viper.GetInt("maxDocLen")
 	scoreThreshold = float64(viper.GetInt("scoreThreshold"))
 
-	fmt.Printf("\n\nargsWithoutProg: %+v", argsWithoutProg)
+	fmt.Printf("\n\nprofileName: %s", profileName)
 	fmt.Printf("\n\ncuratedDomains: %s", curatedDomains)
 	fmt.Printf("\n\nregexLinkOk: %s", regexLinkOk)
 	fmt.Printf("\n\nregexRankingKeywords: %s", regexRankingKeywords)
 	fmt.Printf("\n\nbootstrapingLinks: %+v", bootstrapingLinks)
 }
 
+func usage() {
+	fmt.Println("Usage: go run crawler.go <profile>")
+	fmt.Println("  <profile>  name of the profile YAML in the working directory (without .yaml)")
+	fmt.Println("Example: go run crawler.go crypto")
+}
+
 func main() {
+	if len(os.Args) < 2 || os.Args[1] == "-h" || os.Args[1] == "--help" {
+		usage()
+		if len(os.Args) < 2 {
+			os.Exit(1)
+		}
+		return
+	}
+
 	// Create needed folders if don't exist
 	fmt.Println("* Checking logs folder ...")
 	if _, err := os.Stat("./logs"); os.IsNotExist(err) {
@@ -1522,27 +1390,6 @@ func main() {
 	fmt.Println("* Init English corpus ...")
 	corpusfreqlib.Init()
 
-	// Ngrams for global curated corpus
-	if false {
-		fmt.Printf("\n")
-		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-small.txt")
-		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19.txt")
-		corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-medium.txt")
-		// corpusCuratedText := iolib.File2string("./logs/corpusCuratedText-Covid19-large.txt")
-		ngramsFreqSorted := ngramsFreqsOfAll(corpusCuratedText, 5)
-		for _, anNgramFreq := range ngramsFreqSorted {
-			fmt.Println("N-GRAM: ", anNgramFreq.Key, anNgramFreq.Value)
-		}
-		fmt.Printf("\n")
-		os.Exit(1)
-	}
-
-	// Allow go interfaces to be expanded into custom structs of our cache implementation
-	gob.Register(CachedData{}) // For some reason, this declaration must be written on main function
-
-	// fmt.Println("* Init cache ...")
-	// cacheInit()
-
 	fmt.Println("* Link bootstrapping ...")
 	linkBootstraping()
 
@@ -1561,20 +1408,3 @@ func main() {
 
 	fmt.Println("\n\n\n***** Done!!!")
 }
-
-// * Downloading url: http://(https://aasm.org/coronavirus-covid-19-faqs-cpap-sleep-apnea-patients/)panic: regexp: Compile(`(?i)\W((https)\W`): error parsing regexp: missing closing ): `(?i)\W((https)\W`
-
-// goroutine 1 [running]:
-// regexp.MustCompile(0xc000f022f0, 0x10, 0x7)
-// 	/usr/lib/go-1.13/src/regexp/regexp.go:311 +0x152
-// main.domainHadFailed(0xc000f022e0, 0x6, 0xc000f022e0)
-// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:461 +0x84
-// main.download(0xc002a05e50, 0x4e, 0x0, 0xc002a05e50, 0x4e, 0xc009945ec0, 0x54, 0xc002cf3850, 0x4dd471)
-// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:187 +0xfe
-// main.downloadCached(0xc002a05e50, 0x4e, 0x9694e9, 0x16, 0xc002cf3a90, 0x1, 0x1, 0x62, 0x0)
-// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:260 +0xc6
-// main.doNextLink(0xcdf, 0x1)
-// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:1041 +0x143
-// main.main()
-// 	/home/informatica/projects/goDockerElasticsearch/goCrawler/crawler.go:1423 +0x2bd
-// exit status 2

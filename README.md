@@ -146,7 +146,8 @@ go test ./...           # cache backend tests
 gofmt -l .              # formatting check (should print nothing)
 ```
 
-There is currently no `Makefile`; the commands above are the canonical build/test flow.
+The same commands are available as `make` targets: `make build`, `make test`, `make fmt`,
+`make vet`, `make run PROFILE=<name>` and `make clean`.
 
 ---
 
@@ -165,6 +166,7 @@ There is currently no `Makefile`; the commands above are the canonical build/tes
 | `addUrl` | Optional external indexer endpoint (currently commented out). |
 | `cacheBackend` | `local` (SQLite, default) or `redis`. |
 | `cachePath` | SQLite database path (default `./cache/cache.db`). |
+| `maxDownloadMB` | Maximum size of a downloaded page in MiB (default `5`). |
 
 ### Profile configuration (`<profile>.yaml`)
 
@@ -203,21 +205,19 @@ and used for HTTP requests. It is not included in the repository.
 ## Running the crawler
 
 ```shell
-# 1. copy the profile you want to the working directory
+# recommended: the Makefile copies the profile from profiles/ when needed
+make run PROFILE=crypto
+make run PROFILE=astrophotography
+
+# or do it manually: copy the profile to the working directory, then run
 cp profiles/crypto.yaml ./
-
-# 2. run it (the argument is the YAML filename without extension)
-go run crawler.go crypto
-
-# other bundled examples
-go run crawler.go neutral           # general English corpus, no specific topic
-go run crawler.go machineLearning
-go run crawler.go astrophotography
+go run crawler.go crypto            # argument = YAML filename without extension
 ```
 
 The crawler runs until its link pool is exhausted. Progress is printed to stdout, including
 `[ONLINE]` (fetched) or `[CACHE]` (served from the cache) for each URL, and a summary every 50
-links. The profile argument is mandatory: omitting it currently causes a panic.
+links. The profile argument is mandatory; omitting it prints usage and exits with status 1.
+`go run crawler.go --help` also prints usage.
 
 ---
 

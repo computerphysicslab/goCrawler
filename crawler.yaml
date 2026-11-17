@@ -23,6 +23,9 @@ specialStopwords: |
 
 downloadTimeout: 8
 
+# Maximum size of a downloaded page, in MiB
+maxDownloadMB: 5
+
 # Cache for downloaded pages: "local" (SQLite file, no service needed) or "redis"
 cacheBackend: local
 cachePath: ./cache/cache.db

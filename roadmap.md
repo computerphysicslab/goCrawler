@@ -9,37 +9,37 @@ Legend for effort: **S** = minutes to hours · **M** = days · **L** = weeks.
 
 ## Tier 1 — Quick wins (effort: S)
 
-### 1. Add a Makefile
+### 1. Add a Makefile — **DONE (2026-11-17)**
 **Problem:** build, test and formatting commands are undocumented and must be typed by hand.
 **Proposal:** add targets `build`, `run <profile>`, `test`, `fmt`, `vet`, `clean`.
 **Impact:** reproducible workflow; low risk.
 
-### 2. Validate command-line arguments
+### 2. Validate command-line arguments — **DONE (2026-11-17)**
 **Problem:** `argsWithoutProg := os.Args[1:]` (`crawler.go:1472`) panics when no profile is given.
 **Proposal:** check the argument count, print a usage message and exit cleanly; add `--help`.
 **Impact:** much better first-run experience.
 
-### 3. Fix the domain regex injection bug
+### 3. Fix the domain regex injection bug — **DONE (2026-11-17)**
 **Problem:** `domainHadFailed()` (`crawler.go:514`) builds `regexp.MustCompile("(?i)\\W(" + domain + ")\\W")`
 without escaping the domain. A domain containing regex metacharacters can panic; a commented stack
 trace at the end of `crawler.go` documents a real occurrence.
 **Proposal:** use `regexp.QuoteMeta(domain)` or plain `strings.Contains`.
 **Impact:** removes a known crash path.
 
-### 4. Cap download size
+### 4. Cap download size — **DONE (2026-11-17)**
 **Problem:** `ioutil.ReadAll(resp.Body)` (`crawler.go:212`) has no limit and can exhaust memory on a
 huge or malicious response.
 **Proposal:** wrap the body in `io.LimitReader(resp.Body, 5<<20)` (configurable maximum).
 **Impact:** predictable memory usage.
 
-### 5. Remove dead code
+### 5. Remove dead code — **DONE (2026-11-17)**
 **Problem:** the global n-gram block behind `if false`, the commented `bigramsOf()`, the legacy
 `cacheInit`/`cacheSave` functions, `gob.Register`, the unused `go-cache` dependency and the commented
 stack trace add noise to a 1560-line file.
 **Proposal:** delete them (or move experiments to an `experimental/` folder) and run `go mod tidy`.
 **Impact:** smaller codebase and dependency graph; easier maintenance.
 
-### 6. Stop the `linksNotOk*.log` files from growing without limit
+### 6. Stop the `linksNotOk*.log` files from growing without limit — **DONE (2026-11-17)**
 **Problem:** three append-only logs are never deduplicated. Historical runs accumulated about
 1.9 GB / 45 million lines, mostly repeated social-share links.
 **Proposal:** log each rejected link only once using a `map[string]struct{}` or a dedicated SQLite
@@ -145,4 +145,4 @@ the dormant n-gram code).
 
 ## Status
 
-All items are currently **proposed / not started** as of 2026-11-17.
+Items **1–6 (Tier 1) are DONE** as of 2026-11-17. Items **7–17 remain proposed / not started**.
