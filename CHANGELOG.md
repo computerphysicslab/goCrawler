@@ -16,6 +16,7 @@ correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 - Multi-label TLDs (`example.co.uk`) in `getSecondLevelDomain`.
 - FTS5 query sanitisation; `SQLITE_BUSY` via busy_timeout; robots multi-worker slot reservation.
 - `writeDocument` no longer calls `log.Fatal`; loggers fail fast when files cannot be created.
+- File handles closed in `iolib` (`String2file`), fixing Windows CI TempDir cleanup; release assets rebuilt with this fix.
 
 ### Changed
 - Pool pruning and bounded dedup sets for long crawls; top-K heap for frequency display.

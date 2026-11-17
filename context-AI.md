@@ -740,3 +740,10 @@ curado correspondiente (o el documento completo si es razonable) además de la U
   pool, sets acotados, top-K heap, detección de idioma por documento y tests CLI/top-K).
 - Diferidos con decisión registrada: P15, P16, P17, P19, P20 y P21 (GUI: diseño completo en
   `docs/GUI_ANALYSIS.md`, implementación diferida a v2.x).
+
+## 26. CI verde y release v1.6.0 corregido (2026-11-17)
+
+- Segundo fallo de CI en Windows: `TestString2fileAndAppend` no podía limpiar el TempDir porque
+  `iolib.String2file` no cerraba el fichero. Corregido (y `File2string` devuelve "" si open falla).
+- CI final: **todos los jobs en verde** en ubuntu, windows y macOS (`gh run view` verificado).
+- Release v1.6.0 con 6 assets reconstruidos con el fix; se eliminó el .deb sobrante de v1.5.0.
