@@ -509,6 +509,10 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ---
 
+## License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2020-2026 Juan Ignacio Pérez Sacristán.
+
 ## Roadmap and author
 
 Planned improvements, ordered from simplest to most complex, are listed in [`roadmap.md`](roadmap.md).

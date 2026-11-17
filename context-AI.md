@@ -600,3 +600,22 @@ que alimenta un canal, N workers que descargan y filtran, y un agregador dueño 
   - Orden recomendado: licencia → versión/build reproducible → vulnerabilidades → Snap → PPA.
 - Nota: el usuario pregunta por licencia e idioma; responder que es Go y que falta licencia (recommend
   MIT o Apache-2.0) antes de cualquier vía oficial.
+
+## 17. Ciclo ampliado, licencia MIT y análisis de vulnerabilidades (2026-11-17)
+
+- **Ciclo en background**: perfil `skystacker-research.yaml` ampliado a **49 semillas** (nuevas fuentes
+  de calibrate/master frames — PixInsight master-frames, Siril manual preprocessing, WBPP, Sky atNight,
+  opticalmechanics, miklosoft — y de plate solving/WCS — twirl, tetra3rs, Siril platesolving SIP,
+  LSST AstrometryTask, prose, zodiacal) y keywords ampliadas (`sip`, `distortion`, `crossmatch`,
+  `centroid`, `tetra`, `zodiacal`, `log-odds`, `verify`, `inlier`). Lanzado con
+  `setsid /tmp/opencode/crawler.bin skystacker-research` (PID 1203990), sesión
+  `logs/Skystacker-research-2026-11-17-Z20-27-46.txt`.
+- **Licencia MIT añadida**: `LICENSE` con copyright 2020-2026 Juan Ignacio Pérez Sacristán, README
+  con sección License y roadmap ítem 19 marcado DONE. Falta `debian/copyright` DEP-5 (ítem 24).
+- **Análisis de las 12 vulnerabilidades** (vía `gh api .../dependabot/alerts`, CLI autenticada):
+  las 12 abiertas son de **`golang.org/x/net`** (5 high, 7 medium), versión actual del 2020.
+  `go mod why` → `collectlinks` → `x/net/html`. Tres vías documentadas en el roadmap ítem 21:
+  A) subir a x/net v0.33.0 (compatible Go 1.20) arregla 10/12, quedan 2 medium que exigen Go ≥1.23;
+  B) subir toolchain a Go ≥1.23 + x/net v0.38.0 arregla las 12 y permite `log/slog` nativo;
+  C) sustituir collectlinks por un extractor propio (no recomendado). Pendiente de decidir.
+- Nota: las alertas se basan en el `go.sum` del último push; el Working tree actual añade `x/exp/slog`.

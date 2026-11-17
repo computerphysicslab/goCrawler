@@ -199,7 +199,7 @@ Goal: make goCrawler packageable and, eventually, acceptable for Ubuntu's review
 - It writes `./logs`, `./output` and `./cache` relative to the working directory. Strict Snap
   confinement would need those paths redirected to `$SNAP_USER_DATA` and the `network` interface.
 
-### 19. Add an explicit open-source license — **BLOCKER (effort: S)**
+### 19. Add an explicit open-source license — **DONE (2026-11-17)**
 Add `LICENSE` (MIT or Apache-2.0 recommended) and a `debian/copyright` DEP-5 stub. Without this,
 Universe/Main are impossible and Snap/PPA metadata is incomplete. Also add an `SPDX-License-Identifier`
 header to source files if Apache-2.0 is chosen.
@@ -210,9 +210,35 @@ page (`crawler.1`) and `go mod vendor` for offline builds. Verify `CGO_ENABLED=0
 document the exact Go toolchain version.
 
 ### 21. Fix dependency vulnerabilities (effort: M)
-Work through the Dependabot report: upgrade or replace flagged dependencies, regenerate `go.sum`,
-and re-run `go test ./...` plus the self-test. Record any accepted risk in `debian/copyright` or a
-`SECURITY.md`.
+**Analysis (2026-11-17, via `gh api repos/.../dependabot/alerts`):** all 12 open alerts are for one
+transitive dependency, **`golang.org/x/net`** (5 high, 7 medium); the current pin is the 2020
+pseudo-version `v0.0.0-20200813134508-3edf25e44fcc`. `go mod why` shows the path
+`goCrawler → github.com/jackdanger/collectlinks → golang.org/x/net/html` (link extraction).
+
+Patched versions per advisory: v0.38.0 (GHSA-vvgc-356p-c3xw), v0.36.0
+(GHSA-qxp5-gwg8-xv66), v0.17.0 (GHSA-qppj-fm5r-hxr3, GHSA-4374-p667-p6c8), v0.13.0
+(GHSA-2wrh-6pvc-2jm9), v0.7.0 (GHSA-vvpx-j8f3-3w6h), v0.4.0 (GHSA-xrjj-mj9h-534m), plus four
+older pseudo-version fixes (GHSA-fxg5-wq6x-vr4w, GHSA-83g2-8m93-v3w7, GHSA-h86h-8ppg-mxmh,
+GHSA-69cg-p879-7622) already covered by any recent release. GHSA-4v7x-pqxf-cx7m also lists the Go
+1.21.9 standard-library fix.
+
+Three possible resolutions:
+
+- **A — Upgrade x/net to v0.33.0 (Go 1.20-compatible, immediate):** fixes **10 of 12**. The two
+  remaining medium alerts need v0.36.0/v0.38.0, which require Go ≥ 1.23. Their applicability here is
+  low: one is XSS in HTML *rendering* (this tool converts HTML to plain text and never renders it),
+  the other is an IPv6-zone proxy bypass (no proxy is configured by default). Document both as
+  accepted risks in `SECURITY.md`.
+- **B — Upgrade the toolchain to Go ≥ 1.23 and x/net v0.38.0 (recommended medium-term):** fixes all
+  12, enables stdlib `log/slog` (removing the `golang.org/x/exp` dependency from item 10) and matches
+  the direction of the SkyStacker toolchain analysis. Requires a full build/test/selftest cycle.
+- **C — Replace `collectlinks` with a private regex-based href extractor:** would remove x/net from
+  the module graph entirely, but lowers parsing quality (regex vs a real HTML parser). Not advised.
+
+Steps in all cases: pin the version explicitly in `go.mod`, run `go mod tidy`, then `go build ./...`,
+`go vet ./...`, `go test ./...` and `go run crawler.go --selftest`. Pushing the updated `go.sum`
+refreshes the Dependabot alerts. Record accepted risks in `SECURITY.md` (new file) and, later, in
+`debian/copyright`.
 
 ### 22. Audit dependency packaging for Debian (effort: M)
 Check which Go modules already exist as Debian/Ubuntu packages (`golang-github-*`). Those that do
@@ -264,5 +290,5 @@ across runs, not only within a run; item 12 covers robots.txt, User-Agent and Cr
 general configurable delay; item 10 adds `slog` structured logging and rejection counters, item 11
 adds SQLite-backed `--resume`). Items **7 and 13–18 remain proposed / not started**.
 
-**Ubuntu readiness:** new section with items **19–27**; all are **proposed / not started**. Item 19
-(add an open-source LICENSE) is a blocker for the official repositories.
+**Ubuntu readiness:** section with items **19–27**. Item 19 (MIT LICENSE) is **DONE**; items
+20–27 remain proposed / not started.
