@@ -718,3 +718,11 @@ curado correspondiente (o el documento completo si es razonable) además de la U
 - `CHANGELOG.md` con hitos v0.9.0 → v1.5.0; tags de versión en el repo.
 - `.github/workflows/ci.yml` (matriz Linux/Windows/macOS con Go 1.26.11) y `release.yml` (5 binarios
   + paquete .deb). Verificado localmente: las 5 compilaciones cruzadas y el .deb se generan bien.
+
+## 24. Release v1.5.0 publicado (2026-11-17)
+
+- Commit final `b8f5b6a`, tags v1.0.0…v1.5.0 pusheados.
+- Release: https://github.com/computerphysicslab/goCrawler/releases/tag/v1.5.0 con 6 assets:
+  linux/amd64, linux/arm64, windows/amd64, darwin/amd64, darwin/arm64 y `gocrawler_1.5.0_amd64.deb`.
+- Compilación cruzada y .deb verificadas localmente con Go 1.26.11 antes de subirlas.
+- CI en marcha: `.github/workflows/ci.yml` (Linux/Windows/macOS) y `release.yml` (tags v*).
