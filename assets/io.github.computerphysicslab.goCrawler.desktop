@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=goCrawler
+Comment=Build curated text corpora from topic-relevant sources
+Exec=gocrawler --help
+Icon=io.github.computerphysicslab.goCrawler
+Terminal=true
+Categories=Development;Science;Utility;

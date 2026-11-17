@@ -1,0 +1,35 @@
+name: gocrawler
+base: core24
+version: '1.0.0'
+summary: Topic-restricted crawler that builds curated text corpora
+description: |
+  goCrawler downloads web pages, filters them by language, length, relevance and
+  uniqueness, and stores the curated text plus token frequencies in a local
+  SQLite database. Redis is optional; the default cache needs no service.
+grade: stable
+confinement: strict
+
+apps:
+  gocrawler:
+    command: bin/gocrawler
+    plugs:
+      - network
+      - network-bind
+      - personal-files
+
+parts:
+  gocrawler:
+    plugin: go
+    source: .
+    build-snaps:
+      - go/1.26/stable
+    build-environment:
+      - CGO_ENABLED: "0"
+    override-build: |
+      go build -trimpath -o "$CRAFT_PART_INSTALL/bin/gocrawler" crawler.go
+
+plugs:
+  personal-files:
+    interface: personal-files
+    write:
+      - $HOME/.local/share/gocrawler

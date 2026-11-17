@@ -3,6 +3,7 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -18,7 +19,10 @@ import (
 	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 
@@ -157,6 +161,12 @@ type crawlState struct {
 
 // saveCrawlState stores the current crawl progress in the cache store.
 func saveCrawlState() {
+	poolMu.Lock()
+	failMu.Lock()
+	crawlMu.Lock()
+	defer crawlMu.Unlock()
+	defer failMu.Unlock()
+	defer poolMu.Unlock()
 	state := crawlState{
 		Version:       crawlStateVersion,
 		Pool:          lPool,
@@ -293,11 +303,15 @@ func listUnique(in []string) []string {
 
 // countRejection increments the counter for one rejection reason.
 func countRejection(reason string) {
+	crawlMu.Lock()
 	rejectionCounts[reason]++
+	crawlMu.Unlock()
 }
 
 // rejectionSummary returns the rejection counters as log attributes.
 func rejectionSummary() []interface{} {
+	crawlMu.Lock()
+	defer crawlMu.Unlock()
 	keys := make([]string, 0, len(rejectionCounts))
 	for k := range rejectionCounts {
 		keys = append(keys, k)
@@ -492,7 +506,9 @@ func getSecondLevelDomain(link string) string {
 
 // increaseDomainCounter records one more visit for a domain.
 func increaseDomainCounter(domain string) {
+	poolMu.Lock()
 	domainCounter[domain]++
+	poolMu.Unlock()
 }
 
 // isBanned reports whether a link matches the configured blacklists.
@@ -510,6 +526,13 @@ func isBanned(link string, domain string) bool {
 
 const maxUniqueRejectedLinks = 1000000
 
+var (
+	poolMu   sync.Mutex
+	rejectMu sync.Mutex
+	failMu   sync.Mutex
+	crawlMu  sync.Mutex
+)
+
 var rejectedLinkSets = map[string]map[string]struct{}{
 	"linksNotOk.log":                 {},
 	"linksNotOk.additional.log":      {},
@@ -519,6 +542,8 @@ var rejectedLinkSets = map[string]map[string]struct{}{
 
 // initRejectedLinkSets loads existing rejected links to deduplicate across runs.
 func initRejectedLinkSets() {
+	rejectMu.Lock()
+	defer rejectMu.Unlock()
 	for filename, set := range rejectedLinkSets {
 		path := "./logs/" + filename
 		if !iolib.FileExists(path) {
@@ -539,6 +564,8 @@ func initRejectedLinkSets() {
 
 // logRejectedLink appends a rejected link to its log only once.
 func logRejectedLink(filename, link string) {
+	rejectMu.Lock()
+	defer rejectMu.Unlock()
 	link = strings.TrimSpace(link)
 	set, ok := rejectedLinkSets[filename]
 	if !ok {
@@ -595,6 +622,8 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 
 // getNextLink selects the highest-priority pending link from the pool.
 func getNextLink() (int, string) {
+	poolMu.Lock()
+	defer poolMu.Unlock()
 	maxi := 0
 	lasti := 0
 	maxURL := ""
@@ -631,7 +660,8 @@ func getNextLink() (int, string) {
 	if maxURL == "" {
 		return maxi, ""
 	}
-	increaseDomainCounter(lPool[maxi].Domain)
+	lPool[maxi].Status = 1
+	domainCounter[lPool[maxi].Domain]++
 
 	return maxi, maxURL
 }
@@ -712,17 +742,23 @@ func domainCounterDump() {
 
 // domainReportFailed records a transport failure in memory and in the text log.
 func domainReportFailed(domain string) {
+	failMu.Lock()
 	failedDomains[domain]++
+	failMu.Unlock()
 	iolib.String2fileAppend(domain+"\n", "./logs/domainFailed.log")
 }
 
 // domainHadFailed reports whether a domain exceeded the failure limit.
 func domainHadFailed(domain string) bool {
+	failMu.Lock()
+	defer failMu.Unlock()
 	return failedDomains[domain] > 6
 }
 
 // initFailedDomains rebuilds the in-memory counter from the text log.
 func initFailedDomains() {
+	failMu.Lock()
+	defer failMu.Unlock()
 	failedDomains = make(map[string]int)
 	path := "./logs/domainFailed.log"
 	if !iolib.FileExists(path) {
@@ -792,6 +828,8 @@ func scoreWithRegex(text string, re *regexp.Regexp) float64 {
 
 // rankingScore scores a document using the configured strategy.
 func rankingScore(text string) float64 {
+	crawlMu.Lock()
+	defer crawlMu.Unlock()
 	switch rankingStrategy {
 	case "keywords":
 		return rankingByKeywords(text)
@@ -1225,7 +1263,8 @@ func addLinksOf(nextLink string, links []string) {
 // filterParagraphs drops non-English, markup-heavy and low-stopword paragraphs.
 func filterParagraphs(paragraphs []string) []string {
 	for i, p := range paragraphs {
-		if whatlanggo.Detect(p).Lang.String() != "English" {
+		info := whatlanggo.Detect(p)
+		if info.Lang.String() != targetLanguage || info.Confidence < minLanguageConfidence {
 			countRejection("non_english")
 			paragraphs[i] = ""
 			continue
@@ -1278,6 +1317,8 @@ func documentSignature(curatedContent string) (string, []kv) {
 
 // isUniqueDocument registers a signature and reports whether it was new.
 func isUniqueDocument(signature, url string) bool {
+	crawlMu.Lock()
+	defer crawlMu.Unlock()
 	if uniqueSignature[signature] == "" {
 		uniqueSignature[signature] = url
 		return true
@@ -1289,6 +1330,8 @@ func isUniqueDocument(signature, url string) bool {
 
 // writeDocument appends the curated text and its ranking row to the outputs.
 func writeDocument(url, content, signature, bestParagraph string, score float64) error {
+	crawlMu.Lock()
+	defer crawlMu.Unlock()
 	iolib.String2fileAppend(url+"\n"+content+"----\n\n\n\n", "./logs/corpusCuratedText.log")
 	if err := csvWriter.Write([]string{fmt.Sprintf("%.02f", score), fmt.Sprintf("%d", len(tokenize(content))), signature, url, bestParagraph}); err != nil {
 		return err
@@ -1306,7 +1349,13 @@ func dumpFrequencies(numLinksProcessed int, force bool) {
 	logger.Info("progress", "processed", numLinksProcessed, "accepted", acceptedDocs,
 		"rejections", rejectionSummary())
 
-	sorted := rSortFreq(corpusFreqs)
+	crawlMu.Lock()
+	freqCopy := make(freq, len(corpusFreqs))
+	for k, v := range corpusFreqs {
+		freqCopy[k] = v
+	}
+	crawlMu.Unlock()
+	sorted := rSortFreq(freqCopy)
 	output := ""
 	for _, item := range sorted {
 		output += fmt.Sprintf("%d %s %s %d\n", item.Value, item.Key, "none", 0)
@@ -1357,8 +1406,9 @@ func doNextLink(numLinksProcessed int) bool {
 		return false
 	}
 
+	poolMu.Lock()
 	prevState := lPool[maxi].Status
-	lPool[maxi].Status = 1
+	poolMu.Unlock()
 	fmt.Printf("\n\n* Downloading url: %s", nextLink)
 
 	content, links, err := downloadCached(nextLink)
@@ -1413,12 +1463,15 @@ func doNextLink(numLinksProcessed int) bool {
 	if err := writeDocument(nextLink, curated, signature, best, score); err != nil {
 		log.Fatal("Cannot write to file", err)
 	}
+	indexDocument(nextLink, curated)
+	crawlMu.Lock()
 	acceptedDocs++
 	corpusDocCount++
 	for _, token := range tokenize(curated) {
 		corpusDocFreq[strings.ToLower(token)]++
 	}
 	corpusFreqs.add(curated)
+	crawlMu.Unlock()
 
 	dumpFrequencies(numLinksProcessed, false)
 	notifyIndexer(nextLink)
@@ -1510,7 +1563,6 @@ func yamlInitProxy() error {
 // yamlInitSpecific loads the profile selected on the command line.
 
 func yamlInitSpecific() error {
-	profileName := os.Args[1]
 	vp := viper.New()
 	vp.SetConfigName(profileName)
 	if iolib.FileExists("./profiles/" + profileName + ".yaml") {
@@ -1530,6 +1582,11 @@ func yamlInitSpecific() error {
 	maxDocLen = vp.GetInt("maxDocLen")
 	scoreThreshold = float64(vp.GetInt("scoreThreshold"))
 	maxLinksPerPage = vp.GetInt("maxLinksPerPage")
+	language := strings.TrimSpace(vp.GetString("language"))
+	if language != "" {
+		targetLanguage = language
+	}
+	minLanguageConfidence = vp.GetFloat64("minLanguageConfidence")
 	rankingStrategy = strings.ToLower(strings.TrimSpace(vp.GetString("rankingStrategy")))
 	if rankingStrategy == "" {
 		rankingStrategy = "hybrid"
@@ -1548,13 +1605,193 @@ func yamlInitSpecific() error {
 	return nil
 }
 
+var searchDB *sql.DB
+
+// initSearchIndex opens the SQLite FTS5 index for the curated corpus.
+func initSearchIndex() error {
+	if searchDB != nil {
+		return nil
+	}
+	db, err := sql.Open("sqlite", cachePath)
+	if err != nil {
+		return err
+	}
+	if _, err := db.Exec(`CREATE VIRTUAL TABLE IF NOT EXISTS corpus_fts USING fts5(url UNINDEXED, text)`); err != nil {
+		db.Close()
+		return err
+	}
+	searchDB = db
+	return nil
+}
+
+// indexDocument adds or replaces a document in the full-text index.
+func indexDocument(docURL, text string) {
+	if searchDB == nil {
+		return
+	}
+	searchDB.Exec(`DELETE FROM corpus_fts WHERE url = ?`, docURL)
+	if _, err := searchDB.Exec(`INSERT INTO corpus_fts(url, text) VALUES(?, ?)`, docURL, text); err != nil {
+		logger.Debug("cannot index document", "url", docURL, "error", err)
+	}
+}
+
+// runSearch queries the curated corpus and prints matching documents.
+func runSearch(query string) error {
+	if err := initSearchIndex(); err != nil {
+		return err
+	}
+	rows, err := searchDB.Query(`SELECT url, snippet(corpus_fts, 1, '[', ']', ' ... ', 16)
+		FROM corpus_fts WHERE corpus_fts MATCH ? ORDER BY rank LIMIT 20`, query)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	found := 0
+	for rows.Next() {
+		var docURL, snippet string
+		if err := rows.Scan(&docURL, &snippet); err != nil {
+			return err
+		}
+		found++
+		fmt.Printf("\n[%d] %s\n%s\n", found, docURL, snippet)
+	}
+	if found == 0 {
+		fmt.Println("No matches for:", query)
+	}
+	return nil
+}
+
+const appVersion = "1.0.0"
+
+var profileName string
+var targetLanguage = "English"
+var minLanguageConfidence float64
+var cliDryRun bool
+var cliQuery string
+var cliExplore bool
+var cliGenerate string
+var cliWorkers = 1
+
+// parseCLI parses the command line while keeping positional-profile compatibility.
+func parseCLI() error {
+	for _, arg := range os.Args[1:] {
+		switch {
+		case arg == "--selftest", arg == "-h", arg == "--help", arg == "--resume", arg == "-resume":
+			continue
+		case strings.HasPrefix(arg, "-profile="), strings.HasPrefix(arg, "--profile="):
+			profileName = strings.SplitN(arg, "=", 2)[1]
+		case strings.HasPrefix(arg, "-backend="), strings.HasPrefix(arg, "--backend="):
+			cacheBackend = strings.SplitN(arg, "=", 2)[1]
+		case strings.HasPrefix(arg, "-cache="), strings.HasPrefix(arg, "--cache-path="):
+			cachePath = strings.SplitN(arg, "=", 2)[1]
+		case strings.HasPrefix(arg, "-log-level="), strings.HasPrefix(arg, "--log-level="):
+			logLevel = strings.SplitN(arg, "=", 2)[1]
+		case strings.HasPrefix(arg, "-max-links="):
+			v, err := strconv.Atoi(strings.SplitN(arg, "=", 2)[1])
+			if err != nil {
+				return fmt.Errorf("invalid -max-links: %w", err)
+			}
+			maxLinksPerPage = v
+		case strings.HasPrefix(arg, "-workers="):
+			v, err := strconv.Atoi(strings.SplitN(arg, "=", 2)[1])
+			if err != nil || v < 1 || v > 32 {
+				return fmt.Errorf("invalid -workers (1..32): %s", arg)
+			}
+			cliWorkers = v
+		case strings.HasPrefix(arg, "-query="), strings.HasPrefix(arg, "--query="):
+			cliQuery = strings.SplitN(arg, "=", 2)[1]
+		case strings.HasPrefix(arg, "-generate-profile="):
+			cliGenerate = strings.SplitN(arg, "=", 2)[1]
+		case arg == "-dry-run", arg == "--dry-run":
+			cliDryRun = true
+		case arg == "-explore", arg == "--explore":
+			cliExplore = true
+		case arg == "-version", arg == "--version":
+			fmt.Printf("goCrawler %s\n", appVersion)
+			return errStop
+		case arg == "-license", arg == "--license":
+			fmt.Println("MIT License - Copyright (c) 2020-2026 Juan Ignacio Perez Sacristan")
+			return errStop
+		case strings.HasPrefix(arg, "-"):
+			return fmt.Errorf("unknown flag: %s", arg)
+		default:
+			if profileName == "" {
+				profileName = arg
+			}
+		}
+	}
+	if profileName == "" && cliQuery == "" && !cliExplore && cliGenerate == "" {
+		return fmt.Errorf("profile argument required")
+	}
+	return nil
+}
+
+// errStop signals that a informational flag was handled and the program should exit cleanly.
+var errStop = errors.New("stop")
+
+// exploreCorpus prints corpus statistics and the most frequent topic terms.
+func exploreCorpus() error {
+	path := "./logs/corpusCuratedText.log"
+	if !iolib.FileExists(path) {
+		return fmt.Errorf("no corpus at %s", path)
+	}
+	urls := 0
+	for _, line := range strings.Split(iolib.File2string(path), "\n") {
+		if strings.HasPrefix(line, "http") {
+			urls++
+		}
+	}
+	fmt.Printf("Curated documents: %d\n", urls)
+	freqPath := "./output/corpusNoEngFrequencies.txt"
+	if !iolib.FileExists(freqPath) {
+		return nil
+	}
+	lines := strings.Split(strings.TrimSpace(iolib.File2string(freqPath)), "\n")
+	limit := 20
+	if len(lines) < limit {
+		limit = len(lines)
+	}
+	fmt.Println("Top topic terms:")
+	for i := 0; i < limit; i++ {
+		fmt.Println(" ", lines[i])
+	}
+	return nil
+}
+
+// generateProfile writes a starter profile from a seed URL.
+func generateProfile(seed, output string) error {
+	u, err := url.Parse(seed)
+	if err != nil || u.Host == "" {
+		return fmt.Errorf("invalid seed URL: %s", seed)
+	}
+	domain := getDomain(seed)
+	terms := regexTermList(`(?i)\W(images?|stack|stacking|calibration|astrometry|plate|noise|gaia|siril)\W`)
+	for _, part := range strings.FieldsFunc(strings.ToLower(u.Path), func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsNumber(r)
+	}) {
+		if len(part) > 3 {
+			terms = append(terms, part)
+		}
+	}
+	terms = listUnique(terms)
+	content := fmt.Sprintf("# Generated profile for %s\ncuratedDomains: |\n  %s\n\nlinkOk: |\n  %s\n\nregexRankingKeywords: |\n  (?i)\\W(%s)\\W\n\nminDocLen: 50\nmaxDocLen: 100000\nscoreThreshold: 10\nrankingStrategy: hybrid\n\nbootstrapingLinks:\n- %q\n",
+		seed, strings.ReplaceAll(domain, ".", `\.`), strings.Join(terms, "|"), strings.Join(terms, "|"), seed)
+	if err := os.WriteFile(output, []byte(content), 0644); err != nil {
+		return err
+	}
+	fmt.Println("Profile written to", output)
+	return nil
+}
+
 // usage prints the command-line usage message.
 func usage() {
 	fmt.Println("Usage: go run crawler.go <profile>")
 	fmt.Println("  <profile>  profile name (without .yaml), from profiles/ or the working directory")
 	fmt.Println("  --selftest run built-in checks and exit")
 	fmt.Println("  --resume   restore a previous crawl from the cache store")
-	fmt.Println("Example: go run crawler.go crypto --resume")
+	fmt.Println("  -profile=, -backend=, -cache=, -log-level=, -workers=N, -max-links=N")
+	fmt.Println("  -dry-run, -explore, -query=TEXT, -generate-profile=URL, -version, -license")
+	fmt.Println("Examples: go run crawler.go crypto --resume | go run crawler.go -query=drizzle")
 }
 
 // startSessionOutput tees stdout to the terminal and to a timestamped file in logs/.
@@ -1616,10 +1853,34 @@ func run() error {
 		return nil
 	}
 
-	for _, arg := range os.Args[2:] {
-		if arg == "--resume" {
+	for _, arg := range os.Args[1:] {
+		if arg == "--resume" || arg == "-resume" {
 			resumeEnabled = true
 		}
+	}
+	if err := parseCLI(); err != nil {
+		if err == errStop {
+			return nil
+		}
+		return err
+	}
+	if cachePath == "" {
+		cachePath = "./cache/cache.db"
+	}
+	if cacheBackend == "" {
+		cacheBackend = "local"
+	}
+	if logLevel == "" {
+		logLevel = "info"
+	}
+	if cliGenerate != "" {
+		return generateProfile(cliGenerate, "./profiles/generated.yaml")
+	}
+	if cliQuery != "" {
+		return runSearch(cliQuery)
+	}
+	if cliExplore {
+		return exploreCorpus()
 	}
 
 	// Create needed folders if don't exist
@@ -1663,6 +1924,15 @@ func run() error {
 	}
 	defer cacheStore.Close()
 	fmt.Printf("Cache backend: %s\n", cacheStore.Name())
+	if err := initSearchIndex(); err != nil {
+		return fmt.Errorf("search index: %w", err)
+	}
+	defer func() {
+		if searchDB != nil {
+			searchDB.Close()
+			searchDB = nil
+		}
+	}()
 
 	startIndex := 0
 	if resumeEnabled {
@@ -1671,6 +1941,12 @@ func run() error {
 		logger.Warn("cannot clear previous crawl state", "error", err)
 	}
 	defer saveCrawlState()
+
+	if cliDryRun {
+		fmt.Printf("Dry run: profile=%s backend=%s cache=%s language=%s strategy=%s workers=%d\n",
+			profileName, cacheBackend, cachePath, targetLanguage, rankingStrategy, cliWorkers)
+		return nil
+	}
 
 	if respectRobots {
 		fmt.Println("* Robots policy enabled ...")
@@ -1702,15 +1978,31 @@ func run() error {
 		iolib.String2file("\n", "./logs/corpusCuratedText.log")
 	}
 
-	// Loop
-	for numLinksProcessed := startIndex; ; numLinksProcessed++ {
-		lastProcessedLink = numLinksProcessed
-		if !doNextLink(numLinksProcessed) {
-			break
-		}
+	// Loop: one goroutine per worker; downloads overlap, shared state is mutex-protected.
+	var nextIndex atomic.Int64
+	nextIndex.Store(int64(startIndex))
+	var wg sync.WaitGroup
+	for i := 0; i < cliWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				index := int(nextIndex.Add(1) - 1)
+				crawlMu.Lock()
+				lastProcessedLink = index
+				crawlMu.Unlock()
+				if !doNextLink(index) {
+					return
+				}
+			}
+		}()
 	}
+	wg.Wait()
+	crawlMu.Lock()
+	finalIndex := lastProcessedLink
+	crawlMu.Unlock()
 
-	dumpFrequencies(lastProcessedLink, true)
+	dumpFrequencies(finalIndex, true)
 	logger.Info("crawl finished",
 		"processed", lastProcessedLink,
 		"accepted", acceptedDocs,

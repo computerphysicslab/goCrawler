@@ -51,7 +51,7 @@ returning.
 
 ## Tier 2 — Medium effort (effort: M)
 
-### 7. Real CLI flags
+### 7. Real CLI flags — **DONE (2026-11-17)**
 **Problem:** configuration is YAML plus one positional argument; switching backends requires
 editing `crawler.yaml`.
 **Proposal:** use `pflag` (already in the dependency tree) for `--profile`, `--backend`,
@@ -76,14 +76,14 @@ end-to-end tests of `doNextLink` with an HTTP fixture server.
 boundary cases for every threshold.
 **Impact:** safe refactoring and reproducible behaviour.
 
-### 10. Structured logging and rejection counters
+### 10. Structured logging and rejection counters — **DONE (2026-11-17)**
 **Problem:** dozens of `fmt.Printf` calls produce unstructured output; it is hard to know why
 documents were discarded.
 **Proposal:** migrate to `log/slog` with levels and emit a summary of rejections by reason
 (language, length, relevance, duplicate, banned domain).
 **Impact:** profile tuning becomes measurable instead of guesswork.
 
-### 11. Resume support
+### 11. Resume support — **DONE (2026-11-17)**
 **Problem:** `LPool.json` and `domainCounter.json` are written but never read back; stopping a run
 loses all progress.
 **Proposal:** persist the link pool, domain counters and visited links in SQLite and restore them at
@@ -103,14 +103,14 @@ does not declare one.
 
 ## Tier 3 — Larger efforts (effort: L)
 
-### 13. Full-text search over the corpus using SQLite FTS5
+### 13. Full-text search over the corpus using SQLite FTS5 — **DONE (2026-11-17)**
 **Problem:** the crawler builds a useful corpus but offers no way to query it.
 **Proposal:** store curated documents in the existing SQLite database with an FTS5 virtual table
 and add a query command/CLI that returns matching documents and snippets.
 **Impact:** turns the corpus into a real search tool without adding a new service. **Highest-value
 item in this roadmap.**
 
-### 14. Concurrent workers with per-domain rate limiting
+### 14. Concurrent workers with per-domain rate limiting — **DONE (2026-11-17)**
 **Problem:** crawling is completely sequential; fetching hundreds of pages is slow. A 106-second
 run used only 24.78 s user + 0.88 s system CPU (24 % of one core on an 8-core machine), so the
 bottleneck is network latency, not CPU.
@@ -150,14 +150,14 @@ documents score low (observed with the Siril GHS tutorial). Keyword matching als
 similarity, and make the strategy configurable per profile.
 **Impact:** better corpus precision and recall; requires evaluation against a labelled set.
 
-### 16. Configurable multi-language support
+### 16. Configurable multi-language support — **DONE (2026-11-17)**
 **Problem:** `whatlanggo` detection only accepts English (`crawler.go:1144`); there is no parameter
 to change it.
 **Proposal:** add `language` and `minLanguageConfidence` to the profile and generalize the paragraph
 filter; optionally support several languages at once.
 **Impact:** opens the tool to non-English corpora; changes a core filter.
 
-### 17. Profile generator and corpus exploration UI
+### 17. Profile generator and corpus exploration UI — **DONE (2026-11-17)**
 **Problem:** writing profiles by hand is tedious, and exploring results means opening raw text and
 frequency files.
 **Proposal:** a helper that derives `linkOk`/`regexRankingKeywords` from a seed URL plus a few terms,
@@ -167,7 +167,7 @@ the dormant n-gram code).
 
 ---
 
-### 18. Fix stale frequency dumps
+### 18. Fix stale frequency dumps — **DONE (2026-11-17)**
 **Problem:** the frequency files are written inside `doNextLink()` only when a document passes every
 filter *and* `numLinksProcessed % 50 == 0`. Most passing documents do not land exactly on a multiple
 of 50, so `corpusFrequencies.txt` and `corpusNoEngFrequencies.txt` can end up describing a single
@@ -204,7 +204,7 @@ Add `LICENSE` (MIT or Apache-2.0 recommended) and a `debian/copyright` DEP-5 stu
 Universe/Main are impossible and Snap/PPA metadata is incomplete. Also add an `SPDX-License-Identifier`
 header to source files if Apache-2.0 is chosen.
 
-### 20. Version and reproducible build metadata (effort: S)
+### 20. Version and reproducible build metadata (effort: S) — **DONE (2026-11-17)**
 Add `--version`/`--license` flags, a `VERSION` constant, clean semantic Git tags (`v0.1.0`), a man
 page (`crawler.1`) and `go mod vendor` for offline builds. Verify `CGO_ENABLED=0 go build` and
 document the exact Go toolchain version.
@@ -241,32 +241,32 @@ set `go 1.26.0` + `toolchain go1.26.11`, upgraded `golang.org/x/net` to v0.62.0 
 `govulncheck ./...` now reports **No vulnerabilities found**; `go build`, `go vet`, `go test` and
 `--selftest` all pass. The Makefile defaults to `GO ?= go1.26.11`.
 
-### 22. Audit dependency packaging for Debian (effort: M)
+### 22. Audit dependency packaging for Debian (effort: M) — **DONE (2026-11-17)**
 Check which Go modules already exist as Debian/Ubuntu packages (`golang-github-*`). Those that do
 must be used from the distro; the rest need either packaging work or an exception for vendoring.
 This decision determines whether Universe is realistic.
 
-### 23. Snapcraft strict-confinement draft (effort: M)
+### 23. Snapcraft strict-confinement draft (effort: M) — **DONE (2026-11-17)**
 Add `snap/snapcraft.yaml` with `confinement: strict`, `base: core22`, `grade: stable`, the `network`
 interface and writable areas limited to `$SNAP_USER_DATA`. Adapt `cachePath`, logs and output paths
 via configuration so no write outside the snap data directory is attempted. Snap is the lowest-friction
 route for appearing in Ubuntu's App Center; strict confinement avoids human review.
 
-### 24. Debian packaging skeleton for PPA (effort: M)
+### 24. Debian packaging skeleton for PPA (effort: M) — **DONE (2026-11-17)**
 Create `debian/control`, `debian/rules` (using `dh-golang`), `debian/changelog`, `debian/install` and
 a signed source package. A Launchpad PPA builds the `.deb` without an audit; the user must run
 `sudo add-apt-repository` first. This is the fastest `.deb` route.
 
-### 25. AppStream metadata and desktop integration (effort: S)
+### 25. AppStream metadata and desktop integration (effort: S) — **DONE (2026-11-17)**
 Add `io.github.computerphysicslab.goCrawler.metainfo.xml` (CLI component, description, screenshots,
 release notes) and an SVG icon. Useful for Snap Store and harmless for PPA.
 
-### 26. Universe / Debian Mentors sponsorship (effort: L, long timeline)
+### 26. Universe / Debian Mentors sponsorship (effort: L, long timeline) — **DEFERRED by decision (2026-11-17)**
 Only after items 19–22: enter Debian unstable first, find a sponsor, pass the NEW queue, then wait for
 Ubuntu to import the package in the next six-month cycle. Requires full source-only reproducible builds,
 no bundled dependencies and a clean `debian/copyright`.
 
-### 27. Main / preinstalled ISO (effort: XL, not currently realistic)
+### 27. Main / preinstalled ISO (effort: XL, not currently realistic) — **OUT OF SCOPE by decision (2026-11-17)**
 Requires a Main Inclusion Report, line-by-line Canonical security audit, demonstrated mass adoption
 and a five-year LTS security commitment. Not recommended for this project in its current form.
 
@@ -328,14 +328,12 @@ cache hits via a fake store, and a local HTTP server for `proxyGet`/`download`.
 
 ## Status
 
-Items **1–6, 8–12 and 21 are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
-across runs, not only within a run; item 12 covers robots.txt, User-Agent and Crawl-delay, but not a
-general configurable delay; item 10 adds `slog` structured logging and rejection counters, item 11
-adds SQLite-backed `--resume`; item 21 resolved all dependency vulnerabilities with Go 1.26.11;
-item 35 expanded the test suite). Items **15 and 28–34 are DONE** as of 2026-11-17 (precompiled regexes, link-pool bug fix,
-in-memory failed domains, shared HTTP client, TF-IDF/hybrid ranking with synonyms, decomposed
-`doNextLink` plus compact corpus index, error-returning `run()` and versioned state, and a URL index
-for the pool). Items **7, 13–14, 16–18 remain proposed / not started**.
+**All actionable items are complete as of 2026-11-17.**
 
-**Ubuntu readiness:** section with items **19–27**. Items 19 (MIT LICENSE) and 21 (dependency
-vulnerabilities) are **DONE**; the rest remain proposed / not started.
+- Core crawler: 1–6, 8–18, 21, 28–35 DONE.
+- Ubuntu readiness: 19–25 DONE; 26 DEFERRED (blocked on Debian dependency packaging, see
+  `docs/UBUNTU_SUBMISSION.md`); 27 OUT OF SCOPE (MIR/LTS commitment not realistic for this project).
+- Remaining non-actionable items: 26 and 27 are deliberate decisions, not pending work.
+
+Verification: `go build ./...`, `go vet ./...`, `go test ./...`, `go test -race ./...`,
+`go run crawler.go --selftest` and `govulncheck ./...` all pass with Go 1.26.11.

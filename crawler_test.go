@@ -378,3 +378,33 @@ func TestProxyGetAndDownloadWithLocalServer(t *testing.T) {
 		}
 	})
 }
+
+func TestFTS5IndexAndSearch(t *testing.T) {
+	oldPath := cachePath
+	cachePath = filepath.Join(t.TempDir(), "search.db")
+	defer func() {
+		cachePath = oldPath
+		if searchDB != nil {
+			searchDB.Close()
+			searchDB = nil
+		}
+	}()
+	if err := initSearchIndex(); err != nil {
+		t.Fatal(err)
+	}
+	indexDocument("https://example.org/stack", "stacking images and sigma clipping")
+	var count int
+	if err := searchDB.QueryRow(`SELECT count(*) FROM corpus_fts`).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatalf("corpus_fts has %d rows, want 1", count)
+	}
+	var got string
+	if err := searchDB.QueryRow(`SELECT url FROM corpus_fts WHERE corpus_fts MATCH ?`, "stacking").Scan(&got); err != nil {
+		t.Fatalf("FTS5 MATCH failed: %v", err)
+	}
+	if got != "https://example.org/stack" {
+		t.Fatalf("search result = %q", got)
+	}
+}

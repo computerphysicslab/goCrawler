@@ -658,3 +658,48 @@ que alimenta un canal, N workers que descargan y filtran, y un agregador dueño 
   `crawlState.Version` rechaza estados incompatibles; cache JSON corrupto se descarta y se redescarga.
 - **34**: `linkIndex map[string]int` para búsqueda O(1) de duplicados y `maxLinksPerPage` (default 200).
 - Verificado: build/vet/test/selftest con Go 1.26.11 y ejecución real corta sin panics.
+
+## 20. Nuevo ciclo de investigación (2026-11-17, 22:48 UTC)
+
+- Ejecución completa con `skystacker-research` (binario con Go 1.26.11, sin Redis):
+  **338 s** (5:38), **217 enlaces procesados**, **52 documentos aceptados**, corpus de 1602 líneas.
+- **Caché**: **144 aciertos `[CACHE]`** frente a **25 descargas `[ONLINE]`** → tasa de acierto
+  **85,2 %**. 15 URLs bloqueadas por robots.txt y 48 errores de descarga.
+- **Contadores de rechazo** (logueados al final): `non_english 19647`, `invalid_url 3129`,
+  `stopword_ratio 4880`, `off_topic_url 247`, `too_short 121`, `low_relevancy 35`, `duplicate 9`,
+  `robots_blocked 15`. Son recuentos por párrafo/enlace, no por documento.
+- **Contenido nuevo**: 51 de los 52 documentos del corpus son nuevos frente a los corpus guardados
+  en ejecuciones anteriores. 6 de las 25 URLs descargadas online pasaron los filtros:
+  `tetra3rs.dev/tutorials/basic-solve`, `starstax`, `starnetastro.com`, dos entradas de KStars
+  (blog de knro) y un documento técnico de Starlink. La mayoría del corpus viene de semillas ya
+  en caché (Astrometry.net, Siril, PixInsight, Astro Pixel Processor), pero las fuentes nuevas
+  amplían la cobertura hacia **plate solving con tetra3rs, apilado con StarStax/StarNet y
+  catálogos KStars**, muy alineadas con `02-astrometry-and-identification/`.
+- **Frecuencias temáticas finales** (el volcado forzado al terminar ya funciona, bug 18 cerrado):
+  `image 366, frames 215, stars 206, drizzle 147, gaia 122, noise 120, flat 112, fits 107,
+  siril 99, stacking 97, cfa 94, astap 93, astrometry 90`.
+- Sesión grabada en `logs/Skystacker-research-2026-11-17-Z21-48-15.txt` (72 KB).
+
+## 21. Política: entregar contenido curado, no solo URLs/keywords (2026-11-17)
+
+El usuario lo ha indicado expresamente: **cuando se pase información recopilada por goCrawler a un
+tercero (por ejemplo, la carpeta `SkyStacker/research`), no basta con listar URLs nuevas y keywords:
+hay que incluir también el contenido descargado y curado** que queda en
+`goCrawler/logs/corpusCuratedText.log`. Ese fichero contiene, para cada documento aceptado, la URL,
+el texto filtrado (inglés, stopwords, longitud y relevancia) y el separador `----`. Es la parte
+realmente útil: las keywords solo resumen de qué habla la página.
+
+Regla permanente: siempre que se exporte un hallazgo del crawler, adjuntar un extracto del texto
+curado correspondiente (o el documento completo si es razonable) además de la URL y las keywords.
+
+## 22. Ciclo 5 y contenido curado entregado (2026-11-17)
+
+- Nuevo ciclo con `skystacker-research` y `-workers=2`: **8 s**, **49 aciertos de caché**, **0
+  descargas online**, **33 documentos** (32 nuevos frente al corpus previo). CPU **137 %** → los dos
+  workers solapan E/S correctamente (no hay 8 núcleos en uso, pero sí >1 core).
+- Siguiendo la política de §21, se creó
+  `astronomia/SkyStacker/research/08-curated-content-cycle-5-2026-11-17.md` con el **texto curado
+  real** de 10 fuentes (measurethepixels, Siril drizzle/platesolving, PixInsight master-frames,
+  tetra3rs, astrometry.net build-index/code, hnsky ASTAP, StarStax, miklosoft), extraído de
+  `logs/corpusCuratedText.log` con su score. Los documentos 06 y 07 y el README de research
+  referencian este fichero.

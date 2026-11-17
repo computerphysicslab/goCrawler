@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+export DH_GOPKG := github.com/computerphysicslab/goCrawler
+export GO111MODULE := on
+export CGO_ENABLED := 0
+
+%:
+	dh $@ --buildsystem=golang
+
+override_dh_auto_build:
+	go build -trimpath -o gocrawler crawler.go
+
+override_dh_auto_install:
+	install -D -m 0755 gocrawler debian/gocrawler/usr/bin/gocrawler
+	install -D -m 0644 README.md debian/gocrawler/usr/share/doc/gocrawler/README.md

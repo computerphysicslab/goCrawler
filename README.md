@@ -228,6 +228,14 @@ and used for HTTP requests. It is not included in the repository.
 make run PROFILE=crypto             # resolves profiles/crypto.yaml
 go run crawler.go astrophotography  # resolves profiles/astrophotography.yaml
 go run crawler.go astrophotography --resume   # restore link pool and counters from SQLite
+
+# other CLI options
+go run crawler.go -profile=crypto -backend=local -workers=4 -log-level=debug
+go run crawler.go -dry-run -profile=crypto
+go run crawler.go -query=drizzle               # search the curated corpus (SQLite FTS5)
+go run crawler.go -explore                     # corpus stats and top terms
+go run crawler.go -generate-profile=https://example.org/stacking
+go run crawler.go -version | -license
 ```
 
 The crawler runs until its link pool is exhausted. Progress is printed to stdout, including
@@ -319,6 +327,25 @@ must also respect per-domain politeness (including `Crawl-delay`). Expected gain
 in wall time (network latency dominates), but CPU usage will stay low and output ordering will change.
 This is roadmap item 14; it is **not implemented**. Use `go test -race` when implementing.
 
+## CLI options
+
+| Flag | Meaning |
+|---|---|
+| `-profile=NAME` | profile name (the first positional argument also works) |
+| `-backend=local\|redis`, `-cache=PATH` | override cache settings from the command line |
+| `-workers=N` | concurrent download workers (1–32, default 1); shared state is mutex-protected |
+| `-log-level=LEVEL` | `debug`, `info`, `warn` or `error` |
+| `-max-links=N` | maximum links added from one page |
+| `-dry-run` | load configuration and exit without crawling |
+| `-query=TEXT` | full-text search over the curated corpus (SQLite FTS5) |
+| `-explore` | print corpus statistics and top topic terms |
+| `-generate-profile=URL` | write `profiles/generated.yaml` from a seed URL |
+| `-resume`, `--resume` | restore the previous crawl from SQLite |
+| `-version`, `-license` | print version or license and exit |
+
+`-h`/`--help` prints the usage summary. Multi-language corpora can be selected with the profile
+keys `language` (default `English`) and `minLanguageConfidence`.
+
 ## Logging, rejection counters and resume
 
 Runtime messages are emitted with structured `slog` records (`time=... level=... msg=... key=value`)
@@ -336,6 +363,10 @@ last processed index. Without `--resume`, any previous state is cleared at start
 
 `govulncheck ./...` reports **no vulnerabilities** with the pinned toolchain and dependencies
 (`golang.org/x/net v0.62.0`, `gopkg.in/yaml.v2 v2.4.0`). Re-run it after every dependency update.
+
+Packaging drafts are included: `snap/snapcraft.yaml` (strict confinement), `debian/` (source
+skeleton for a PPA), AppStream metadata and a desktop launcher in `assets/`. See
+[`docs/UBUNTU_SUBMISSION.md`](docs/UBUNTU_SUBMISSION.md) for the decisions and remaining blockers.
 
 ## Distribution and audit readiness
 

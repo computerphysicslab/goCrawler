@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+  <id>io.github.computerphysicslab.goCrawler</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>goCrawler</name>
+  <summary>Topic-restricted crawler that builds curated text corpora</summary>
+  <description>
+    <p>goCrawler downloads web pages, filters them by language, length, relevance and uniqueness,
+    and stores curated text, token frequencies and a ranking in a local SQLite database. It is a
+    command-line tool aimed at text-mining and corpus-building workflows.</p>
+  </description>
+  <launchable type="desktop-id">io.github.computerphysicslab.goCrawler.desktop</launchable>
+  <categories>
+    <category>Development</category>
+    <category>Science</category>
+    <category>Utility</category>
+  </categories>
+  <url type="homepage">https://github.com/computerphysicslab/goCrawler</url>
+  <url type="bugtracker">https://github.com/computerphysicslab/goCrawler/issues</url>
+  <developer_name>Juan Ignacio Perez Sacristan</developer_name>
+  <releases>
+    <release version="1.0.0" date="2026-11-17">
+      <description><p>First packaged release: configurable ranking, robots.txt policy, resumable crawls and local cache.</p></description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>

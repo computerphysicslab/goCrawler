@@ -1,0 +1,16 @@
+Source: goCrawler (https://github.com/computerphysicslab/goCrawler)
+Section: utils
+Priority: optional
+Maintainer: Juan Ignacio Perez Sacristan <computerphysicslab@gmail.com>
+Build-Depends: debhelper-compat (= 13), golang-go (>= 2:1.26), golang-gopkg-yaml.v2-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/computerphysicslab/goCrawler
+
+Package: gocrawler
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: topic-restricted crawler for curated text corpora
+ goCrawler starts from seed URLs, downloads pages, and keeps only documents
+ that pass language, length, relevance and uniqueness filters. It writes a
+ curated corpus, token frequencies and a ranking to disk. The default cache
+ is a local SQLite file; Redis is optional.
