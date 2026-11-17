@@ -55,8 +55,12 @@ func String2file(text string, filename string) {
 	aFile, err := os.Create(filename)
 	if err != nil {
 		log.Println(err)
+		return
 	}
-	aFile.Write([]byte(text))
+	defer aFile.Close()
+	if _, err := aFile.WriteString(text); err != nil {
+		log.Println(err)
+	}
 }
 
 // String2fileAppend appends the string content into a file
@@ -76,12 +80,13 @@ func File2string(filename string) string {
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Println(err)
+		return ""
 	}
 	defer file.Close()
-	b, err2 := ioutil.ReadAll(file)
-	if err2 != nil {
+	b, err := ioutil.ReadAll(file)
+	if err != nil {
 		log.Println(err)
+		return ""
 	}
-
-	return string(b[:])
+	return string(b)
 }
