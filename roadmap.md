@@ -134,6 +134,18 @@ the dormant n-gram code).
 
 ---
 
+### 18. Fix stale frequency dumps
+**Problem:** the frequency files are written inside `doNextLink()` only when a document passes every
+filter *and* `numLinksProcessed % 50 == 0`. Most passing documents do not land exactly on a multiple
+of 50, so `corpusFrequencies.txt` and `corpusNoEngFrequencies.txt` can end up describing a single
+document even after a long crawl (observed in the 2026-11-17 astrophotography run).
+**Proposal:** move the periodic dump to a place that executes for every processed link, or dump on
+a final flush when the link pool is exhausted; also dump at run end regardless of the counter.
+**Impact:** trustworthy frequency output; **medium priority** because it affects the quality of one
+of the main results.
+
+---
+
 ## Suggested execution order
 
 1. Items **1–5** (one afternoon): hygiene and crash fixes.
@@ -145,4 +157,5 @@ the dormant n-gram code).
 
 ## Status
 
-Items **1–6 (Tier 1) are DONE** as of 2026-11-17. Items **7–17 remain proposed / not started**.
+Items **1–6 (Tier 1) are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
+across runs, not only within a run). Items **7–17 and the new item 18 remain proposed / not started**.

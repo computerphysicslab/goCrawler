@@ -292,7 +292,27 @@ var rejectedLinkSets = map[string]map[string]struct{}{
 	"linksNotOk.ParseRequestURI.log": {},
 }
 
+func initRejectedLinkSets() {
+	for filename, set := range rejectedLinkSets {
+		path := "./logs/" + filename
+		if !iolib.FileExists(path) {
+			continue
+		}
+		for _, line := range strings.Split(iolib.File2string(path), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			if len(set) >= maxUniqueRejectedLinks {
+				break
+			}
+			set[line] = struct{}{}
+		}
+	}
+}
+
 func logRejectedLink(filename, link string) {
+	link = strings.TrimSpace(link)
 	set, ok := rejectedLinkSets[filename]
 	if !ok {
 		return
@@ -1371,6 +1391,8 @@ func main() {
 		// Output folder does not exist, we create it automatically
 		os.MkdirAll("./output", os.ModePerm)
 	}
+
+	initRejectedLinkSets()
 
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
