@@ -10,6 +10,7 @@ package corpusfreqlib
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -89,8 +90,46 @@ func loadCorpus(filename string) map[string]WordInfo {
 	return corpusFreqs
 }
 
+const freqIndexFile = "./corpusfreqlib/freq-index.json"
+
+// loadFreqIndex loads the compact JSON index when it is available.
+func loadFreqIndex() bool {
+	b, err := os.ReadFile(freqIndexFile)
+	if err != nil {
+		return false
+	}
+	index := make(map[string]int)
+	if err := json.Unmarshal(b, &index); err != nil || len(index) == 0 || index["the"] == 0 {
+		return false
+	}
+	corpusFreqs = make(map[string]WordInfo, len(index))
+	for token, total := range index {
+		corpusFreqs[token] = WordInfo{numTotal: total}
+	}
+	return true
+}
+
+// saveFreqIndex persists only the totals used by Freq.
+func saveFreqIndex() {
+	index := make(map[string]int, len(corpusFreqs))
+	for token, item := range corpusFreqs {
+		index[token] = item.numTotal
+	}
+	b, err := json.Marshal(index)
+	if err != nil {
+		log.Println("cannot encode frequency index:", err)
+		return
+	}
+	if err := os.WriteFile(freqIndexFile, b, 0644); err != nil {
+		log.Println("cannot write frequency index:", err)
+	}
+}
+
 // Init loads and normalizes the English reference corpora.
 func Init() {
+	if loadFreqIndex() {
+		return
+	}
 	corpusFreqsEng = loadCorpus("./corpusfreqlib/all.num")
 	corpusFreqsCont = loadCorpus("./corpusfreqlib/contemporaryEnglish.txt")
 
@@ -107,6 +146,7 @@ func Init() {
 	}
 
 	Test()
+	saveFreqIndex()
 }
 
 // Freq returns the standard English frequency of a token.

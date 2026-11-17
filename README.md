@@ -408,9 +408,10 @@ requests. The SQLite file was 32 MB for those 76 pages. Note that the warm run i
 - **Tokenization** (`tokenize`, `crawler.go:535`): split on every non-alphanumeric character.
 - **Stopword filtering** (`analyze`, `crawler.go:679`): lowercase and remove stopwords; the Snowball
   stemmer is implemented but disabled.
-- **Relevance scoring** (`rankingByKeywords`, `crawler.go:554`):
-  `100 * uniqueMatchingKeywords / sqrt(1 + tokenCount)`. Because of the divisor, long documents
-  score lower even when they are highly relevant.
+- **Relevance scoring** (`rankingScore`): three configurable strategies. `keywords` keeps the legacy
+  `100 * uniqueMatches / sqrt(1 + tokenCount)` formula; `tfidf` computes the share of the document's
+  IDF weight matched by the profile vocabulary (length-normalised); `hybrid` averages both. The
+  profile `synonyms` block expands keyword matching to related terms.
 - **Best paragraph** (`bestParagraph`, `crawler.go:590`): the highest-ranked paragraph, capped at
   2000 characters.
 - **Uniqueness**: a document is rejected if its seven most frequent tokens match an already accepted

@@ -170,6 +170,7 @@ func TestDomainHadFailed(t *testing.T) {
 		if err := os.WriteFile("logs/domainFailed.log", []byte(content), 0644); err != nil {
 			t.Fatal(err)
 		}
+		initFailedDomains()
 		if !domainHadFailed("example.org") {
 			t.Fatal("domain with 7 failures should be discarded")
 		}

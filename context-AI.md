@@ -638,3 +638,23 @@ que alimenta un canal, N workers que descargan y filtran, y un agregador dueño 
   nomenclatura del fichero de sesión, cache hit con store falso y servidor HTTP local para
   `proxyGet`/`download`. Verificado con Go 1.26.11.
 - **Roadmap**: ítems 21 y 35 DONE; nuevos ítems 28–35, con 28–30 como quick wins de prioridad alta.
+
+## 19. Implementación de roadmap 15 y 28–34 (2026-11-17)
+
+- **15 (ranking)**: `rankingScore` con tres estrategias configurables por perfil (`rankingStrategy:
+  keywords|tfidf|hybrid`), normalización por longitud, IDF calculado del corpus aceptado y bloque
+  `synonyms: term: a|b|c` para expansión semántica ligera. Default `hybrid`.
+- **28**: todas las regex compiladas una vez (constantes a nivel paquete y derivadas de config en
+  `compileConfigRegexes()` al arrancar). Ya no hay `regexp.Compile` en el hot path.
+- **29**: `getNextLink` no incrementa `domainCounter` si no hay candidato válido (`maxURL == ""`).
+- **30**: `failedDomains map[string]int` en memoria, reconstruido del log y persistido en `state:crawl`;
+  `domainHadFailed` ya no escanea el fichero en cada descarga.
+- **31**: `httpClient` único con `http.Transport` (keep-alive, timeouts, proxy configurable).
+- **32**: `doNextLink` descompuesto en `filterParagraphs`, `buildCuratedContent`, `documentSignature`,
+  `isUniqueDocument`, `writeDocument`, `dumpFrequencies` y `notifyIndexer`. El volcado de frecuencias
+  ahora también se fuerza al terminar (arregla el bug 18). `corpusfreqlib` guarda un índice JSON
+  compacto `corpusfreqlib/freq-index.json` (en .gitignore) para no releer ~700k líneas cada arranque.
+- **33**: `run() error` + `main` solo gestiona el exit code; `yamlInit*`/`csvInit` devuelven errores;
+  `crawlState.Version` rechaza estados incompatibles; cache JSON corrupto se descarta y se redescarga.
+- **34**: `linkIndex map[string]int` para búsqueda O(1) de duplicados y `maxLinksPerPage` (default 200).
+- Verificado: build/vet/test/selftest con Go 1.26.11 y ejecución real corta sin panics.

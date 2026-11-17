@@ -143,7 +143,7 @@ results ordered by an index or accept unordered output. Validate with `go test -
 **Impact:** large wall-time reduction (I/O bound); CPU stays low. Refactoring effort is significant
 and output ordering changes. **Status: proposed, not implemented.**
 
-### 15. Better ranking: normalize length and add semantic similarity
+### 15. Better ranking: normalize length and add semantic similarity — **DONE (2026-11-17)**
 **Problem:** `rankingByKeywords` divides by `sqrt(1 + tokenCount)`, so long, highly relevant
 documents score low (observed with the Siril GHS tutorial). Keyword matching also misses synonyms.
 **Proposal:** normalize scores by document length, consider TF-IDF or embeddings for semantic
@@ -279,35 +279,35 @@ and a five-year LTS security commitment. Not recommended for this project in its
 
 Full details in [`docs/FUNCTION_ANALYSIS.md`](docs/FUNCTION_ANALYSIS.md).
 
-### 28. Precompile regular expressions (effort: S) — HIGH PRIORITY
+### 28. Precompile regular expressions (effort: S) — HIGH PRIORITY — **DONE (2026-11-17)**
 `linkSeemsOk`, `isBanned`, `getDomain`, `getSecondLevelDomain`, `stopwordFilter` and the border/stopword
 counters compile regexes on every call. Compile constants once at package scope and config-derived
 ones once in `yamlInitGeneral`. Expected: measurable CPU reduction in the 53 %-CPU warm-cache runs.
 
-### 29. Fix `getNextLink` empty-candidate bug (effort: S) — HIGH PRIORITY
+### 29. Fix `getNextLink` empty-candidate bug (effort: S) — HIGH PRIORITY — **DONE (2026-11-17)**
 When no link passes `isBanned`/`linkSeemsOk`, `maxURL` stays empty but `increaseDomainCounter` still
 runs for `lPool[0]`, skewing priorities. Guard on `maxURL == ""` before incrementing.
 
-### 30. Replace the O(n^2) failed-domain log scan (effort: S) — HIGH PRIORITY
+### 30. Replace the O(n^2) failed-domain log scan (effort: S) — HIGH PRIORITY — **DONE (2026-11-17)**
 `domainHadFailed` reads and splits the whole `domainFailed.log` on every download. Keep an in-memory
 `map[string]int` persisted in `state:crawl`; keep the text log only for humans.
 
-### 31. Reuse one HTTP client in `proxyGet` (effort: S) — MEDIUM PRIORITY
+### 31. Reuse one HTTP client in `proxyGet` (effort: S) — MEDIUM PRIORITY — **DONE (2026-11-17)**
 A new `http.Client` per request plus `req.Close = true` disables keep-alive. Use one package-level
 client with a tuned `http.Transport`.
 
-### 32. Decompose `doNextLink` and index the English corpus (effort: M)
+### 32. Decompose `doNextLink` and index the English corpus (effort: M) — **DONE (2026-11-17)**
 `doNextLink` is ~330 lines with eight early returns; split it into `filterParagraphs`,
 `buildCuratedContent`, `isUniqueDocument`, `writeDocument` and `dumpFrequencies` (this also fixes
 item 18). Separately, persist a compact frequency index instead of re-reading 700k lines of `all.num`
 at every start.
 
-### 33. Error returns instead of panic/os.Exit; versioned state (effort: M)
+### 33. Error returns instead of panic/os.Exit; versioned state (effort: M) — **DONE (2026-11-17)**
 `yamlInit*`, `csvInit` and `main` panic or call `os.Exit`, skipping deferred session/CSV/log closes.
 Extract `run() error` and return errors. Add a `Version` field to `crawlState` and reject unknown
 versions. Handle corrupt cache JSON by re-downloading instead of panicking.
 
-### 34. Index the link pool by URL (effort: M, depends on 14)
+### 34. Index the link pool by URL (effort: M, depends on 14) — **DONE (2026-11-17)**
 `addLink` performs a linear scan for duplicates and `addLinksOf` has no per-page cap. Maintain a
 `map[string]int` index and a configurable link cap.
 
@@ -332,8 +332,10 @@ Items **1–6, 8–12 and 21 are DONE** as of 2026-11-17 (item 6 was refined the
 across runs, not only within a run; item 12 covers robots.txt, User-Agent and Crawl-delay, but not a
 general configurable delay; item 10 adds `slog` structured logging and rejection counters, item 11
 adds SQLite-backed `--resume`; item 21 resolved all dependency vulnerabilities with Go 1.26.11;
-item 35 expanded the test suite). Items **7, 13–18 and 28–34 remain proposed / not started**;
-28–30 are the highest-priority quick wins from the function review.
+item 35 expanded the test suite). Items **15 and 28–34 are DONE** as of 2026-11-17 (precompiled regexes, link-pool bug fix,
+in-memory failed domains, shared HTTP client, TF-IDF/hybrid ranking with synonyms, decomposed
+`doNextLink` plus compact corpus index, error-returning `run()` and versioned state, and a URL index
+for the pool). Items **7, 13–14, 16–18 remain proposed / not started**.
 
 **Ubuntu readiness:** section with items **19–27**. Items 19 (MIT LICENSE) and 21 (dependency
 vulnerabilities) are **DONE**; the rest remain proposed / not started.
