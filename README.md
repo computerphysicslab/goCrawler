@@ -183,6 +183,7 @@ all checks pass.
 | `cacheBackend` | `local` (SQLite, default) or `redis`. |
 | `cachePath` | SQLite database path (default `./cache/cache.db`). |
 | `maxDownloadMB` | Maximum size of a downloaded page in MiB (default `5`). |
+| `logLevel` | Structured log level: `debug`, `info`, `warn` or `error` (default `info`). |
 | `respectRobots` | Fetch and honour `robots.txt` before each online download (default `true`). |
 | `userAgent` | User-Agent sent for page and `robots.txt` requests. |
 
@@ -225,6 +226,7 @@ and used for HTTP requests. It is not included in the repository.
 ```shell
 make run PROFILE=crypto             # resolves profiles/crypto.yaml
 go run crawler.go astrophotography  # resolves profiles/astrophotography.yaml
+go run crawler.go astrophotography --resume   # restore link pool and counters from SQLite
 ```
 
 The crawler runs until its link pool is exhausted. Progress is printed to stdout, including
@@ -315,6 +317,25 @@ and filtering, and an aggregator goroutine owning all result structures and file
 must also respect per-domain politeness (including `Crawl-delay`). Expected gain is a large reduction
 in wall time (network latency dominates), but CPU usage will stay low and output ordering will change.
 This is roadmap item 14; it is **not implemented**. Use `go test -race` when implementing.
+
+## Logging, rejection counters and resume
+
+Runtime messages are emitted with structured `slog` records (`time=... level=... msg=... key=value`)
+at the level configured by `logLevel`. Every filter increments a rejection counter; progress and the
+final summary log the counts by reason (`non_english`, `stopword_ratio`, `too_short`, `too_long`,
+`duplicate`, `low_relevancy`, `token_distribution`, `invalid_url`, `off_topic_url`,
+`robots_blocked`). This makes profile tuning measurable instead of guesswork.
+
+The link pool, domain counters, uniqueness signatures and accumulated frequencies are saved in the
+SQLite store under `state:crawl` every 50 links and at shutdown. Running with `--resume` restores
+them, appends to `ranking-URL.csv` and the corpus instead of truncating them, and continues from the
+last processed index. Without `--resume`, any previous state is cleared at startup.
+
+## Distribution and audit readiness
+
+Packaging options (PPA, Snap Store, Debian/Ubuntu Universe, Main) and the work needed before each
+are analysed in [`roadmap.md`](roadmap.md), section "Ubuntu / Debian distribution readiness".
+The first blocker is the absence of an open-source `LICENSE` file.
 
 ## Outputs
 

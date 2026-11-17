@@ -23,6 +23,9 @@ specialStopwords: |
 
 downloadTimeout: 8
 
+# Structured log level: debug, info, warn or error
+logLevel: info
+
 # Maximum size of a downloaded page, in MiB
 maxDownloadMB: 5
 

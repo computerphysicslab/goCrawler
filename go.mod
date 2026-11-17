@@ -10,7 +10,7 @@ require (
 	github.com/kljensen/snowball v0.6.0
 	github.com/spf13/viper v1.7.1
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
-	modernc.org/sqlite v1.31.0
+	modernc.org/sqlite v1.28.0
 )
 
 require (
@@ -35,12 +35,12 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
+	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b // indirect
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/yaml.v2 v2.2.4 // indirect
-	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
 	modernc.org/libc v1.55.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect

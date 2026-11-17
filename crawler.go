@@ -25,6 +25,7 @@ import (
 	"github.com/jackdanger/collectlinks"
 	snowballeng "github.com/kljensen/snowball/english"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/slog"
 	"jaytaylor.com/html2text"
 
 	"github.com/abadojack/whatlanggo"
@@ -58,6 +59,108 @@ var cacheStore storelib.Store
 var robotsPolicy *robotspolicy.Policy
 var userAgent string
 var respectRobots bool
+var logLevel string
+
+// logger is replaced at startup so records are written through the session tee.
+var logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+var rejectionCounts = make(map[string]int)
+var acceptedDocs int
+var lastProcessedLink int
+var resumeEnabled bool
+
+const crawlStateKey = "state:crawl"
+
+// crawlState is the serializable snapshot needed to resume a run.
+type crawlState struct {
+	Pool          []aLink           `json:"pool"`
+	DomainCounter map[string]int    `json:"domainCounter"`
+	Processed     int               `json:"processed"`
+	UniqueSigs    map[string]string `json:"uniqueSignatures"`
+	Frequencies   map[string]int    `json:"frequencies"`
+	SavedAt       time.Time         `json:"savedAt"`
+}
+
+// saveCrawlState stores the current crawl progress in the cache store.
+func saveCrawlState() {
+	state := crawlState{
+		Pool:          lPool,
+		DomainCounter: domainCounter,
+		Processed:     lastProcessedLink,
+		UniqueSigs:    uniqueSignature,
+		Frequencies:   corpusFreqs,
+		SavedAt:       time.Now(),
+	}
+	b, err := json.Marshal(state)
+	if err != nil {
+		logger.Error("cannot serialize crawl state", "error", err)
+		return
+	}
+	if err := cacheStore.Set(crawlStateKey, string(b)); err != nil {
+		logger.Error("cannot save crawl state", "error", err)
+		return
+	}
+	logger.Debug("crawl state saved", "processed", lastProcessedLink)
+}
+
+// loadCrawlState restores a previous crawl and returns the next link index.
+func loadCrawlState() int {
+	value := cacheStore.Get(crawlStateKey)
+	if value == "" {
+		logger.Warn("no crawl state found, starting from scratch")
+		return 0
+	}
+	var state crawlState
+	if err := json.Unmarshal([]byte(value), &state); err != nil {
+		logger.Error("cannot decode crawl state", "error", err)
+		return 0
+	}
+	lPool = state.Pool
+	domainCounter = state.DomainCounter
+	uniqueSignature = state.UniqueSigs
+	corpusFreqs = state.Frequencies
+	lastProcessedLink = state.Processed
+	logger.Info("crawl state restored",
+		"processed", state.Processed,
+		"links", len(lPool),
+		"savedAt", state.SavedAt)
+	return state.Processed
+}
+
+// initLogger configures the structured logger level.
+func initLogger(level string) {
+	var lvl slog.Level
+	switch strings.ToLower(level) {
+	case "debug":
+		lvl = slog.LevelDebug
+	case "warn":
+		lvl = slog.LevelWarn
+	case "error":
+		lvl = slog.LevelError
+	default:
+		lvl = slog.LevelInfo
+	}
+	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
+}
+
+// countRejection increments the counter for one rejection reason.
+func countRejection(reason string) {
+	rejectionCounts[reason]++
+}
+
+// rejectionSummary returns the rejection counters as log attributes.
+func rejectionSummary() []interface{} {
+	keys := make([]string, 0, len(rejectionCounts))
+	for k := range rejectionCounts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	attrs := make([]interface{}, 0, len(keys)*2)
+	for _, k := range keys {
+		attrs = append(attrs, k, rejectionCounts[k])
+	}
+	return attrs
+}
 
 /***************************************************************************************************************
 ****************************************************************************************************************
@@ -68,10 +171,15 @@ var respectRobots bool
 var csvWriter *csv.Writer
 
 // csvInit creates the ranking CSV writer and opens its output file.
+// csvInit creates the ranking CSV writer, appending when resuming.
 func csvInit() {
-	// var dataCSV = [][]string{{}}
-	// file, err := os.Create("output/maxFreq-numWords-URL.csv")
-	file, err := os.Create("output/ranking-URL.csv")
+	var file *os.File
+	var err error
+	if resumeEnabled {
+		file, err = os.OpenFile("output/ranking-URL.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	} else {
+		file, err = os.Create("output/ranking-URL.csv")
+	}
 	if err != nil {
 		log.Fatal("Cannot create file: ", err)
 	}
@@ -228,6 +336,7 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 	if !found {
 		if robotsPolicy != nil {
 			if !robotsPolicy.Allowed(urlLink) {
+				countRejection("robots_blocked")
 				logRejectedLink("robotsBlocked.log", urlLink)
 				fmt.Printf(" [ROBOTS-BLOCKED]")
 				return "", nil, errors.New("download: blocked by robots.txt")
@@ -365,6 +474,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	// Standard URL validation in goLang
 	_, err := url.ParseRequestURI(l)
 	if err != nil {
+		countRejection("invalid_url")
 		logRejectedLink("linksNotOk.ParseRequestURI.log", l)
 		// fmt.Printf("\n\nParseRequestURI error: %s", err)
 		return false
@@ -378,6 +488,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	rURL := regexp.MustCompile(regexURL)
 	matches := rURL.FindAllStringSubmatch(l, -1)
 	if len(matches) < 1 {
+		countRejection("invalid_url")
 		logRejectedLink("linksNotOk.additional.log", l)
 		// fmt.Printf("\n\nAdditional URL validator failed: %s", l)
 		return false
@@ -390,9 +501,10 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 		r, _ := regexp.Compile(regexLinkOk)
 		match := r.FindStringSubmatch(l)
 		if len(match) > 0 {
-			fmt.Printf("\nlinkSeemsOk: -%s- matches regexLinkOk: %s", match[1], l)
+			logger.Debug("link matched profile whitelist", "token", match[1], "url", l)
 			return true
 		} else {
+			countRejection("off_topic_url")
 			logRejectedLink("linksNotOk.log", l)
 			// fmt.Printf("\n\nlinkSeemsOk(%s) failed to match regexLinkOk: %s", l, regexLinkOk)
 			return false
@@ -1090,6 +1202,7 @@ func doNextLink(numLinksProcessed int) bool {
 
 		whatlanggoInfo := whatlanggo.Detect(p)
 		if whatlanggoInfo.Lang.String() != "English" {
+			countRejection("non_english")
 			paragraphs[i] = ""
 			// fmt.Printf("\n\nNOT ENGLISH (%s): %s", whatlanggoInfo.Lang.String(), p)
 			continue
@@ -1130,6 +1243,7 @@ func doNextLink(numLinksProcessed int) bool {
 		ratioStopWords := float64(numStopWords) / float64(numTotalWords+1)
 		// fmt.Printf("\n\nratioStopWords: %f: %s", ratioStopWords, paragraphs[i])
 		if ratioStopWords < 0.1 {
+			countRejection("stopword_ratio")
 			paragraphs[i] = ""
 		} else {
 			paragraphs[i] = p5
@@ -1162,12 +1276,14 @@ func doNextLink(numLinksProcessed int) bool {
 
 	// Cut filter on curated numWords
 	if docLen > maxDocLen {
-		fmt.Printf("\n*** docLen > %d : %d %s", maxDocLen, docLen, curatedContent[:1000])
+		countRejection("too_long")
+		logger.Debug("document rejected", "reason", "too_long", "url", nextLink, "tokens", docLen)
 		return true
 	}
 
 	if docLen < minDocLen {
-		fmt.Printf("\n*** docLen < %d : %d %s", minDocLen, docLen, curatedContent)
+		countRejection("too_short")
+		logger.Debug("document rejected", "reason", "too_short", "url", nextLink, "tokens", docLen)
 		return true
 	}
 
@@ -1197,14 +1313,16 @@ func doNextLink(numLinksProcessed int) bool {
 	if uniqueSignature[gDocSignature] == "" {
 		uniqueSignature[gDocSignature] = nextLink
 	} else {
-		fmt.Printf("\n\n++++++++++ SIMILAR FOUND ON %s\n", uniqueSignature[gDocSignature])
+		countRejection("duplicate")
+		logger.Debug("document rejected", "reason", "duplicate", "url", nextLink, "duplicate_of", uniqueSignature[gDocSignature])
 		return true
 	}
 
 	// Ignore when ranking score is lower than cutoff threshold
 	s := rankingByKeywords(curatedContent)
 	if s < scoreThreshold {
-		fmt.Printf("\n\n++++++++++ NOT ENOUGH RELEVANCY %+v\n", s)
+		countRejection("low_relevancy")
+		logger.Debug("document rejected", "reason", "low_relevancy", "url", nextLink, "score", s)
 		return true
 	}
 
@@ -1221,15 +1339,22 @@ func doNextLink(numLinksProcessed int) bool {
 
 	// Cut values on maxFreq/numWords ratio 0.1 - 0.002
 	if float64(gDoc[0].Value)/float64(1+docLen) > 0.1 || float64(gDoc[0].Value)/float64(1+docLen) < 0.002 {
-		fmt.Printf("\n*** Filter on maxFreq/numWords ratio : %.03f %s", float64(gDoc[0].Value)/float64(1+docLen), curatedContent)
+		countRejection("token_distribution")
+		logger.Debug("document rejected", "reason", "token_distribution", "url", nextLink)
 		return true
 	}
+	acceptedDocs++
 
 	// Tokenizer text token frequencies
 	corpusFreqs.add(curatedContent)
 
 	// Once in a while...
 	if numLinksProcessed%50 == 0 {
+		saveCrawlState()
+		logger.Info("progress",
+			"processed", numLinksProcessed,
+			"accepted", acceptedDocs,
+			"rejections", rejectionSummary())
 		fmt.Printf("\n\nnumLinksProcessed: %d", numLinksProcessed)
 
 		corpusFreqsSorted := rSortFreq(corpusFreqs)
@@ -1364,6 +1489,10 @@ func yamlInitGeneral() {
 	if cachePath == "" {
 		cachePath = "./cache/cache.db"
 	}
+	logLevel = strings.TrimSpace(viper.GetString("logLevel"))
+	if logLevel == "" {
+		logLevel = "info"
+	}
 	respectRobots = true
 	if viper.IsSet("respectRobots") {
 		respectRobots = viper.GetBool("respectRobots")
@@ -1373,7 +1502,8 @@ func yamlInitGeneral() {
 		userAgent = "goCrawler/1.0 (+https://github.com/computerphysicslab/goCrawler)"
 	}
 
-	fmt.Printf("\n\nrespectRobots: %v", respectRobots)
+	fmt.Printf("\n\nlogLevel: %s", logLevel)
+	fmt.Printf("\nrespectRobots: %v", respectRobots)
 	fmt.Printf("\nuserAgent: %s", userAgent)
 	fmt.Printf("\n\ncacheBackend: %s", cacheBackend)
 	fmt.Printf("\ncachePath: %s", cachePath)
@@ -1443,10 +1573,10 @@ func usage() {
 	fmt.Println("Usage: go run crawler.go <profile>")
 	fmt.Println("  <profile>  profile name (without .yaml), from profiles/ or the working directory")
 	fmt.Println("  --selftest run built-in checks and exit")
-	fmt.Println("Example: go run crawler.go crypto")
+	fmt.Println("  --resume   restore a previous crawl from the cache store")
+	fmt.Println("Example: go run crawler.go crypto --resume")
 }
 
-// main initializes the crawler and drives the processing loop.
 // startSessionOutput tees stdout to the terminal and to a timestamped file in logs/.
 // It returns a function that restores stdout and closes the file.
 func startSessionOutput(profileName string) func() {
@@ -1489,6 +1619,7 @@ func startSessionOutput(profileName string) func() {
 	}
 }
 
+// main initializes the crawler and drives the processing loop.
 func main() {
 	if len(os.Args) >= 2 && os.Args[1] == "--selftest" {
 		if runSelfTests() {
@@ -1503,6 +1634,12 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	}
+
+	for _, arg := range os.Args[2:] {
+		if arg == "--resume" {
+			resumeEnabled = true
+		}
 	}
 
 	// Create needed folders if don't exist
@@ -1524,6 +1661,7 @@ func main() {
 
 	fmt.Println("* Loading YAML config ...")
 	yamlInitGeneral()
+	initLogger(logLevel)
 	yamlInitProxy()
 	yamlInitSpecific()
 
@@ -1537,6 +1675,14 @@ func main() {
 	defer cacheStore.Close()
 	fmt.Printf("Cache backend: %s\n", cacheStore.Name())
 
+	startIndex := 0
+	if resumeEnabled {
+		startIndex = loadCrawlState()
+	} else if err := cacheStore.Set(crawlStateKey, ""); err != nil {
+		logger.Warn("cannot clear previous crawl state", "error", err)
+	}
+	defer saveCrawlState()
+
 	if respectRobots {
 		fmt.Println("* Robots policy enabled ...")
 		robotsPolicy = robotspolicy.New(userAgent, downloadTimeout)
@@ -1545,22 +1691,33 @@ func main() {
 	fmt.Println("* Init English corpus ...")
 	corpusfreqlib.Init()
 
-	fmt.Println("* Link bootstrapping ...")
-	linkBootstraping()
+	if !resumeEnabled {
+		fmt.Println("* Link bootstrapping ...")
+		linkBootstraping()
+	} else {
+		fmt.Printf("* Resuming with %d links in the pool ...\n", len(lPool))
+	}
 
 	fmt.Println("* Init CSV ...")
 	csvInit()
 
-	fmt.Println("* Init curated corpus ...")
-	iolib.String2file("\n", "./logs/corpusCuratedText.log")
+	if !resumeEnabled {
+		fmt.Println("* Init curated corpus ...")
+		iolib.String2file("\n", "./logs/corpusCuratedText.log")
+	}
 
 	// Loop
-	for numLinksProcessed := 0; ; numLinksProcessed++ {
+	for numLinksProcessed := startIndex; ; numLinksProcessed++ {
+		lastProcessedLink = numLinksProcessed
 		if !doNextLink(numLinksProcessed) {
 			break
 		}
 	}
 
+	logger.Info("crawl finished",
+		"processed", lastProcessedLink,
+		"accepted", acceptedDocs,
+		"rejections", rejectionSummary())
 	fmt.Println("\n\n\n***** Done!!!")
 }
 

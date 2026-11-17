@@ -572,3 +572,31 @@ que alimenta un canal, N workers que descargan y filtran, y un agregador dueño 
   `.../profiles/crypto.yaml` con la raíz limpia.
 - README y roadmap actualizados. Estado del roadmap: **ítems 1–6, 8, 9 y 12 DONE**; pendientes
   7, 10–11, 13–18.
+
+## 16. Keywords del corpus, ítems 10/11 y preparación Ubuntu (2026-11-17)
+
+- **Perfil SkyStacker ampliado**: del `curated text` de la ejecución en fondo se extrajeron keywords
+  reales: `solve-field`, `index files`, `quads`, `skymarks`, `xylist/axy`, `source extraction`,
+  `healpix/hpx`, `wcs/wcslib`, `projection`, `celestial coordinates`, `fits bintable`, `scale`.
+  El corpus era fuerte en plate solving pero débil en apilado avanzado, así que se buscaron URLs
+  nuevas (Subframe Selector, PSFSignalWeight, Winsorized Sigma Clipping, ponderación, culling,
+  build-index, code.html de Astrometry.net, astroquery, scivision) y se añadieron al perfil
+  `profiles/skystacker-research.yaml` junto con sus keywords.
+- **Roadmap 10 DONE**: logging estructurado con `golang.org/x/exp/slog v0.0.0-20230801115018-d63ba01acd4b`
+  (Go 1.20 no trae `log/slog`; es el mismo código que se incorporó a la stdlib en 1.21).
+  Config `logLevel: info`. Contadores de rechazo por motivo y resúmenes `level=INFO msg=progress`.
+- **Roadmap 11 DONE**: `crawlState` (pool, domainCounter, processed, uniqueSignature, corpusFreqs)
+  serializado a JSON en la clave `state:crawl` de SQLite; `--resume` restaura el estado, no trunca
+  corpus ni CSV y continúa desde el índice guardado. Verificado en dos ejecuciones cortas:
+  `crawl state restored processed=0 links=22`.
+- **Nueva sección del roadmap "Ubuntu / Debian distribution readiness" (ítems 19–27)** con el análisis
+  de las cuatro vías (PPA, Snap Store, Universe, Main). Datos clave para el usuario:
+  - El proyecto está en **Go**; el caché SQLite es puro Go → factible `CGO_ENABLED=0`.
+  - **NO hay fichero `LICENSE`**: el repo es público pero legalmente "todos los derechos reservados".
+    Es el bloqueador 19; sin licencia OSI no hay Universe/Main.
+  - Hay **12 vulnerabilidades** (5 high, 7 moderate) reportadas por Dependabot → ítem 21.
+  - snapcraft recomienda `confinement: strict` + `$SNAP_USER_DATA` porque el crawler escribe en
+    `./logs`, `./output`, `./cache` relativos al CWD; hace falta redirigirlos.
+  - Orden recomendado: licencia → versión/build reproducible → vulnerabilidades → Snap → PPA.
+- Nota: el usuario pregunta por licencia e idioma; responder que es Go y que falta licencia (recommend
+  MIT o Apache-2.0) antes de cualquier vía oficial.

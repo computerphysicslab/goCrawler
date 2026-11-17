@@ -179,6 +179,75 @@ of the main results.
 
 ---
 
+## Ubuntu / Debian distribution readiness
+
+Goal: make goCrawler packageable and, eventually, acceptable for Ubuntu's review processes.
+
+**Current facts that matter for an audit:**
+
+- Language: **Go 1.20**; the default cache is pure-Go SQLite (`modernc.org/sqlite`), so
+  `CGO_ENABLED=0` static builds are already possible.
+- **License: none.** The GitHub repository is public but has no `LICENSE` file, so it is legally
+  "all rights reserved". This blocks Universe/Main and is bad practice even for PPA/Snap.
+- Dependencies: Viper, redigo, whatlanggo, html2text, collectlinks, robotstxt, modernc/sqlite and
+  their transitive tree. Debian policy requires building from source with no network and without
+  bundling libraries that already exist as distro packages.
+- GitHub Dependabot currently reports **12 vulnerabilities (5 high, 7 moderate)** on the default
+  branch. These must be resolved or explicitly documented before any review.
+- The tool is a **CLI**, not a GUI app: AppStream metadata is still useful (a `cli` component), but
+  a `.desktop` launcher is optional. A man page and `--version` are expected by Debian.
+- It writes `./logs`, `./output` and `./cache` relative to the working directory. Strict Snap
+  confinement would need those paths redirected to `$SNAP_USER_DATA` and the `network` interface.
+
+### 19. Add an explicit open-source license — **BLOCKER (effort: S)**
+Add `LICENSE` (MIT or Apache-2.0 recommended) and a `debian/copyright` DEP-5 stub. Without this,
+Universe/Main are impossible and Snap/PPA metadata is incomplete. Also add an `SPDX-License-Identifier`
+header to source files if Apache-2.0 is chosen.
+
+### 20. Version and reproducible build metadata (effort: S)
+Add `--version`/`--license` flags, a `VERSION` constant, clean semantic Git tags (`v0.1.0`), a man
+page (`crawler.1`) and `go mod vendor` for offline builds. Verify `CGO_ENABLED=0 go build` and
+document the exact Go toolchain version.
+
+### 21. Fix dependency vulnerabilities (effort: M)
+Work through the Dependabot report: upgrade or replace flagged dependencies, regenerate `go.sum`,
+and re-run `go test ./...` plus the self-test. Record any accepted risk in `debian/copyright` or a
+`SECURITY.md`.
+
+### 22. Audit dependency packaging for Debian (effort: M)
+Check which Go modules already exist as Debian/Ubuntu packages (`golang-github-*`). Those that do
+must be used from the distro; the rest need either packaging work or an exception for vendoring.
+This decision determines whether Universe is realistic.
+
+### 23. Snapcraft strict-confinement draft (effort: M)
+Add `snap/snapcraft.yaml` with `confinement: strict`, `base: core22`, `grade: stable`, the `network`
+interface and writable areas limited to `$SNAP_USER_DATA`. Adapt `cachePath`, logs and output paths
+via configuration so no write outside the snap data directory is attempted. Snap is the lowest-friction
+route for appearing in Ubuntu's App Center; strict confinement avoids human review.
+
+### 24. Debian packaging skeleton for PPA (effort: M)
+Create `debian/control`, `debian/rules` (using `dh-golang`), `debian/changelog`, `debian/install` and
+a signed source package. A Launchpad PPA builds the `.deb` without an audit; the user must run
+`sudo add-apt-repository` first. This is the fastest `.deb` route.
+
+### 25. AppStream metadata and desktop integration (effort: S)
+Add `io.github.computerphysicslab.goCrawler.metainfo.xml` (CLI component, description, screenshots,
+release notes) and an SVG icon. Useful for Snap Store and harmless for PPA.
+
+### 26. Universe / Debian Mentors sponsorship (effort: L, long timeline)
+Only after items 19–22: enter Debian unstable first, find a sponsor, pass the NEW queue, then wait for
+Ubuntu to import the package in the next six-month cycle. Requires full source-only reproducible builds,
+no bundled dependencies and a clean `debian/copyright`.
+
+### 27. Main / preinstalled ISO (effort: XL, not currently realistic)
+Requires a Main Inclusion Report, line-by-line Canonical security audit, demonstrated mass adoption
+and a five-year LTS security commitment. Not recommended for this project in its current form.
+
+**Recommended order:** 19 → 20 → 21 → 23 (Snap Store, the practical target) → 24 (PPA for `.deb` users)
+→ 25. Treat 26 as a long-term goal and 27 as out of scope.
+
+---
+
 ## Suggested execution order
 
 1. Items **1–5** (one afternoon): hygiene and crash fixes.
@@ -190,6 +259,10 @@ of the main results.
 
 ## Status
 
-Items **1–6, 8, 9 and 12 are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
+Items **1–6 and 8–12 are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
 across runs, not only within a run; item 12 covers robots.txt, User-Agent and Crawl-delay, but not a
-general configurable delay). Items **7, 10–11, 13–17 and 18 remain proposed / not started**.
+general configurable delay; item 10 adds `slog` structured logging and rejection counters, item 11
+adds SQLite-backed `--resume`). Items **7 and 13–18 remain proposed / not started**.
+
+**Ubuntu readiness:** new section with items **19–27**; all are **proposed / not started**. Item 19
+(add an open-source LICENSE) is a blocker for the official repositories.
