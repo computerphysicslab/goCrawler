@@ -1,0 +1,486 @@
+# Contexto AI — Workspace `myTools`
+
+> **Fichero vivo.** Este documento existe para que cualquier IA que trabaje aquí entienda el
+> entorno y pueda continuar el desarrollo sin partir de cero. **Añade aquí toda instrucción,
+> decisión o conocimiento importante** que me vayas dando. Cuando leas este fichero, trátalo
+> como la fuente de verdad: actualízalo cuando aprendas algo nuevo relevante (sección 7).
+
+- **Ruta:** `/home/jips/datos/datos-juan/proyectos/myTools/context-ai.md`
+- **Creado:** 2026-11-17
+- **Autor del código:** Juan Ignacio Pérez Sacristán (`computerphysicslab`,
+  computerphysicslab@gmail.com)
+- **Idioma del proyecto:** código y comentarios en inglés; documentación y este contexto en español.
+
+---
+
+## 1. Estructura del workspace `myTools`
+
+La raíz **no es un repositorio Git**; cada subproyecto puede serlo. Ocupación total ≈ 3,4 GB.
+
+| Carpeta | Tamaño | Descripción |
+|---|---|---|
+| `goLang-goCrawler/` | **2,2 GB** | Proyecto principal (ver §2). El 95% del peso son logs. **Repo Git aquí** (dentro de `goCrawler/`). |
+| `AI/` | 1,2 GB | Proyectos/experimentos de IA (no analizados en detalle aún). |
+| `DocSpider/` | 33 MB | Otro spider (no analizado aún). |
+| `twitter/`, `youTube/`, `AutoScreenShot/`, `linkedin-video-download/` | < 2 MB | Utilidades pequeñas (no analizadas aún). |
+
+> Si más adelante quieres que documente `AI/`, `DocSpider/` u otros, dímelo y amplío este fichero.
+
+---
+
+## 2. Proyecto principal: `goCrawler`
+
+**Ruta:** `goLang-goCrawler/goCrawler/` · **Repo Git:** sí · **Último commit:** `1be79f6 fix` (2023-05-10).
+
+### 2.1 Qué hace
+
+Crawler temático en **Go 1.20** (módulo `goCrawler`; migrado desde 1.13 en 2026-11-17). No
+rastrea la web indiscriminadamente: parte de URLs semilla (`bootstrapingLinks`), descarga páginas,
+extrae enlaces y texto plano, y **solo conserva documentos que pasan filtros de idioma (inglés),
+longitud, relevancia por palabras clave y unicidad**. Resultado: un **corpus de texto curado por
+tema** + estadísticas de frecuencias y detección de n-gramas. Usa **SQLite local** como caché de
+ URLs descargadas (Redis ya no es obligatorio, ver §2.9), **Viper** para YAML por perfil y
+`whatlanggo` para detección de idioma.
+
+README: *"goLang crawler restricted to only topic relevant/curated URLs. It includes token
+frequency analysis and NLP nGram detection"*. Demo: https://youtu.be/7IDkNYcMXxU
+
+### 2.2 Estructura de código
+
+| Ruta | Función |
+|---|---|
+| `crawler.go` (1560 líneas) | **Punto de entrada** (`main`, líneas 1477-1543). Descarga, filtra, puntúa, escribe corpus y output. |
+| `corpusfreqlib/` | Corpus de referencia del inglés (BNC `all.num` + `contemporaryEnglish.txt`). Expone `Freq(token)` para calcular términos específicos del tema restando frecuencia estándar. |
+| `iolib/iolib.go` | E/S: `FileExists`, `CopyFileContents`, `String2file` (sobrescribe), `String2fileAppend` (añade), `File2string`. |
+| `stringlib/stringlib.go` | `RmNewLines`, `IsNumeric`, `Test`. |
+| `storelib/` | **Capa de caché intercambiable** (nueva, 2026-11-17). Interfaz `Store` + backends SQLite (por defecto) y Redis. Ver §2.9. |
+| `redislib/redislib.go` | Wrapper redigo (pool `MaxIdle:80`, `MaxActive:12000`, TCP `:6379`). `Ping/Set/Get/Exists/SetInterface/GetInterface`. Ya no hace `panic`/`log.Fatal` si Redis cae: devuelve error o valor vacío. Solo lo usa `storelib/redis.go`. |
+| `profiles/*.yaml` | 22 perfiles temáticos (ver §2.5). **Ojo:** el programa los lee del directorio de trabajo, no de `profiles/` (hay que copiarlos a la raíz). |
+| `logs/` | Todos los logs y el corpus (§2.6). Ignorado por Git. |
+| `output/` | `ranking-URL.csv`, `LPool.json`, `domainCounter.json`, `corpusFrequencies.txt`, `corpusNoEngFrequencies.txt`. |
+
+**Dependencias clave (go.mod):** `whatlanggo`, `redigo`, `collectlinks`, `html2text`, `viper`,
+`snowball`, `goPackages`, `go-cache`, **`modernc.org/sqlite v1.31.0`** (puro Go, sin CGO;
+v1.32+ ya pidió Go 1.21). Eliminadas por `go mod tidy`: `go-lang-detector`, `prose/v2` (NER).
+`go-cache` sigue en go.mod pero solo lo usan `cacheInit()/cacheSave()`, desactivados.
+
+### 2.3 Flujo de `main()` (crawler.go)
+
+1. Crea `./logs` y `./output` si faltan.
+2. `redislib.Ping()` — Redis es obligatorio.
+3. `yamlInitGeneral()` → `yamlInitProxy()` → `yamlInitSpecific()`.
+4. `corpusfreqlib.Init()` (frecuencias del inglés).
+5. `linkBootstraping()` (URLs semilla) → `csvInit()` → trunca `corpusCuratedText.log`.
+6. Bucle infinito `doNextLink()` hasta agotar el pool.
+
+**`doNextLink()` (1082-1406), corazón del proceso:**
+- Descarga vía Redis (cached u online), con timeout de 8 s y proxy opcional.
+- Por párrafo: detección de idioma (`whatlanggo`, solo `"English"`), limpieza de HTML/URLs,
+  ratio de stopwords (descarta < 0,1).
+- `curatedContent`: párrafos ≥ 200 chars con ratio de stopwords 0,1–0,38.
+- Filtros: `minDocLen`/`maxDocLen`, firma de unicidad (7 tokens más frecuentes),
+  `scoreThreshold`, ratio `maxFreq/numWords` 0,002–0,1.
+- Escribe el corpus y el CSV; cada 50 enlaces guarda frecuencias y volcados JSON.
+
+**Prioridad de enlaces (`getNextLink`, 384-423):** `Count² / (domainCounter[dom]+1)`; las semillas
+van primero. Un dominio con > 6 fallos se descarta (`domainHadFailed`). Se ignoran enlaces internos
+del mismo dominio de segundo nivel (`addLinksOf`).
+
+### 2.4 Configuración y ejecución
+
+```shell
+# Requisito: Redis corriendo
+sudo systemctl start redis && redis-cli ping    # PONG
+
+# Desde la raíz del proyecto (crawler.go y crawler.yaml deben estar ahí):
+cp profiles/crypto.yaml ./
+go run crawler.go crypto          # único argumento: nombre del perfil YAML sin extensión
+# otros: neutral, litecoin, machineLearning, stressDetection, debug...
+```
+
+- **Sin variables de entorno ni flags.** Config 100% YAML + `os.Args[1]`. Si falta el argumento → panic.
+- **`crawler.yaml` (general):** dominios baneados (facebook, twitter, reddit, google, youtube,
+  etherscan, wikipedia, github, pinterest...), tokens baneados (`login|signup|search|pdf` +
+  extensiones), stopwords, `downloadTimeout: 8`, `addUrl` de indexador externo (comentado).
+- **Perfil YAML:** `curatedDomains`, `linkOk`, `regexRankingKeywords`, `minDocLen`, `maxDocLen`,
+  `scoreThreshold`, `bootstrapingLinks`.
+- **`proxy.yaml`:** opcional (`proxyHost`, `proxyUser`, `proxyPass`), no presente.
+- **No hay LICENSE, Makefile, scripts .sh, Dockerfile ni tests formales.**
+
+### 2.5 Perfiles / categorías de corpus (22 en `profiles/` + 3 sueltos)
+
+Cripto: `crypto`, `litecoin`, `blockchain`, `crypto-top80`, `crypto-duckduckgo`,
+`crypto-substack`, `cryptocurrency-Wikipedia`, `cryptoPriceForecast`, `CryptoWar`, `Polkadot`
+(+ `Polkadot-Wikipedia`, `Polkadot-Linkedin`), `Web3-Bing`, `Decentralized-Bing`, `dao`.
+Salud: `covid19`, `vaers` (Vaccine Adverse Events Reporting System), `covid-vaers`,
+`covid-vaers-substack`. Otros: `machineLearning`, `revolution` (Freedom Convoy/Ucrania), `1`
+(mixto). Sueltos: `neutral` (inglés general), `debug`, `stressDetection` (fNIRS/EEG/deporte).
+
+Idioma: solo inglés (ISO 639-3 `eng` de `whatlanggo`). No hay parámetro para cambiarlo.
+
+### 2.6 Sistema de logs
+
+| Log | Generado en | Comportamiento |
+|---|---|---|
+| `linksNotOk.log` | `crawler.go:373` | **Acumulativo (append)**. Links que no casan `regexLinkOk` (keywords/dominios del perfil). 40,2 M líneas, 1,6 GB. |
+| `linksNotOk.additional.log` | `crawler.go:358` | **Acumulativo**. Fallos del regex estricto (§2.7). 5,55 M líneas, 306 MB. |
+| `linksNotOk.ParseRequestURI.log` | `crawler.go:345` | **Acumulativo**. Fallos de `url.ParseRequestURI`. 260 k líneas, 11 MB. |
+| `corpusCuratedText.log` | `crawler.go:1264`, `:1533` | **Se trunca al arrancar**. El corpus curado (URL + texto + `----`). |
+| `corpusCuratedText-*.log` | — | **Renombrados a mano** de ejecuciones anteriores (Crypto, Litecoin, VAERS, etc.). No los genera el código. |
+| `download.log` | `crawler.go:1041` | **Se trunca**. Una línea por descarga (Requested/Ok/errores). |
+| `domainFailed.log` | `crawler.go:504`, `:1056` | **Se trunca**. Dominios con error de transporte; > 6 apariciones → descartado. |
+| `cgi.log` | `crawler.go:449`, `:1051` | **Se trunca**. Links a los que se quitó la query string para canonicalizar. |
+
+**Código inactivo / deuda técnica:** bloque de n-gramas globales tras `if false`, `bigramsOf()`
+comentado, `cacheInit()/cacheSave()` (gob) sin uso, NER y stemming desactivados,
+`logDomainFailed` declarado sin uso, `corpusfreqlib/test/goCorpusFreqTest.go` con import de
+distinta capitalización (probablemente no compila).
+
+### 2.7 Embudo de validación de links (`linkSeemsOk`, 333-382)
+
+1. **Longitud:** < 13 o > 256 → descartado sin log.
+2. **`url.ParseRequestURI`** (343) → fallo: `linksNotOk.ParseRequestURI.log`.
+3. **Regex estricto adicional** (355, añadido en `a57c1ee` "Additional URL validator" para evitar
+   panics con URLs tipo `http://(http://...`):
+   `(?i)(^http(s)?://[a-z0-9-]+(\.[a-z0-9-]+)*(:[0-9]+)?(\/[a-z0-9\-\_\/\.\+\%\(\)\~\@]*)?$)`
+   → fallo: `linksNotOk.additional.log`.
+4. **Filtro del perfil** (`regexLinkOk` = `linkOk|curatedDomains`) si `avoidCustomCheck=false`
+   → fallo: `linksNotOk.log`.
+5. **Listas negras** de `crawler.yaml` (`isBanned`) y dominio vacío → descartados sin log.
+
+### 2.8 Migración a Go 1.20 y compilación (2026-11-17)
+
+- Go instalado en el sistema: **1.20.3** (`/usr/bin/go`), con `GOPATH=/home/jips/go`.
+- **Cambios realizados:**
+  - `go.mod`: `go 1.13` → **`go 1.20`**.
+  - `go mod tidy`: eliminó dependencias declaradas pero sin uso (`go-lang-detector`, `prose/v2`)
+    y separó las indirectas en un segundo bloque `require`. `go.sum` regenerado.
+  - `corpusfreqlib/test/goCorpusFreqTest.go:11`: corregido el import
+    `goCrawler/goCorpusFreqLib` → `goCrawler/corpusfreqlib` (capitalización errónea; rompía
+    `go build ./...` incluso con Go 1.13).
+- **Verificación:** `go build ./...` ✅ · `go vet ./...` ✅ (sin avisos) ·
+  `go build -o crawler.bin crawler.go` ✅ (binario ~9,5 MB, generado en `/tmp/opencode/`).
+- **Smoke test** con `go run crawler.go debug` (Redis 5.0.7 arrancado temporalmente): el
+  programa carga YAML, conecta con Redis (`PING → PONG`), inicializa el corpus inglés
+  (669.418 tokens BNC + 27.447 contemporáneo, factor 133,85) y arranca el bootstrapping
+  correctamente. Sin errores de runtime. Redis se detuvo después y los logs vacíos creados
+  por el test se eliminaron, dejando `logs/` como estaba.
+- **Nota:** el smoke test inicial se hizo con Redis, pero desde §2.9 **Redis ya no hace falta**
+  por defecto. El perfil `debug` usa una semilla en checo (`euractiv.cz`) que el filtro de idioma
+  descarta; es solo de prueba.
+
+### 2.9 Cache desacoplada: SQLite por defecto, Redis opcional (2026-11-17)
+
+Decisión del usuario: **SQLite como backend local**, se descartan todos los datos antiguos de
+Redis (no se migra nada), se reciclan código y estructuras, y Redis debe seguir funcionando
+pero sin ser obligatorio.
+
+**Diseño implementado:**
+- Paquete nuevo **`storelib/`**:
+  - `storelib.go`: interfaz `Store` (`Exists/Get/Set/Close/Name`), constantes `BackendLocal` y
+    `BackendRedis`, y factory `Init(backend, path)`. Backend desconocido → error explícito.
+  - `sqlite.go`: tabla `cache(key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at DATETIME)`.
+    Driver **`modernc.org/sqlite v1.31.0`** (puro Go, sin CGO). WAL + `synchronous=FULL`
+    (sync en disco) + `busy_timeout=5000`, `SetMaxOpenConns(1)`. `Set` usa
+    `INSERT ... ON CONFLICT(key) DO UPDATE`. La BD se crea sola en `./cache/`.
+  - `redis.go`: adaptador delgado que envuelve `redislib` sin cambiar su API.
+  - `store_test.go`: tests de ambos backends (persistencia tras cerrar/reabrir, update,
+    backend inválido y Redis caído sin panic). `go test ./...` ✅.
+- **`crawler.yaml`:** nuevo `cacheBackend: local` y `cachePath: ./cache/cache.db`. Viper lee
+  ambos en `yamlInitGeneral()`; si faltan, aplica esos defaults.
+- **`crawler.go`:** `downloadCached()` usa la variable global `cacheStore` en lugar de llamar a
+  `redislib` directamente. `main()` inicializa el store **después** de cargar el YAML y hace
+  `defer cacheStore.Close()`; si falla la inicialización, mensaje + `os.Exit(1)`.
+- **`redislib/redislib.go`:** eliminados `panic()` en `Dial` y `log.Fatal` en `Exists/Get/
+  SetInterface/GetInterface`. Con Redis caído devuelve error/valor vacío, no mata el proceso.
+  Se quitó el `fmt.Printf("DEBUG: %s", value)` que volcaba la página cacheada.
+- **Formato de datos sin cambios:** clave `cache_<URL>`, valor JSON de `CachedData{Content, Links}`.
+  Los `gob.Register`/`cacheInit`/`cacheSave` antiguos quedan intactos pero sin uso.
+
+**Verificación:** compila y pasa `go vet` y `go test ./...` con Redis **parado**; ejecución real
+con `cacheBackend: local` crea `cache/cache.db` y no menciona Redis; con `cacheBackend: redis` y
+servidor arrancado, usa Redis (`Cache backend: Redis`). Estado final limpio: Redis parado,
+`logs/` y `cache/` vacíos.
+
+---
+
+## 3. Resumen de `linksNotOk.log` (1,6 GB) — ***EL LOG YA BORRADO***
+
+> Analizado el 2026-11-17 antes de borrarlo. **40.282.346 líneas**, fecha de último
+> Write: 2023-06-14. Es el "vertedero" de enlaces que **pasaron** los filtros de longitud y
+> sintaxis pero **no casaron** las palabras clave/dominios curados del perfil activo.
+
+- **Formato:** una URL por línea, sin cabeceras ni timestamps. Longitud media 40 caracteres.
+- **Esquemas:** HTTPS 33,9 M (84,2%), HTTP 6,3 M (15,6%), protocolo-relativas `//...` 9.078,
+  otros 5.213. Solo 117.829 líneas (0,3%) llevan `?`, ninguna `#`, 41.837 con %-encoding.
+- **174.650 hosts distintos**, pero altísima concentración. Top dominios de 2º nivel:
+  `addtoany.com` 2,34 M, `wordpress.com` 1,96 M, `geckoterminal.com` 1,61 M,
+  `clinicaltrials.gov` 1,29 M, `linkedin.com` 1,27 M, `pinterest.com` 929 k,
+  `tumblr.com` 825 k, `digg.com` 532 k, `addthis.com` 463 k, `whatsapp.com` 426 k,
+  `getpocket.com` 402 k, `vk.com` 345 k, `wa.me` 329 k, `stumbleupon.com` 322 k.
+  TLDs: `.com` 28,3 M, `.org` 2,2 M, `.gov` 2,0 M, `.me` 950 k, `.net` 600 k, `.ru`/`.uk` 410 k.
+- **Naturaleza del contenido:** abrumadoramente **chrome de navegación y widgets de redes
+  sociales** que aparecen en el pie/lateral de casi cualquier página: botones de compartir
+  (AddToAny, AddThis, Pocket, Digg, StumbleUpon, WhatsApp, Telegram, VK), enlaces de
+  redes (LinkedIn, Pinterest, Tumblr, Twitter), `wp-admin/customize.php` de blogs WordPress,
+  redirects afiliados (`go.redirectingat.com`, `adjust.com`, `appsflyer.com`), y enlaces
+  legales/de Wikimedia (`//foundation.wikimedia.org/wiki/Privacy_policy`, Terms of Use).
+- **Las primeras líneas** son enlaces de Wikipedia/Wikimedia/Crypto (perfil cripto); **las
+  últimas** son NLM/NIH/HHS/PubMed (perfiles covid/VAERS). El fichero es un **acumulado de
+  muchas ejecuciones de perfiles distintos concatenadas**, sin separadores entre ejecuciones.
+- **Duplicados masivos:** la misma URL se registró miles de veces (p. ej.
+  `https://www.youtube.com/user/NLMNIH` 4.321 veces, `https://www.hhs.gov/` 5.710 veces).
+  Causa probable: el crawler reprocesa páginas ya en caché de Redis en cada ejecución y vuelve
+  a appendear los mismos enlaces boilerplate. **No hay deduplicación ni límite de tamaño.**
+
+---
+
+## 4. Resumen de `linksNotOk.additional.log` (306 MB) — ***EL LOG YA BORRADO***
+
+> Analizado el 2026-11-17 antes de borrarlo. **5.550.422 líneas**, último Write 2023-06-14.
+> Es el "vertedero" de valores de `href` que **fallaron el regex estricto** de la capa 3 (§2.7).
+> Se introdujo en 2022-03-12 para evitar panics; muestra que los `<a href>` del HTML distan
+> mucho de ser URLs HTTP absolutas.
+
+- **Formato:** una línea por enlace rechazado. Longitud media 57 caracteres.
+- **Desglose por tipo de fallo:**
+  - **Rutas relativas: 4.406.922 (79,4%)** — de ellas 3.242.383 son rutas simples tipo
+    `/tos`, `/privacy`, `/price/bittorrent/`, `/en-gb/...`; 1.055.661 son relativas con
+    caracteres especiales; 108.878 son solo query (`/?term=Selimovic+A&cauthor_id=...`, típico
+    de PubMed/NCBI).
+  - **URLs con query string: 967.665 (17,4%)** — sobre todo *share links* con el payload
+    percent-encoded: `facebook.com/sharer/sharer.php?u=...`, `twitter.com/intent/tweet?...`,
+    `reddit.com/submit?...`, `gab.com/compose?...`, `gettr.com/share?...`, `parler.com/new-post?...`,
+    `tumblr.com/widgets/share/tool?...`.
+  - **`javascript:void(0)` / `javascript:void(0);`: 58.741 (1,1%)**.
+  - **`mailto:` y `tel:` y similares: ~82.178 (1,5%)** (p. ej. `mailto:feedback@forbes.com`,
+    `tel:+44 (0)20 7843 2320`).
+  - HTTP 155.053, HTTPS 849.175 (el resto son los esquemas no-http).
+- **Hosts de origen más frecuentes:** `twitter.com` 185.847, `www.blogger.com` 78.842,
+  `www.facebook.com` 66.489, `www.ncbi.nlm.nih.gov` 33.139, `www.youtube.com` 31.627,
+  `www.linkedin.com` 30.541, `scholar.google.com` 26.372, `medium.com` 19.363,
+  `cran.r-project.org` 15.278, `www.reddit.com` 11.885, `web.archive.org` 8.934,
+  `bitcointalk.org` 6.733, `dx.doi.org` 5.997.
+- **Lectura:** este log es la prueba de que el regex protector hace un trabajo real: sin él,
+    el crawler intentaría descargar `javascript:void(0)`, rutas relativas sin dominio y
+    URLs con `?`/`&`/`=`, que romperían `ParseRequestURI` o generarían peticiones inútiles.
+    Los últimos ejemplos (queries MeSH de PubMed, Google Maps de NIH) confirman que también
+    captura enlaces de navegación interna legítima que simplemente no son absolutos.
+
+---
+
+## 5. Conocimiento y pautas extraídas de la experiencia de funcionamiento
+
+1. **El 99% de los enlaces extraídos de una web son ruido temático.** El 1,6 GB de
+   `linksNotOk.log` está dominado por widgets de compartir, trackers y enlaces legales. La
+   heurística realmente discriminante no es la descarga, sino la **whitelist de
+   `linkOk`/`curatedDomains` del perfil**. Invertir en mejores keywords/dominios curados rinde
+   más que optimizar la descarga.
+2. **Los logs acumulativos crecen sin control y son una deuda operativa.** Los tres
+   `linksNotOk*.log` suman ~1,9 GB de un total de 2,1 GB en `logs/`. El patrón
+   `String2fileAppend` + reprocesado de páginas en caché Redis produce duplicados masivos
+   (miles de veces la misma URL). **Son regenerables y están en `.gitignore`: borrarlos es
+   seguro** y libera ~1,9 GB. Si se quiere conservar su valor diagnóstico, lo correcto es
+   guardar solo enlaces únicos, con rotación por tamaño o muestreo.
+3. **La robustez se construyó por capas, a golpes de fallos reales.** El orden de los commits
+   lo demuestra: `9196e93` añadió `ParseRequestURI` (2022-03-12), `a57c1ee` añadió el regex
+   estricto el mismo día tras aparecer URLs mal formadas, `6917c85` refinó `linkSeemsOk`
+   (2022-03-27). Cada capa del embudo (§2.7) corresponde a un tipo de error encontrado en
+   producción. **No eliminar capas "por parecer redundantes".**
+4. **El perfil importa más que el algoritmo.** El mismo código produjo corpus distintos
+   (Crypto, Litecoin, VAERS, Revolution...) solo cambiando el YAML. Las firmas de
+   `corpusCuratedText-*.log` son renombrados manuales: conviene versionar/perfilar mejor el
+   nombre de salida si se automatiza.
+5. **Dominios "inesperados" aparecen mucho:** `clinicaltrials.gov` (1,29 M rechazos) y
+   `geckoterminal.com` (1,61 M) indican que los perfiles Covid/VAERS y Crypto respectivamente
+   encuentran estas fuentes una y otra vez. Son **candidatos a añadir a `curatedDomains`** o a
+   afinar `linkOk` si se quiere aprovechar ese tráfico en vez de descartarlo.
+6. **El corpus es bilingüe-limitado por diseño:** solo inglés, detectado párrafo a párrafo;
+   cualquier otro idioma se descarta. Cambiar esto requiere tocar `crawler.go:1144-1149`.
+ 7. **La caché (Redis antes, SQLite ahora) acelera pero también dispara el ruido:** cada
+    ejecución reextrae links de páginas cacheadas, por lo que los logs de rechazo crecen aunque
+    no se descargue nada nuevo. El backend cambió (§2.9), el comportamiento no.
+
+---
+
+## 6. Recomendaciones si se continúa el desarrollo
+
+- ~~**Borrar** `logs/linksNotOk.log`, `logs/linksNotOk.additional.log` y
+  `logs/linksNotOk.ParseRequestURI.log` (~1,9 GB libres).~~ **HECHO por el usuario el
+  2026-11-17**: `logs/` está vacío. El conocimiento está preservado en §3 y §4.
+- Si se quiere evitar que vuelvan a crecer: deduplicar antes de appendear (tabla SQLite de links
+  ya rechazados, reutilizando `storelib`), o limitar el log a las primeras N apariciones por host.
+- Documentar/versionar los perfiles (hoy están en `.gitignore`) para no perder la configuración
+  que generó cada corpus.
+- ~~Añadir un `go test` mínimo~~ **HECHO**: `storelib/store_test.go` cubre ambos backends
+  (`go test ./...`). Falta un `Makefile` con `run`/`build`.
+- Revisar el bloque de n-gramas (`if false`) y el NER (`prose/v2`) si se reactiva el análisis.
+
+---
+
+## 7. Notas del usuario (sección viva — añadir aquí)
+
+_(Espacio reservado. Cada vez que me des una instrucción, decisión de diseño o dato importante,
+lo registro aquí y ajusto las secciones anteriores si hace falta.)_
+
+- **2026-11-17:** El usuario ha pedido este fichero de contexto. Ha indicado que los dos logs
+  grandes (`linksNotOk.log` y `linksNotOk.additional.log`) **van a ser borrados** tras el
+  análisis, y que aquí debe quedar registrado el conocimiento útil extraído de ellos. Ir
+  aprendiendo y ampliando este documento a medida que el usuario aporte más información.
+- **2026-11-17:** El usuario confirmó que **ya limpió `logs/`** (vacío) y pidió **actualizar el
+  código a la última versión de Go instalada (1.20.3) y compilarlo**. Ver §2.8: migración
+  completada, `go mod tidy` aplicado, import del test corregido, build y vet OK, smoke test
+   con Redis correcto. Preferencia a respetar: mantener el entorno limpio tras las pruebas
+   (Redis parado y sin logs residuales).
+- **2026-11-17:** Tras analizar la viabilidad, el usuario eligió **SQLite** como backend local.
+   Confirmó que **los datos existentes en Redis se pueden borrar todos** (sin migración) y que se
+   trabaja **desde cero reciclando código y estructuras**. Redis se mantiene como opción pero ya
+   no es obligatorio. Implementación completa en §2.9. Preferencias a respetar: sin datos
+   heredados, entorno limpio tras probar, y documentación actualizada.
+- **2026-11-17:** El usuario pidió una **prueba real** del buscador con el tema *astrophotography
+  image stacking*, **todo en inglés**. Ver §8: perfil nuevo, dos pasadas, resultados y aprendizajes.
+
+---
+
+## 8. Prueba real: `astrophotography image stacking` (2026-11-17)
+
+**Objetivo:** verificar que el crawler encuentra información útil sobre un tema concreto, en
+inglés. Perfil nuevo **`profiles/astrophotography.yaml`** (copiado a la raíz para ejecutarlo,
+según la convención del proyecto). Contenido 100% en inglés:
+
+- `curatedDomains`: wikipedia, siril.readthedocs.io, pixinsight.com, skyatnightmagazine.com,
+  cloudynights.com, astrobackyard.com, deepskystacker.free.fr, nasa.gov, stsci.edu, arxiv.org...
+- `linkOk`: `stack|stacking|astrophotograph*|astronom*|pixinsight|siril|registax|autostakkert|
+  deepsky|subframe|registration|integration|calibration|...`
+- `regexRankingKeywords`: ~70 términos (`stack`, `registration`, `integration`, `subframe`,
+  `signal-to-noise`, `dither`, `drizzle`, `fwhm`, `pixinsight`, `siril`, `wbpp`, `sigma clipping`...)
+- `minDocLen: 50`, `maxDocLen: 100000`, `scoreThreshold: 20`.
+
+**Pasada 1** (9 semillas): 11 descargas, **5 documentos** en el corpus. Tres semillas
+(`en.wikipedia.org/wiki/Image_stacking`, `/wiki/Astrophotography`, `urbanastrophotography.com`,
+`astroguide.starlust.de`) devolvieron páginas de ~125-180 chars y **0 enlaces** (bloqueo/JS).
+
+**Pasada 2** (11 semillas, sustituyendo las muertas por `astrobackyard.com` y `cloudynights.com`):
+64 enlaces procesados (57 `[ONLINE]` + **7 `[CACHE]` sirvidos por SQLite**), **29 documentos**,
+corpus de 934 líneas / 272 KB, `ranking-URL.csv` con 29 filas. `corpusFrequencies.txt` (67 KB) y
+`corpusNoEngFrequencies.txt` (48 KB) regenerados correctamente (el filtro de contraste intercorpus
+funciona: `image 310, stacking 102, frames 101, histogram 95, astrophotography 78, siril 57,
+deepskystacker 35, pixinsight 32`). **Cero textos no ingleses** detectados.
+
+Mejores documentos (score): Sky at Night stacking guide 129,6 · Miklosoft stacking & rejection
+117,2 · Siril tutorials 113,2 · DeepSkyStacker live 107,7 · astrobackyard Siril 101,6 ·
+Siril docs stacking 100,8. Distribución: 5 con score ≥100, 14 en 60-99, 4 en 40-59, 6 <40.
+
+**Aprendizajes operativos:**
+1. **Las semillas determinan el resultado.** Las páginas que devuelven ~125 chars son bloqueos;
+   conviene descartarlas y usar dominios amigables con el crawler (`astrobackyard.com`,
+   `cloudynights.com`, `siril.org`, `siril.readthedocs.io`, `skyatnightmagazine.com`,
+   `deepskystacker.free.fr`, `miklosoft.se`, `astro.bharrat.net` funcionan bien).
+2. **La caché SQLite hizo su trabajo:** 7 aciertos en la segunda pasada sin Redis.
+3. **El `score` no es relevancia pura:** `rankingByKeywords` divide por `sqrt(1+#tokens)`,
+   así que documentos largos y muy relevantes (p. ej. Siril GHS, 6991 chars) puntúan bajo.
+   Subir `scoreThreshold` por encima de 40 recortaría también buenos documentos.
+4. **Ruido residual esperable:** patreon, weather.com (iPhone), Adobe Camera RAW y itelescope
+   se colaron con scores 42-58. Un `curatedDomains` más estricto o un `linkOk` menos genérico
+   (`image` es muy amplio) lo reduciría.
+5.    El comando fue `go run crawler.go astrophotography` desde la raíz del proyecto, sin Redis.
+
+**Estado:** resultados de la prueba conservados en `logs/corpusCuratedText.log`, `output/` y
+`cache/cache.db` (1,1 MB) para inspección. Semillas originales en `profiles/astrophotography.yaml`.
+
+### 8.1 Continuación con la versión del roadmap bloque 1 (2026-11-17)
+
+Tras hacer push de `eea3110` (movimiento de perfiles a `profiles/` + bloque 1), se repitió la
+investigación con la nueva versión:
+
+- **Pasada 2 repetida (idéntica a la original):** 29 documentos, 65 `[ONLINE]`, corpus de 934
+  líneas. Resultado **idéntico** al de la versión anterior → buena señal de regresión tras quitar
+  código muerto, añadir `io.LimitReader` y deduplicar logs.
+- **Pasada 3 (semillas ampliadas):** se añadieron 11 fuentes nuevas descubiertas en el propio pool
+  y por búsqueda web (PixInsight tutorials, discuss.pixls.us, Astro Pixel Processor, RegiStax,
+  AutoStakkert, Sky & Telescope). Resultado: **34 documentos** (corpus 1125 líneas), 5 nuevos:
+  `PixInsight M31-Ha`, `Master Calibration Frames`, `StarAlignment distortion`, el tutorial de Siril
+  en pixls.us y el índice de siril.readthedocs.io. **65 aciertos de caché SQLite** y solo 11
+  descargas online → el backend local reduce muchísimo el tráfico en pasadas sucesivas.
+- **Conocimiento temático extraído del corpus:** stacking = integrar subexposiciones alineadas para
+  subir la relación señal/ruido (∝√N); flujo estándar *calibración (bias/dark/flat) → registro →
+  integración*, con dithering, drizzle, FWHM, sigma clipping y Winsorized Sigma Clipping como
+  técnicas recurrentes. Frecuencias temáticas de la pasada 2: `image 310, stacking 102, frames 101,
+  histogram 95, siril 57, deepskystacker 35, pixinsight 32`.
+
+**Dos bugs descubiertos durante la investigación:**
+1. **Deduplicación entre ejecuciones:** el `map` de `logRejectedLink` se reiniciaba en cada arranque,
+   así que los duplicados volvían a aparecer en pasadas sucesivas. **Corregido**: `initRejectedLinkSets()`
+   carga las líneas ya existentes de los tres logs al arrancar y se normaliza con `TrimSpace` tanto
+   al cargar como al escribir. Verificado: tras tres ejecuciones consecutivas los totales dejaron de
+   crecer (422/127/206 líneas, todas únicas).
+ 2. **Frecuencias desactualizadas (no corregido, añadido al roadmap como ítem 18):** el volcado de
+    `corpusFrequencies.txt` ocurre dentro de `doNextLink()` solo si el documento pasa *todos* los
+    filtros y `numLinksProcessed % 50 == 0`. En la pasada 3 solo se volcó en el índice 0, por lo que
+    los ficheros describen un único documento (`the 18`) aunque el corpus tenga 34. Mover el volcado
+    al final de cada iteración o al terminar la ejecución.
+
+---
+
+## 9. Nueva línea de investigación: SkyStacker (2026-11-17)
+
+El usuario pidió **focalizar la investigación** en
+`/home/jips/datos/datos-juan/proyectos/astronomia/SkyStacker/research/`.
+
+- Es la carpeta de investigación de **SkyStacker**, un motor CLI Go *local-first* (v0.4.1 → v0.5.0)
+  para calibración, registro, apilado, post-procesado e identificación astronómica.
+- Estructura: `01-architecture-and-core-engine/` (pipeline de 9 pasos, concurrencia, `sync.Pool`,
+  SIMD/Swiss Tables), `02-astrometry-and-identification/` (plate solving, HEALPix, Gaia DR3,
+  cross-matching, anomalías), `03-reference-and-literature/` (50 fuentes, glosario de 100 términos),
+  más `04-calibration-and-self-flat.md`, `05-research-deep-dive-2026-11-16.md` y los outcomes de
+  Gemini Deep Research.
+- Entrada recomendada: `RESEARCH_SYNTHESIS.md`. Temas clave para el crawler: sigma-clipping,
+  SNR ∝ √N, FWHM/eccentricidad, master dark/flat/bias, drizzle, WCS/SIP, HEALPix, Gaia DR3,
+  XISF/FITS, GHS, RC-Astro, ASTAP, Siril, PixInsight.
+- **Pendiente:** crear un perfil de crawler alineado con estas líneas (no solo "image stacking"
+  genérico) y guardar los resultados en esa línea de investigación.
+
+## 10. Uso de CPU y política robots.txt (2026-11-17)
+
+- **Núcleos:** 8 (`nproc` = 8, `GOMAXPROCS` por defecto = 8).
+- **Uso real medido** con `/usr/bin/time -v` sobre el binario compilado, 1:46 de duración:
+  User 24,78 s + System 0,88 s = 25,66 s de CPU → **24 % de un solo núcleo** (0,24/8).
+  **El crawler NO usa los 8 núcleos**: es secuencial (un solo `doNextLink` por iteración); la
+  única gorutina extra es la del indexador externo `addUrl`, desactivada por defecto. El runtime
+  puede usar hilos para GC/scheduler, pero no hay trabajo paralelo. Para usar los 8 núcleos haría
+  falta el ítem 14 del roadmap (worker pool + rate limiting por dominio).
+- **Política robots.txt implementada** en el paquete nuevo `robotspolicy/` (dependencia
+  `github.com/temoto/robotstxt v1.1.2`):
+  - `Policy.Allowed(url)` descarga y **cachea por host** el robots.txt, aplica `FindGroup(userAgent)`
+    y `group.Test(path)`. Si no existe (404) o hay error de red → **fail open** (permitir).
+  - `Policy.Wait(url)` aplica el `Crawl-delay` del grupo entre peticiones al mismo host.
+  - Config en `crawler.yaml`: `respectRobots: true` (default) y
+    `userAgent: "goCrawler/1.0 (+https://github.com/computerphysicslab/goCrawler)"`.
+  - En `downloadCached()`, antes de `download()`, se comprueba `Allowed`; si está bloqueado se
+    escribe en `logs/robotsBlocked.log` (deduplicado) y se devuelve error. Si está permitido se
+    llama a `Wait` para respetar `Crawl-delay`.
+  - Tests en `robotspolicy/robotspolicy_test.go` (allow/block/crawl-delay y fail-open).
+  - **Bug corregido**: `robotstxt.Group.CrawlDelay` **ya es** `time.Duration`, así que multiplicarlo
+    por `time.Second` producía un `Sleep` de siglos y colgaba el test. Asignación directa.
+    `go test ./...` ✅ (incluye el delay de 1 s del test).
+- Nota para el usuario: este fichero es el canónico y está en la raíz de `myTools`; se deja
+  además una copia en la raíz del repo como `context-AI.md` para que sea visible desde el proyecto.
+  **Actualizar ambas copias** cuando se añada información nueva.
+
+## 11. Resultado de la investigación enfocada en SkyStacker (2026-11-17)
+
+- Perfil nuevo **`profiles/skystacker-research.yaml`** (todo en inglés), con 21 semillas extraídas
+  del propio catálogo de referencias de `astronomia/SkyStacker/research/` y dominios/keywords de
+  astrometría (ASTAP, SCAMP, plate solving, WCS, Gaia, drizzle, FITS, photometría).
+- Ejecución con `robots.txt` activo: 73 descargas online, **18 documentos** en el corpus,
+  **8 URLs bloqueadas por robots.txt** (ivoa.net, nova.astrometry.net, docs.astropy.org, wcstools,
+  flickr) y varios robots.txt inaccesibles tratados con fail-open. La ejecución se cortó por el
+  timeout de 240 s con el pool aún no vacío → resultado parcial.
+- Fuentes más relevantes: photutils (71,7), Siril drizzle (47,6), DeepSkyStacker technical (43,6),
+  CFA drizzle de PixInsight (40,1), ASTAP (36,5), paper original de drizzle del STScI (36,1),
+  Astrometry.net docs (35,3), SCAMP (23,9) y Gaia DR4.
+- Informe guardado en
+  `astronomia/SkyStacker/research/06-crawler-based-source-discovery-2026-11-17.md` (en inglés),
+  con método, resultados, observaciones de robots.txt, nota de CPU y seguimiento sugerido.
+- README y roadmap actualizados: política robots documentada, ítem 12 marcado DONE (falta el delay
+  genérico configurable por dominio), ítem 18 (frecuencias desactualizadas) sigue pendiente.

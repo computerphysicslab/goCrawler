@@ -31,6 +31,7 @@ import (
 
 	"goCrawler/corpusfreqlib"
 	"goCrawler/iolib"
+	"goCrawler/robotspolicy"
 	"goCrawler/storelib"
 	"goCrawler/stringlib"
 )
@@ -52,6 +53,9 @@ var scoreThreshold float64
 var addUrl string
 var cacheBackend, cachePath string
 var cacheStore storelib.Store
+var robotsPolicy *robotspolicy.Policy
+var userAgent string
+var respectRobots bool
 
 /***************************************************************************************************************
 ****************************************************************************************************************
@@ -216,6 +220,14 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 		}
 	}
 	if !found {
+		if robotsPolicy != nil {
+			if !robotsPolicy.Allowed(urlLink) {
+				logRejectedLink("robotsBlocked.log", urlLink)
+				fmt.Printf(" [ROBOTS-BLOCKED]")
+				return "", nil, errors.New("download: blocked by robots.txt")
+			}
+			robotsPolicy.Wait(urlLink)
+		}
 		ACachedData.Content, ACachedData.Links, err = download(urlLink)
 		if err == nil {
 			encoded, marshalErr := json.Marshal(ACachedData)
@@ -290,6 +302,7 @@ var rejectedLinkSets = map[string]map[string]struct{}{
 	"linksNotOk.log":                 {},
 	"linksNotOk.additional.log":      {},
 	"linksNotOk.ParseRequestURI.log": {},
+	"robotsBlocked.log":              {},
 }
 
 func initRejectedLinkSets() {
@@ -1309,7 +1322,17 @@ func yamlInitGeneral() {
 	if cachePath == "" {
 		cachePath = "./cache/cache.db"
 	}
+	respectRobots = true
+	if viper.IsSet("respectRobots") {
+		respectRobots = viper.GetBool("respectRobots")
+	}
+	userAgent = strings.TrimSpace(viper.GetString("userAgent"))
+	if userAgent == "" {
+		userAgent = "goCrawler/1.0 (+https://github.com/computerphysicslab/goCrawler)"
+	}
 
+	fmt.Printf("\n\nrespectRobots: %v", respectRobots)
+	fmt.Printf("\nuserAgent: %s", userAgent)
 	fmt.Printf("\n\ncacheBackend: %s", cacheBackend)
 	fmt.Printf("\ncachePath: %s", cachePath)
 	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
@@ -1408,6 +1431,11 @@ func main() {
 	}
 	defer cacheStore.Close()
 	fmt.Printf("Cache backend: %s\n", cacheStore.Name())
+
+	if respectRobots {
+		fmt.Println("* Robots policy enabled ...")
+		robotsPolicy = robotspolicy.New(userAgent, downloadTimeout)
+	}
 
 	fmt.Println("* Init English corpus ...")
 	corpusfreqlib.Init()

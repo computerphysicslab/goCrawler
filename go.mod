@@ -34,6 +34,7 @@ require (
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
+	github.com/temoto/robotstxt v1.1.2 // indirect
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.3.2 // indirect

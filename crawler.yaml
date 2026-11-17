@@ -26,6 +26,10 @@ downloadTimeout: 8
 # Maximum size of a downloaded page, in MiB
 maxDownloadMB: 5
 
+# Fetch and honour robots.txt before each online download
+respectRobots: true
+userAgent: "goCrawler/1.0 (+https://github.com/computerphysicslab/goCrawler)"
+
 # Cache for downloaded pages: "local" (SQLite file, no service needed) or "redis"
 cacheBackend: local
 cachePath: ./cache/cache.db

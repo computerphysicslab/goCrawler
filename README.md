@@ -167,6 +167,8 @@ The same commands are available as `make` targets: `make build`, `make test`, `m
 | `cacheBackend` | `local` (SQLite, default) or `redis`. |
 | `cachePath` | SQLite database path (default `./cache/cache.db`). |
 | `maxDownloadMB` | Maximum size of a downloaded page in MiB (default `5`). |
+| `respectRobots` | Fetch and honour `robots.txt` before each online download (default `true`). |
+| `userAgent` | User-Agent sent for page and `robots.txt` requests. |
 
 ### Profile configuration (`<profile>.yaml`)
 
@@ -255,6 +257,27 @@ cacheBackend: redis
 Both backends implement the same four operations, so switching requires no code changes.
 
 ---
+
+## Robots.txt policy
+
+Before every **online** download, the crawler asks the `robotspolicy` package whether the URL is
+allowed:
+
+- one `robots.txt` is fetched and cached per host (scheme + host);
+- the correct rule group is selected with the configured `userAgent`;
+- disallowed URLs are skipped and recorded (deduplicated) in `logs/robotsBlocked.log`;
+- a `Crawl-delay` declared by the site is enforced between requests to that host;
+- a missing (404) or unreachable `robots.txt` means **allow** (fail open), with the error printed.
+
+Cached pages are not re-checked, so a warm cache does not generate extra `robots.txt` traffic.
+Set `respectRobots: false` in `crawler.yaml` to disable the policy.
+
+### CPU usage
+
+The crawler is sequential: it does **not** use all available cores. In a controlled 106-second run
+on an 8-core machine it consumed 24.78 s user + 0.88 s system CPU, about **24 % of one core**
+(mostly waiting on the network). `GOMAXPROCS` defaults to 8, but no crawling work is parallelised;
+see roadmap item 14 for a worker-pool design.
 
 ## Outputs
 

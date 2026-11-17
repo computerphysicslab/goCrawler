@@ -85,10 +85,11 @@ loses all progress.
 startup (with a `--resume` flag).
 **Impact:** makes long crawls practical.
 
-### 12. Politeness and `robots.txt`
-**Problem:** the crawler fires requests as fast as the sequential loop allows and ignores site
-policies. This contributes to the ~125-character "blocked page" responses seen from Wikipedia and
-some blogs.
+### 12. Politeness and `robots.txt` — **DONE (2026-11-17)**
+**Problem (partially solved):** the crawler fires requests as fast as the sequential loop allows
+and ignores site policies. Implemented: `robots.txt` fetch/cache per host, User-Agent, block logging
+and `Crawl-delay` enforcement. Remaining: a general configurable per-domain delay even when the site
+does not declare one.
 **Proposal:** fetch and honour `robots.txt`, add a configurable per-domain delay and a descriptive
 `User-Agent`.
 **Impact:** fewer blocks, better citizenship, higher yield per seed.
@@ -157,5 +158,6 @@ of the main results.
 
 ## Status
 
-Items **1–6 (Tier 1) are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
-across runs, not only within a run). Items **7–17 and the new item 18 remain proposed / not started**.
+Items **1–6 and 12 are DONE** as of 2026-11-17 (item 6 was refined the same day to deduplicate
+across runs, not only within a run; item 12 covers robots.txt, User-Agent and Crawl-delay, but not a
+general configurable delay). Items **7–11, 13–17 and 18 remain proposed / not started**.
