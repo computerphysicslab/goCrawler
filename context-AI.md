@@ -814,3 +814,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   lista de variantes (`details[].variants`).
 - Quinta pestaña "Prompt generator" + `/api/prompt?profile=NAME`: prompt en inglés con instrucción
   exhaustiva, keywords, URLs semilla y extractos del texto curado del log.
+
+## 34. Bugs del Workbench resueltos (v1.7.6, 2026-11-18)
+
+- El launch de `skystacker-research` hacía panic en `scoreWithRegex` porque el regex del perfil no
+  tiene grupo de captura y el código accedía a `k[1]`. Ahora se usa `k[1]` si existe, si no `k[0]`.
+- `resolveProfileName` empareja perfiles ignorando mayúsculas y espacios, así que "Skystacker
+  Research" resuelve a `skystacker-research.yaml`. Afecta a launch, profile view y prompt.
+- `launchGUICrawl` ya no sustituye el puntero global `app`; usa `ResetForProfile` para evitar
+  carreras con los handlers HTTP. Verificado: start → visits=50, accepted=16, sin error.
+- Prompt generator: `<select id="pr-profile">` rellenado con los perfiles y el último ejecutado por defecto.

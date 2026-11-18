@@ -3,7 +3,18 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.5] - 2026-11-18
+## [v1.7.6] - 2026-11-18
+
+### Fixed
+- GUI crawl of `skystacker-research` crashed in `scoreWithRegex` when the profile regex has no capturing group.
+- Profile resolution is now case/space-insensitive (session logs capitalise names).
+- GUI no longer replaces the global crawler pointer while serving requests; state is reset in place.
+- Prompt generator profile is a dropdown defaulting to the last executed profile.
+
+### Added
+- Regression tests for group-less regex scoring, profile resolution and state reset.
+
+ - 2026-11-18
 
 ### Changed
 - Keyword lab: remove button placed next to the word; applying switches back to the Profiles tab.
