@@ -2616,8 +2616,8 @@ textarea,input,select{width:100%;background:var(--input);color:var(--text);borde
 button.act{background:var(--accent);color:var(--bg);border:0;border-radius:calc(var(--radius)/2);padding:var(--space) calc(var(--space)*2);min-height:36px;cursor:pointer;transition:filter .15s,transform .1s}
 button.act:hover{filter:brightness(1.12)}button.act:active{transform:translateY(1px)}
 button.act:disabled{opacity:.4;cursor:not-allowed;filter:none}
-button.act[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--text);filter:brightness(1.2)}
-button.act[aria-pressed=false]{opacity:.6}
+button.act.state-on{background:var(--accent);color:var(--bg);box-shadow:inset 0 0 0 2px var(--text)}
+button.act.state-off{background:var(--input);color:var(--muted);border:1px solid var(--border)}
 pre{background:var(--input);padding:var(--space);border-radius:calc(var(--radius)/2);white-space:pre-wrap;max-height:380px;overflow:auto;font-family:var(--mono);font-size:12px}
 table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bottom:1px solid var(--border);text-align:left}
 .row{display:flex;flex-wrap:wrap;gap:var(--space)}.row>*{flex:1 1 130px;min-width:110px}
@@ -2631,7 +2631,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 @media(max-width:760px){.about-row{flex-direction:column}.about-qr{flex:1 1 auto}}header,nav{padding-left:var(--space);padding-right:var(--space)}main{padding:var(--space)}.row>*{flex:1 1 100%}nav button{padding:var(--space)}}
 </style></head><body>
 <a class="skip" href="#main">Skip to content</a>
-<header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span><button class="act" id="btn-theme" onclick="toggleTheme()" aria-label="Toggle dark and light theme">Theme: dark</button><button class="act" id="btn-contrast" onclick="toggleContrast()" aria-label="Toggle high contrast" aria-pressed="false">Contrast: off</button><button class="act" id="btn-motion" onclick="toggleMotion()" aria-label="Toggle reduced motion" aria-pressed="false">Motion: full</button></header>
+<header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span><button class="act state-off" id="btn-theme" onclick="toggleTheme()" aria-label="Toggle dark and light theme">Theme: dark</button><button class="act state-off" id="btn-contrast" onclick="toggleContrast()" aria-label="Toggle high contrast" aria-pressed="false">○ Contrast OFF</button><button class="act state-off" id="btn-motion" onclick="toggleMotion()" aria-label="Toggle reduced motion" aria-pressed="false">○ Motion OFF</button></header>
 <nav role="tablist" aria-label="Workbench sections"><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main id="main">
 <section id="dash" hidden><div class="card"><div class="kpi-grid"><div class="kpi-card"><span class="kpi-label">Pages visited</span><span class="kpi-value" id="s-visits">0</span></div><div class="kpi-card"><span class="kpi-label">Cache hits</span><span class="kpi-value" id="s-cache">0</span></div><div class="kpi-card"><span class="kpi-label">Online</span><span class="kpi-value" id="s-online">0</span></div><div class="kpi-card"><span class="kpi-label">Download ms</span><span class="kpi-value" id="s-ms">0</span></div><div class="kpi-card"><span class="kpi-label">Accepted</span><span class="kpi-value" id="s-accepted">0</span></div><div class="kpi-card"><span class="kpi-label">Not accepted</span><span class="kpi-value" id="s-rejected">0</span></div><div class="kpi-card"><span class="kpi-label">Crawls running</span><span class="kpi-value" id="s-running">0</span></div><div class="kpi-card"><span class="kpi-label">Net reqs</span><span class="kpi-value" id="s-net">0</span></div><div class="kpi-card"><span class="kpi-label">Cache I/O</span><span class="kpi-value" id="s-io">0</span></div><div class="kpi-card"><span class="kpi-label">URLs/s</span><span class="kpi-value" id="s-rate">0</span></div><div class="kpi-card"><span class="kpi-label">Avg ms</span><span class="kpi-value" id="s-lat">0</span></div><div class="kpi-card"><span class="kpi-label">Queue</span><span class="kpi-value" id="s-queue">0</span></div><div class="kpi-card"><span class="kpi-label">Go routines</span><span class="kpi-value" id="s-goroutines">0</span></div></div></div><div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>URL queue</h3><p class="muted">Pending: <b id="q-total">0</b>. States: requested → retrieved/failed → removed.</p><div id="queue-list"></div></div>
@@ -2646,12 +2646,12 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 </main><script>
 const $=id=>document.getElementById(id);
 const navButtons=()=>[...document.querySelectorAll('nav button')];
-function applyTheme(light){document.body.classList.toggle('light',light);localStorage.setItem('gc-theme',light?'light':'dark');const b=$('btn-theme');if(b)b.textContent=light?'Theme: light':'Theme: dark'}
+function applyTheme(light){document.body.classList.toggle('light',light);localStorage.setItem('gc-theme',light?'light':'dark');const b=$('btn-theme');if(b){b.classList.toggle('state-on',light);b.classList.toggle('state-off',!light);b.textContent='Theme: '+(light?'light':'dark')}}
 function toggleTheme(){applyTheme(!document.body.classList.contains('light'))}
 applyTheme(localStorage.getItem('gc-theme')==='light');
-function setPressed(id,on,onText,offText){const b=$(id);if(b){b.setAttribute('aria-pressed',on?'true':'false');b.textContent=on?onText:offText}}
-function applyContrast(on){document.body.classList.toggle('hc',on);localStorage.setItem('gc-contrast',on?'on':'off');setPressed('btn-contrast',on,'Contrast: on','Contrast: off')}
-function applyMotion(reduce){document.body.classList.toggle('reduce-motion',reduce);localStorage.setItem('gc-motion',reduce?'reduce':'full');setPressed('btn-motion',reduce,'Motion: reduced','Motion: full')}
+function setPressed(id,on,label){const b=$(id);if(b){b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('state-on',on);b.classList.toggle('state-off',!on);b.textContent=(on?'● ':'○ ')+label+' '+(on?'ON':'OFF')}}
+function applyContrast(on){document.body.classList.toggle('hc',on);localStorage.setItem('gc-contrast',on?'on':'off');setPressed('btn-contrast',on,'Contrast')}
+function applyMotion(reduce){document.body.classList.toggle('reduce-motion',reduce);localStorage.setItem('gc-motion',reduce?'reduce':'full');setPressed('btn-motion',reduce,'Motion')}
 applyContrast(localStorage.getItem('gc-contrast')==='on');
 applyMotion(localStorage.getItem('gc-motion')==='reduce'||(!localStorage.getItem('gc-motion')&&window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches));
 function toggleContrast(){applyContrast(!document.body.classList.contains('hc'))}
