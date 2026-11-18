@@ -171,6 +171,31 @@ func newCrawler() *Crawler {
 	}
 }
 
+// ResetForProfile clears crawl state while keeping GUI settings stable.
+func (c *Crawler) ResetForProfile(profile string) {
+	c.ProfileName = profile
+	c.LPool = nil
+	c.LinkIndex = make(map[string]int)
+	c.DomainCounter = make(map[string]int)
+	c.FailedDomains = make(map[string]int)
+	c.UniqueSignature = make(map[string]string)
+	c.CorpusFreqs = make(freq)
+	c.CorpusDocFreq = make(map[string]int)
+	c.CorpusDocCount = 0
+	c.RejectionCounts = make(map[string]int)
+	c.AcceptedDocs = 0
+	c.LastProcessedLink = 0
+	c.StateDirty = false
+	c.CacheHits = 0
+	c.OnlineDownloads = 0
+	c.DownloadMS = 0
+	c.GUILastError = ""
+	c.StopRequested.Store(false)
+	for name := range c.RejectedLinkSets {
+		c.RejectedLinkSets[name] = make(map[string]struct{})
+	}
+}
+
 // app is the active crawler instance, initialized at the start of run().
 var app = newCrawler()
 
@@ -956,10 +981,16 @@ func scoreWithRegex(text string, re *regexp.Regexp) float64 {
 	var uniqueK = make(map[string]int)
 
 	for _, k := range rr {
-		if len(k[1]) < 3 {
+		term := ""
+		if len(k) > 1 {
+			term = k[1]
+		} else if len(k) > 0 {
+			term = k[0]
+		}
+		if len(term) < 3 {
 			continue
 		}
-		uniqueK[strings.ToLower(k[1])]++
+		uniqueK[strings.ToLower(term)]++
 	}
 
 	var ks []string
@@ -1088,8 +1119,14 @@ func uniqueMatches(text string, re *regexp.Regexp) int {
 	}
 	seen := make(map[string]bool)
 	for _, m := range re.FindAllStringSubmatch(text, -1) {
-		if len(m) > 1 && len(m[1]) >= 3 {
-			seen[strings.ToLower(m[1])] = true
+		term := ""
+		if len(m) > 1 {
+			term = m[1]
+		} else if len(m) > 0 {
+			term = m[0]
+		}
+		if len(term) >= 3 {
+			seen[strings.ToLower(term)] = true
 		}
 	}
 	return len(seen)
@@ -2169,15 +2206,15 @@ const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawl
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
-<section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><input id="pr-profile" placeholder="profile name"><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
+<section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><select id="pr-profile"></select><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
 <section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><div id="k-out"></div><button class="act" onclick="applyKeywords()">Apply to profile</button></div></section>
 </main><script>
 const $=id=>document.getElementById(id);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus','prompt'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
 async function json(u,o){const r=await fetch(u,o);return r.json()}
 async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
-async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');$('p-list').innerHTML=p.map(x=>'<option>'+x+'</option>').join('');if(last.profile&&p.includes(last.profile))$('p-list').value=last.profile;loadProfile()}
-async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n}
+async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;}loadProfile()}
+async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
 async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
 let extracted=[];async function extract(){const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+' <button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td></tr>').join('')+'</table>'}function removeKeyword(w){extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
@@ -2203,18 +2240,17 @@ var guiCrawling atomic.Bool
 
 // launchGUICrawl runs a crawl inside the GUI process so its metrics are live.
 func launchGUICrawl(profile string) error {
-	if !iolib.FileExists("./profiles/" + filepath.Base(profile) + ".yaml") {
-		return fmt.Errorf("profile not found: %s", profile)
+	resolved, err := resolveProfileName(profile)
+	if err != nil {
+		return err
 	}
 	if !guiCrawling.CompareAndSwap(false, true) {
 		return fmt.Errorf("a crawl is already running")
 	}
 	go func() {
 		defer guiCrawling.Store(false)
-		app = newCrawler()
-		app.ProfileName = profile
-		app.GUILastError = ""
-		startIndex, cleanup, err := setupRuntime(profile)
+		app.ResetForProfile(resolved)
+		startIndex, cleanup, err := setupRuntime(resolved)
 		if err != nil {
 			app.GUILastError = err.Error()
 			return
@@ -2239,11 +2275,12 @@ func guiHandler() http.Handler {
 			http.Error(w, "profile required", 400)
 			return
 		}
-		path := "profiles/" + name + ".yaml"
-		if !iolib.FileExists(path) {
-			http.Error(w, "profile not found", 404)
+		resolved, err := resolveProfileName(name)
+		if err != nil {
+			http.Error(w, err.Error(), 404)
 			return
 		}
+		path := "profiles/" + resolved + ".yaml"
 		vp := viper.New()
 		vp.SetConfigFile(path)
 		if err := vp.ReadInConfig(); err != nil {
@@ -2289,13 +2326,17 @@ func guiHandler() http.Handler {
 				http.Error(w, "profile required", 400)
 				return
 			}
-			path := "profiles/" + name + ".yaml"
-			b, err := os.ReadFile(path)
+			resolved, err := resolveProfileName(name)
 			if err != nil {
 				http.Error(w, err.Error(), 404)
 				return
 			}
-			writeJSON(w, map[string]string{"name": name, "content": string(b)})
+			b, err := os.ReadFile("profiles/" + resolved + ".yaml")
+			if err != nil {
+				http.Error(w, err.Error(), 404)
+				return
+			}
+			writeJSON(w, map[string]string{"name": resolved, "content": string(b)})
 		case http.MethodPost:
 			var body struct{ Name, Content string }
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -2512,6 +2553,20 @@ func guiHandler() http.Handler {
 	})
 
 	return mux
+}
+
+// resolveProfileName finds an existing profile ignoring case and spaces.
+func resolveProfileName(name string) (string, error) {
+	files, _ := filepath.Glob("profiles/*.yaml")
+	target := strings.ToLower(strings.ReplaceAll(filepath.Base(name), " ", "-"))
+	for _, file := range files {
+		base := strings.TrimSuffix(filepath.Base(file), ".yaml")
+		candidate := strings.ToLower(base)
+		if candidate == target || strings.ReplaceAll(candidate, "-", " ") == strings.ReplaceAll(target, "-", " ") {
+			return base, nil
+		}
+	}
+	return "", fmt.Errorf("profile not found: %s", name)
 }
 
 // lastExecutedProfile derives the most recent profile from session log filenames.

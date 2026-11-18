@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -271,4 +272,52 @@ func TestEndToEndLocalServer(t *testing.T) {
 	if !iolibFileExists("output/corpusFrequencies.txt") {
 		t.Fatal("frequency output was not written")
 	}
+}
+
+func TestScoreWithRegexNoCapturingGroup(t *testing.T) {
+	withApp(t, func() {
+		re := regexp.MustCompile("stack|image|siril")
+		got := scoreWithRegex("stack image siril stack", re)
+		if got <= 0 {
+			t.Fatalf("scoreWithRegex = %v, want > 0", got)
+		}
+		reGroup := regexp.MustCompile(`(?i)\W(stack|image)\W`)
+		if scoreWithRegex(" stack image ", reGroup) <= 0 {
+			t.Fatal("grouped regex should also score")
+		}
+	})
+}
+
+func TestResolveProfileNameCaseInsensitive(t *testing.T) {
+	withApp(t, func() {
+		if err := os.MkdirAll("profiles", 0755); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join("profiles", "skystacker-research.yaml")
+		if _, err := os.Stat(path); err != nil {
+			if err := os.WriteFile(path, []byte("scoreThreshold: 1\n"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(path)
+		}
+		got, err := resolveProfileName("Skystacker Research")
+		if err != nil || got != "skystacker-research" {
+			t.Fatalf("resolveProfileName = %q, %v", got, err)
+		}
+	})
+}
+
+func TestResetForProfile(t *testing.T) {
+	withApp(t, func() {
+		app.AcceptedDocs = 9
+		app.CacheHits = 4
+		app.LPool = []aLink{{URL: "https://a.org"}}
+		app.RejectionCounts["non_english"] = 3
+		app.GUILastError = "old"
+		app.ResetForProfile("local")
+		if app.AcceptedDocs != 0 || app.CacheHits != 0 || len(app.LPool) != 0 ||
+			len(app.RejectionCounts) != 0 || app.GUILastError != "" || app.ProfileName != "local" {
+			t.Fatalf("state not reset: %+v", app)
+		}
+	})
 }

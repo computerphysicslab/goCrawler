@@ -54,7 +54,7 @@ func TestGUIRootAndAssets(t *testing.T) {
 		if code != 200 || !strings.Contains(body, "goCrawler Workbench") {
 			t.Fatalf("root = %d %q", code, body[:minInt(120, len(body))])
 		}
-		for _, fragment := range []string{"/api/keywords/apply", "'/api/stats'", "btn-start", "btn-stop", "s-running", "reasons"} {
+		for _, fragment := range []string{"/api/keywords/apply", "'/api/stats'", "btn-start", "btn-stop", "s-running", "reasons", `id="pr-profile"`, "<select id=\"pr-profile\""} {
 			if !strings.Contains(body, fragment) {
 				t.Fatalf("GUI HTML is missing %q", fragment)
 			}
