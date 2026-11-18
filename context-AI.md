@@ -1003,3 +1003,15 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   `recordRejection`. Test de regresión `TestIsUniqueDocumentDoesNotDeadlockOnDuplicate`.
 - Verificación: crawl completo de `skystacker-research` termina con `crawl finished processed=126
   accepted=38` y `Done!!!`; `go test -race ./...` ✅.
+
+
+## 29. Soporte PDF añadido al roadmap (v1.8.8, 2026-11-18)
+
+- Análisis en `docs/PDF_SUPPORT_ANALYSIS.md`: mejor opción open source y pura Go es
+  `github.com/ledongthuc/pdf` (BSD-3-Clause, fork de rsc/pdf); alternativa `dslipak/pdf`.
+  Descartadas: pdfcpu (no extrae texto), go-fitz/Pdfium (cgo/WASM y AGPL) y unipdf (comercial).
+- Roadmap: P48 (S) flags `process_pdf`/`pdf_max_bytes`/`pdf_pages_limit` + gates;
+  P49 (M) descarga cruda con límite y validación `%PDF-`;
+  P50 (M) wrapper `pdftextlib` (límite de páginas, fallos graceful);
+  P51 (L) integración completa en pipeline/corpus + tests.
+- OCR de PDFs escaneados queda fuera de alcance; se tratan como documentos demasiado cortos.

@@ -10,12 +10,15 @@ table; full details of the senior audit and the GUI proposal are in `docs/`.
 
 ## 1. Pending work — ordered by increasing difficulty
 
-Sources: `docs/GUI_STUDIO_ANALYSIS.md` and `docs/GUI_MOCKUP_ANALYSIS.md` (2026-11-18). Items are
-sorted by increasing effort; React/Vue frontends are explicitly rejected (they would break the
-zero-dependency single-binary design).
+Sources: `docs/GUI_STUDIO_ANALYSIS.md`, `docs/GUI_MOCKUP_ANALYSIS.md` and
+`docs/PDF_SUPPORT_ANALYSIS.md` (2026-11-18). Items are sorted by increasing effort; React/Vue
+frontends are explicitly rejected (they would break the zero-dependency single-binary design).
+PDF support uses the pure-Go BSD-3 library `github.com/ledongthuc/pdf`; MuPDF/UniPDF options were
+rejected for native dependencies / commercial licensing.
 
 | ID | Effort | Item |
 |---|---|---|
+| P48 | S | PDF support: opt-in profile flags (`process_pdf`, `pdf_max_bytes`, `pdf_pages_limit`) and PDF URL/content-type gating |
 | P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
 | P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
@@ -28,12 +31,15 @@ zero-dependency single-binary design).
 | P43 | M | Domain heatmap (accepted pages per domain) |
 | P45 | M | Command palette (Cmd/Ctrl+K) for quick actions |
 | P46 | M | Report export to Markdown and print-to-PDF |
+| P49 | M | Raw PDF downloader with size cap, magic-byte validation and timeout |
+| P50 | M | `pdftextlib` wrapper around `ledongthuc/pdf` for text extraction with page limit and graceful failures |
 | P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) in SQLite |
 | P29 | L | Audit table with instant search and filters by HTTP status and Content-Type |
 | P37 | L | Structured profile editor: chips, live regex validation, YAML advanced view |
 | P39 | L | Profile version history (snapshot per run with diff) |
 | P42 | L | Corpus Explorer: virtualised list, keyword highlighting, filters, export MD/JSON/CSV |
 | P44 | L | Session comparison between two runs of the same profile |
+| P51 | L | Full PDF pipeline/corpus integration (`source_type`, `page_count`), rejection reasons and tests |
 | P30 | XL | Interactive topology graph and URL inspection drawer |
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
