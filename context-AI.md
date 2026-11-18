@@ -787,3 +787,12 @@ Solución aplicada en este equipo: symlink usuario `~/.local/bin/go -> ~/sdk/go1
 Si queda un proceso GUI anterior escuchando en 8765, el nuevo fallaba con `bind: address already in use`.
 Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puertos consecutivos desde
 8765, imprimiendo la URL real. Verificado: dos instancias simultáneas → 8765 y 8766.
+
+## 31. Dashboard del Workbench (v1.7.3, 2026-11-18)
+
+- `/api/stats` añade `running_count`, `not_accepted` y `rejections` (snapshot de `app.RejectionCounts`).
+- `btn-stop` nace desactivado; `stats()` alterna `disabled` de start/stop según `running` y muestra
+  el número de crawls activos y una tabla ordenada de razones de rechazo (con aviso de que los
+  recuentos son por párrafo/enlace, no por página).
+- Verificado con crawl real: visits=22, accepted=13, not_accepted=9, razones `stopword_ratio`,
+  `too_short`, `non_english`, `low_relevancy`.

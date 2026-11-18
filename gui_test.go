@@ -54,8 +54,13 @@ func TestGUIRootAndAssets(t *testing.T) {
 		if code != 200 || !strings.Contains(body, "goCrawler Workbench") {
 			t.Fatalf("root = %d %q", code, body[:minInt(120, len(body))])
 		}
-		if !strings.Contains(body, "/api/keywords/apply") || !strings.Contains(body, "'/api/stats'") {
-			t.Fatal("GUI HTML is missing expected API calls")
+		for _, fragment := range []string{"/api/keywords/apply", "'/api/stats'", "btn-start", "btn-stop", "s-running", "reasons"} {
+			if !strings.Contains(body, fragment) {
+				t.Fatalf("GUI HTML is missing %q", fragment)
+			}
+		}
+		if !strings.Contains(body, `id="btn-stop" class="act" onclick="stopCrawl()" disabled`) {
+			t.Fatal("Stop button should start disabled")
 		}
 	})
 }
@@ -126,6 +131,7 @@ func TestGUIStatsEndpoint(t *testing.T) {
 		app.DownloadMS = 1234
 		app.AcceptedDocs = 5
 		app.GUILastError = "sample error"
+		app.RejectionCounts = map[string]int{"non_english": 12, "too_short": 4}
 		server := httptest.NewServer(guiHandler())
 		defer server.Close()
 		code, body := guiRequest(t, server, "GET", "/api/stats", "")
@@ -138,8 +144,13 @@ func TestGUIStatsEndpoint(t *testing.T) {
 		}
 		if stats["visits"].(float64) != 10 || stats["cache"].(float64) != 7 ||
 			stats["online"].(float64) != 3 || stats["accepted"].(float64) != 5 ||
-			stats["error"].(string) != "sample error" {
+			stats["error"].(string) != "sample error" || stats["not_accepted"].(float64) != 5 ||
+			stats["running_count"].(float64) != 0 {
 			t.Fatalf("unexpected stats: %v", stats)
+		}
+		reasons, ok := stats["rejections"].(map[string]interface{})
+		if !ok || reasons["non_english"].(float64) != 12 || reasons["too_short"].(float64) != 4 {
+			t.Fatalf("unexpected rejection breakdown: %v", stats["rejections"])
 		}
 	})
 }

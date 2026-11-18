@@ -2161,11 +2161,12 @@ func generateProfile(seed, output string) error {
 }
 
 const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawler Workbench</title>
-<style>body{font-family:system-ui;margin:0;background:#10151c;color:#dfe7ee}header{padding:12px 20px;background:#1b2733}nav button{background:none;border:0;color:#9fb3c8;padding:10px 16px;cursor:pointer;font-size:15px}nav button.on{color:#fff;border-bottom:2px solid #4fc3f7}main{padding:18px 22px}.card{background:#1b2733;border-radius:8px;padding:14px;margin-bottom:14px}textarea,input,select{width:100%;background:#0e1620;color:#dfe7ee;border:1px solid #2c3e50;border-radius:4px;padding:8px;box-sizing:border-box;margin:6px 0}button.act{background:#2b6cb0;color:#fff;border:0;border-radius:4px;padding:8px 14px;cursor:pointer}pre{background:#0e1620;padding:10px;border-radius:4px;white-space:pre-wrap;max-height:380px;overflow:auto}table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid #2c3e50;text-align:left}.row{display:flex;gap:12px}.row>*{flex:1}.muted{color:#8fa3b8}</style></head><body>
+<style>body{font-family:system-ui;margin:0;background:#10151c;color:#dfe7ee}header{padding:12px 20px;background:#1b2733}nav button{background:none;border:0;color:#9fb3c8;padding:10px 16px;cursor:pointer;font-size:15px}nav button.on{color:#fff;border-bottom:2px solid #4fc3f7}main{padding:18px 22px}.card{background:#1b2733;border-radius:8px;padding:14px;margin-bottom:14px}textarea,input,select{width:100%;background:#0e1620;color:#dfe7ee;border:1px solid #2c3e50;border-radius:4px;padding:8px;box-sizing:border-box;margin:6px 0}button.act{background:#2b6cb0;color:#fff;border:0;border-radius:4px;padding:8px 14px;cursor:pointer}button.act:disabled{opacity:.4;cursor:not-allowed;background:#455a6b}pre{background:#0e1620;padding:10px;border-radius:4px;white-space:pre-wrap;max-height:380px;overflow:auto}table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid #2c3e50;text-align:left}.row{display:flex;gap:12px}.row>*{flex:1}.muted{color:#8fa3b8}</style></head><body>
 <header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span></header>
 <nav><button class="on" data-tab="dash">Dashboard</button><button data-tab="prof">Profiles</button><button data-tab="corpus">Corpus</button><button data-tab="keys">Keyword lab</button></nav><main>
-<section id="dash"><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div></div></div>
-<div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button class="act" onclick="startCrawl()">Start</button> <button class="act" onclick="stopCrawl()">Stop</button><pre id="run-out"></pre></div></section>
+<section id="dash"><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div></div></div>
+<div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
+<div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof" hidden><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
 <section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><pre id="k-out"></pre><button class="act" onclick="applyKeywords()">Apply to profile</button></div></section>
@@ -2173,15 +2174,15 @@ const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawl
 const $=id=>document.getElementById(id);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['dash','prof','corpus','keys'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
 async function json(u,o){const r=await fetch(u,o);return r.json()}
-async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('status').textContent=s.error?('error: '+s.error):(s.running?'running':'ready')}
+async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
 async function profiles(){const p=await json('/api/profiles');$('p-list').innerHTML=p.map(x=>'<option>'+x+'</option>').join('');loadProfile()}
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
 async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
 async function extract(){const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));$('k-out').textContent=d.keywords.join(' ')}
 async function applyKeywords(){const n=$('k-profile').value;const kws=$('k-out').textContent.split(/\s+/).filter(Boolean);const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws})});$('status').textContent=(await r.json()).status}
-async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json())}
-async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping'}
+async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
+async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping';stats()}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
 setInterval(stats,1500);stats();profiles()
 </script></body></html>`
@@ -2277,14 +2278,29 @@ func guiHandler() http.Handler {
 		}
 	})
 	mux.HandleFunc("/api/stats", func(w http.ResponseWriter, r *http.Request) {
+		visits := app.CacheHits + app.OnlineDownloads
+		running := guiCrawling.Load()
+		runningCount := 0
+		if running {
+			runningCount = 1
+		}
+		app.CrawlMu.Lock()
+		reasons := make(map[string]int, len(app.RejectionCounts))
+		for reason, count := range app.RejectionCounts {
+			reasons[reason] = count
+		}
+		app.CrawlMu.Unlock()
 		writeJSON(w, map[string]interface{}{
-			"visits":      app.CacheHits + app.OnlineDownloads,
-			"cache":       app.CacheHits,
-			"online":      app.OnlineDownloads,
-			"download_ms": app.DownloadMS,
-			"accepted":    app.AcceptedDocs,
-			"running":     guiCrawling.Load(),
-			"error":       app.GUILastError,
+			"visits":        visits,
+			"cache":         app.CacheHits,
+			"online":        app.OnlineDownloads,
+			"download_ms":   app.DownloadMS,
+			"accepted":      app.AcceptedDocs,
+			"not_accepted":  visits - app.AcceptedDocs,
+			"running":       running,
+			"running_count": runningCount,
+			"rejections":    reasons,
+			"error":         app.GUILastError,
 		})
 	})
 	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) {

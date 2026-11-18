@@ -3,7 +3,13 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.2] - 2026-11-18
+## [v1.7.3] - 2026-11-18
+
+### Added
+- Workbench dashboard: Start/Stop buttons now reflect run state, active crawl count, not-accepted
+  pages and a ranked breakdown of rejection reasons.
+
+ - 2026-11-18
 
 ### Fixed
 - The Workbench now tries the next 20 ports when the default 8765 is already in use, and prints the actual URL.
