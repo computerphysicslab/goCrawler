@@ -117,6 +117,7 @@ type Crawler struct {
 	// state
 	LPool             []aLink
 	LinkIndex         map[string]int
+	VisitedURLs       map[string]bool
 	DomainCounter     map[string]int
 	FailedDomains     map[string]int
 	UniqueSignature   map[string]string
@@ -168,6 +169,7 @@ func newCrawler() *Crawler {
 		RankingStrategy:  "hybrid",
 		Synonyms:         make(map[string][]string),
 		LinkIndex:        make(map[string]int),
+		VisitedURLs:      make(map[string]bool),
 		DomainCounter:    make(map[string]int),
 		FailedDomains:    make(map[string]int),
 		UniqueSignature:  make(map[string]string),
@@ -201,6 +203,7 @@ func (c *Crawler) ResetForProfile(profile string) {
 	c.ProfileName = profile
 	c.LPool = nil
 	c.LinkIndex = make(map[string]int)
+	c.VisitedURLs = make(map[string]bool)
 	c.DomainCounter = make(map[string]int)
 	c.FailedDomains = make(map[string]int)
 	c.UniqueSignature = make(map[string]string)
@@ -563,10 +566,11 @@ func csvInit() error {
 /**** TYPES ****/
 
 type aLink struct {
-	URL    string
-	Domain string
-	Count  int
-	Status int // 0 = pending, 1 = crawling, 2 = downloaded, 3 = failed, 4 = bootstrapping
+	URL        string
+	Domain     string
+	Count      int
+	Status     int       // 0 = pending, 1 = crawling, 2 = downloaded, 3 = failed, 4 = bootstrapping
+	ReservedAt time.Time // when a worker picked it up
 }
 
 type CachedData struct {
@@ -855,6 +859,11 @@ func getNextLink() (int, string) {
 	}
 
 	for i, l := range app.LPool {
+		if l.Status == 1 && !l.ReservedAt.IsZero() && time.Since(l.ReservedAt) > linkStaleTimeout {
+			app.LPool[i].Status = 0
+			app.LPool[i].ReservedAt = time.Time{}
+			l = app.LPool[i]
+		}
 		if l.Status == 4 { // bootstrapping url
 			fmt.Printf("\n\nFound bootstrapping url: %+v", l)
 			// Set this item directly as next candidate
@@ -882,6 +891,9 @@ func getNextLink() (int, string) {
 		return maxi, ""
 	}
 	app.LPool[maxi].Status = 1
+	app.LPool[maxi].ReservedAt = time.Now()
+	app.VisitedURLs[maxURL] = true
+	app.StateDirty = true
 	recordQueueEvent("requested", maxURL)
 	app.DomainCounter[app.LPool[maxi].Domain]++
 	app.StateDirty = true
@@ -891,6 +903,13 @@ func getNextLink() (int, string) {
 
 // addLink validates a link and adds or updates it in the pool.
 func addLink(link string, avoidFilters bool) bool {
+	app.PoolMu.Lock()
+	defer app.PoolMu.Unlock()
+	return addLinkLocked(link, avoidFilters)
+}
+
+// addLinkLocked assumes PoolMu is held.
+func addLinkLocked(link string, avoidFilters bool) bool {
 	domain := getDomain(link)
 
 	if !linkSeemsOk(link, avoidFilters) { // Avoid links that do not pass keyword filter
@@ -912,6 +931,11 @@ func addLink(link string, avoidFilters bool) bool {
 			app.LogCGI.Printf("\n\n%s\n%s", link2, link)
 			link = link2
 		}
+	}
+
+	// Never process the same URL twice in one run, even after pruning.
+	if app.VisitedURLs[link] {
+		return false
 	}
 
 	// Look for an existing entry in the link pool using the URL index.
@@ -1706,14 +1730,17 @@ func documentSignature(curatedContent string) (string, []kv) {
 // isUniqueDocument registers a signature and reports whether it was new.
 func isUniqueDocument(signature, url string) bool {
 	app.CrawlMu.Lock()
-	defer app.CrawlMu.Unlock()
-	if app.UniqueSignature[signature] == "" {
+	existing := app.UniqueSignature[signature]
+	if existing == "" {
 		app.UniqueSignature[signature] = url
 		app.StateDirty = true
+		app.CrawlMu.Unlock()
 		return true
 	}
-	recordRejection("duplicate", url, "signature matches "+app.UniqueSignature[signature], "")
-	app.Logger.Debug("document rejected", "reason", "duplicate", "url", url, "duplicate_of", app.UniqueSignature[signature])
+	app.CrawlMu.Unlock()
+
+	recordRejection("duplicate", url, "signature matches "+existing, "")
+	app.Logger.Debug("document rejected", "reason", "duplicate", "url", url, "duplicate_of", existing)
 	return false
 }
 
@@ -1833,16 +1860,18 @@ func notifyIndexer(rawURL string) {
 
 // doNextLink processes the next queued link and reports whether crawling should continue.
 func doNextLink(numLinksProcessed int) bool {
-	maxi, nextLink := getNextLink()
+	_, nextLink := getNextLink()
 	linkSeemsOk(nextLink, false)
 	if nextLink == "" {
 		fmt.Println("* No more links available in the pool")
-		fmt.Println(maxi)
 		return false
 	}
 
 	app.PoolMu.Lock()
-	prevState := app.LPool[maxi].Status
+	prevState := 0
+	if i, ok := app.LinkIndex[nextLink]; ok {
+		prevState = app.LPool[i].Status
+	}
 	app.PoolMu.Unlock()
 	if app.StopRequested.Load() {
 		return false
@@ -1859,7 +1888,9 @@ func doNextLink(numLinksProcessed int) bool {
 		recordQueueEvent("retrieved", nextLink)
 	}
 	app.PoolMu.Lock()
-	app.LPool[maxi].Status = finalStatus
+	if i, ok := app.LinkIndex[nextLink]; ok {
+		app.LPool[i].Status = finalStatus
+	}
 	app.PoolMu.Unlock()
 
 	if prevState == 4 && finalStatus == 2 {
@@ -2135,6 +2166,7 @@ const (
 	maxRequestTimeout = 30 * time.Second
 	maxCrawlDuration  = 10 * time.Minute
 	maxCrawlDelay     = 5 * time.Second
+	linkStaleTimeout  = 60 * time.Second
 )
 
 const appVersion = "1.8.8"

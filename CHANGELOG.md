@@ -1,3 +1,10 @@
+## [v1.6.1] - 2026-11-18
+
+### Fixed
+- Self-deadlock in `isUniqueDocument` when rejecting a duplicate document: it held `CrawlMu` and then
+  called `recordRejection`, which locks `CrawlMu` again. The lock is now released before recording.
+- Crawls with `skystacker-research` now finish instead of hanging.
+
 ## [v1.8.13] - 2026-11-18
 
 ### Changed

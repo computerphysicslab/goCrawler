@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -343,6 +344,70 @@ func TestNonEnglishRejectionRecordsDetails(t *testing.T) {
 		}
 		if !strings.Contains(events[0].Detail, "detected") || events[0].Text == "" || events[0].URL == "" {
 			t.Fatalf("incomplete rejection event: %+v", events[0])
+		}
+	})
+}
+
+func TestVisitedURLsPreventReaddingAfterPrune(t *testing.T) {
+	withApp(t, func() {
+		app.RegexLinkOk = "(?i)^https*://.*(stack)"
+		app.CuratedDomains = "example\\.org"
+		compileConfigRegexes()
+
+		if !addLink("https://example.org/stack", false) {
+			t.Fatal("first add failed")
+		}
+		if len(app.LPool) != 1 {
+			t.Fatalf("pool = %d", len(app.LPool))
+		}
+		_, _ = getNextLink()
+		app.LPool[0].Status = 2
+		pruneTerminalLinks()
+		if len(app.LPool) != 0 {
+			t.Fatalf("pool after prune = %d", len(app.LPool))
+		}
+		if addLink("https://example.org/stack", false) {
+			t.Fatal("visited URL was re-added after pruning")
+		}
+		if len(app.LPool) != 0 {
+			t.Fatalf("pool after re-add = %d", len(app.LPool))
+		}
+	})
+}
+
+func TestConcurrentAddLinkIsSafe(t *testing.T) {
+	withApp(t, func() {
+		app.RegexLinkOk = "(?i)^https*://.*(stack)"
+		app.CuratedDomains = "example\\.org"
+		compileConfigRegexes()
+		var wg sync.WaitGroup
+		for i := 0; i < 8; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for j := 0; j < 50; j++ {
+					addLink("https://example.org/stack", false)
+				}
+			}()
+		}
+		wg.Wait()
+		if len(app.LPool) != 1 {
+			t.Fatalf("pool = %d, want 1 unique URL", len(app.LPool))
+		}
+	})
+}
+
+func TestStaleReservedLinkIsRecovered(t *testing.T) {
+	withApp(t, func() {
+		app.RegexLinkOk = "(?i)^https*://.*(stack)"
+		app.CuratedDomains = "example\\.org"
+		compileConfigRegexes()
+		addLink("https://example.org/stack", false)
+		app.LPool[0].Status = 1
+		app.LPool[0].ReservedAt = time.Now().Add(-2 * linkStaleTimeout)
+		_, url := getNextLink()
+		if url != "https://example.org/stack" {
+			t.Fatalf("stale link was not recovered: %q", url)
 		}
 	})
 }

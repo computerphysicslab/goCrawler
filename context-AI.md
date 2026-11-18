@@ -993,3 +993,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   textarea. `/api/prompt` usa como fallback el último perfil ejecutado y luego cualquier perfil.
 - `resolveProfileName` normaliza mayúsculas, espacios, guiones y guiones bajos.
 - Tests de Stop, fallback de prompt y manejo de errores JS; `go test -race ./...` ✅.
+
+## 28. Deadlock resuelto en isUniqueDocument (v1.6.1, 2026-11-18)
+
+- Causa raíz: `isUniqueDocument()` tomaba `app.CrawlMu` con `defer Unlock` y dentro llamaba a
+  `recordRejection()`, que vuelve a tomar `app.CrawlMu` → auto-deadlock. Los workers quedaban
+  bloqueados en `recordRejection` (crawler.go:506) y el crawl se congelaba (~1486 líneas).
+- Fix: leer/escribir `UniqueSignature` bajo lock y soltar el mutex antes de llamar a
+  `recordRejection`. Test de regresión `TestIsUniqueDocumentDoesNotDeadlockOnDuplicate`.
+- Verificación: crawl completo de `skystacker-research` termina con `crawl finished processed=126
+  accepted=38` y `Done!!!`; `go test -race ./...` ✅.
