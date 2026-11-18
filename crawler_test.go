@@ -456,3 +456,16 @@ func TestPruneTerminalLinks(t *testing.T) {
 		t.Fatalf("index not rebuilt: %v", linkIndex)
 	}
 }
+
+func TestParseCLIVersionAndLicense(t *testing.T) {
+	oldArgs, oldV, oldL := os.Args, showVersion, showLicense
+	defer func() { os.Args, showVersion, showLicense = oldArgs, oldV, oldL }()
+	os.Args = []string{"crawler", "-version", "-license"}
+	showVersion, showLicense = false, false
+	if err := parseCLI(); err != errStop {
+		t.Fatalf("parseCLI = %v, want errStop", err)
+	}
+	if !showVersion || !showLicense {
+		t.Fatal("both informational flags should be set")
+	}
+}

@@ -1834,7 +1834,7 @@ func runSearch(query string) error {
 	return nil
 }
 
-const appVersion = "1.0.0"
+const appVersion = "1.6.0"
 
 var profileName string
 var targetLanguage = "English"
@@ -1845,6 +1845,8 @@ var cliExplore bool
 var cliGenerate string
 var cliWorkers = 1
 var configFile string
+var showVersion bool
+var showLicense bool
 var stopRequested atomic.Bool
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
@@ -1895,11 +1897,9 @@ func parseCLI() error {
 		case arg == "-explore", arg == "--explore":
 			cliExplore = true
 		case arg == "-version", arg == "--version":
-			fmt.Printf("goCrawler %s\n", appVersion)
-			return errStop
+			showVersion = true
 		case arg == "-license", arg == "--license":
-			fmt.Println("MIT License - Copyright (c) 2020-2026 Juan Ignacio Perez Sacristan")
-			return errStop
+			showLicense = true
 		case strings.HasPrefix(arg, "-"):
 			return fmt.Errorf("unknown flag: %s", arg)
 		default:
@@ -1907,6 +1907,15 @@ func parseCLI() error {
 				profileName = arg
 			}
 		}
+	}
+	if showVersion || showLicense {
+		if showVersion {
+			fmt.Printf("goCrawler %s\n", appVersion)
+		}
+		if showLicense {
+			fmt.Println("MIT License - Copyright (c) 2020-2026 Juan Ignacio Perez Sacristan")
+		}
+		return errStop
 	}
 	if profileName == "" && cliQuery == "" && !cliExplore && cliGenerate == "" {
 		return fmt.Errorf("profile argument required")
