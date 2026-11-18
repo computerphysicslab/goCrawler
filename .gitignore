@@ -5,3 +5,5 @@ output/*
 profiles/*
 corpusfreqlib/freq-index.json
 gocrawler-linux-amd64
+
+robots-cache.json
