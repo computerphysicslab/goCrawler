@@ -50,6 +50,7 @@ func (s *sqliteStore) Name() string { return "SQLite (" + s.path + ")" }
 
 // Exists reports whether a key is present in the cache.
 func (s *sqliteStore) Exists(key string) bool {
+	operations.Add(1)
 	var one int
 	err := s.db.QueryRow(`SELECT 1 FROM cache WHERE key = ?`, key).Scan(&one)
 	return err == nil
@@ -57,6 +58,7 @@ func (s *sqliteStore) Exists(key string) bool {
 
 // Get returns the cached value of a key.
 func (s *sqliteStore) Get(key string) string {
+	operations.Add(1)
 	var value string
 	if err := s.db.QueryRow(`SELECT value FROM cache WHERE key = ?`, key).Scan(&value); err != nil {
 		return ""
@@ -66,6 +68,7 @@ func (s *sqliteStore) Get(key string) string {
 
 // Set inserts or updates a cached value.
 func (s *sqliteStore) Set(key, value string) error {
+	operations.Add(1)
 	_, err := s.db.Exec(`INSERT INTO cache(key, value) VALUES(?, ?)
 		ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP`, key, value)
 	return err

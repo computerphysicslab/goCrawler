@@ -11,10 +11,19 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/temoto/robotstxt"
 )
+
+var requests atomic.Int64
+
+// Requests returns the number of robots.txt HTTP requests performed.
+func Requests() int64 { return requests.Load() }
+
+// ResetStats clears the request counter.
+func ResetStats() { requests.Store(0) }
 
 const (
 	robotsCacheVersion = 1
@@ -158,6 +167,7 @@ func (p *Policy) rulesFor(hostKey string) *hostRules {
 	}
 	req.Header.Set("User-Agent", p.userAgent)
 
+	requests.Add(1)
 	resp, err := p.client.Do(req)
 	if err != nil {
 		fmt.Printf(" [ROBOTS fetch error: %v]", err)

@@ -884,3 +884,11 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - Entradas caducadas se refrescan; fallos de red no se persisten.
 - Tests: persistencia entre dos instancias (una sola petición HTTP) y expiración tras 8 días.
 - Los ficheros `robots-cache.json` están en `.gitignore`.
+
+## 40. Métricas de red y caché en el dashboard (v1.8.2, 2026-11-18)
+
+- `networkRequestsTotal()` suma las peticiones HTTP de `proxyGet` + las de `robots.txt`
+  (`robotspolicy.Requests()`); `storelib.Operations()` cuenta `Exists/Get/Set` en SQLite y Redis.
+- `/api/stats` expone `network` y `cache_io`; el dashboard muestra "Net reqs" y "Cache I/O".
+- Ambos contadores se ponen a cero en `ResetForProfile`. Verificado con crawl real: visits=22,
+  cache=22, network=0 (todo desde caché), cache_io=47.

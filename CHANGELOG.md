@@ -3,7 +3,13 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.8.1] - 2026-11-18
+## [v1.8.2] - 2026-11-18
+
+### Added
+- Workbench metrics "Net reqs" (HTTP requests including robots.txt) and "Cache I/O" (cache
+  read/write operations), with reset on each crawl and tests.
+
+ - 2026-11-18
 
 ### Added
 - Persistent `robots.txt` cache on disk (`cache/robots-cache.json`) with a seven-day TTL; rules and

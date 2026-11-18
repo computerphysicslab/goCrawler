@@ -7,12 +7,21 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 )
 
 const (
 	BackendLocal = "local"
 	BackendRedis = "redis"
 )
+
+var operations atomic.Int64
+
+// Operations returns the number of cache read/write operations performed.
+func Operations() int64 { return operations.Load() }
+
+// ResetStats clears the operation counter.
+func ResetStats() { operations.Store(0) }
 
 // Store is the minimal interface the crawler needs from its cache.
 type Store interface {

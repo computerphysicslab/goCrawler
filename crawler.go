@@ -199,6 +199,9 @@ func (c *Crawler) ResetForProfile(profile string) {
 	c.StateDirty = false
 	c.CacheHits = 0
 	c.OnlineDownloads = 0
+	networkRequests.Store(0)
+	robotspolicy.ResetStats()
+	storelib.ResetStats()
 	c.DownloadMS = 0
 	c.GUILastError = ""
 	c.StopRequested.Store(false)
@@ -561,6 +564,7 @@ func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	if printLog {
 		fmt.Printf("\nStart downloading")
 	}
+	networkRequests.Add(1)
 	resp, err = app.HTTPClient.Do(req)
 	if printLog {
 		fmt.Printf("\nEnd downloading")
@@ -2170,6 +2174,12 @@ func parseCLI() error {
 
 // errStop signals that a informational flag was handled and the program should exit cleanly.
 var appGUI bool
+var networkRequests atomic.Int64
+
+// networkRequestsTotal includes page downloads and robots.txt fetches.
+func networkRequestsTotal() int64 {
+	return networkRequests.Load() + robotspolicy.Requests()
+}
 
 var errStop = errors.New("stop")
 
@@ -2230,25 +2240,32 @@ func generateProfile(seed, output string) error {
 const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawler Workbench</title>
 <style>body{font-family:system-ui;margin:0;background:#10151c;color:#dfe7ee}header{padding:12px 20px;background:#1b2733}nav button{background:none;border:0;color:#9fb3c8;padding:10px 16px;cursor:pointer;font-size:15px}nav button.on{color:#fff;border-bottom:2px solid #4fc3f7}main{padding:18px 22px}.card{background:#1b2733;border-radius:8px;padding:14px;margin-bottom:14px}textarea,input,select{width:100%;background:#0e1620;color:#dfe7ee;border:1px solid #2c3e50;border-radius:4px;padding:8px;box-sizing:border-box;margin:6px 0}button.act{background:#2b6cb0;color:#fff;border:0;border-radius:4px;padding:8px 14px;cursor:pointer}button.act:disabled{opacity:.4;cursor:not-allowed;background:#455a6b}pre{background:#0e1620;padding:10px;border-radius:4px;white-space:pre-wrap;max-height:380px;overflow:auto}table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid #2c3e50;text-align:left}.row{display:flex;gap:12px}.row>*{flex:1}.muted{color:#8fa3b8}</style></head><body>
 <header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span></header>
-<nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button></nav><main>
-<section id="dash" hidden><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div></div></div>
+<nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">hazURL</button></nav><main>
+<section id="dash" hidden><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div><div>Net reqs<div id="s-net">0</div></div><div>Cache I/O<div id="s-io">0</div></div></div></div>
 <div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
 <section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><select id="pr-profile"></select><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
+<section id="urls" hidden><div class="card"><h3>hazURL — seed URL manager</h3><p class="muted">Paste one URL per line. Add, replace or remove seed URLs; changes are written to the profile YAML.</p><select id="u-profile"></select><textarea id="u-text" rows="12" placeholder="https://example.org/page"></textarea><div><button class="act" onclick="addURLs()">Add URLs</button> <button class="act" onclick="replaceURLs()">Replace all</button> <button class="act" onclick="removeURLs()">Remove selected</button></div><div id="u-list"></div></div></section>
 <section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><div id="k-out"></div><button class="act" onclick="applyKeywords()">Apply to profile</button></div></section>
 </main><script>
 const $=id=>document.getElementById(id);
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus','prompt'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus','prompt','urls'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
 async function json(u,o){const r=await fetch(u,o);return r.json()}
-async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
-async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;}loadProfile()}
-async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n}
+async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
+async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;$('u-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;$('u-profile').value=match;}loadProfile()}
+async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n;if($('u-profile')){$('u-profile').value=n;loadURLs()}}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
 async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
 let extracted=[];let removed=[];async function extract(){removed=[];const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+' <button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td></tr>').join('')+'</table>'}function removeKeyword(w){removed.push(w);extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
 async function applyKeywords(){const n=$('k-profile').value;const kws=extracted;const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws,removed:removed})});const res=await r.json();$('status').textContent=res.status+' ('+res.keywords+' keywords)';document.querySelector('[data-tab=prof]').click();profiles()}
+function parseURLs(){return $('u-text').value.split(/\r?\n/).map(x=>x.trim().replace(/^["']|["']$/g,'')).filter(x=>/^https?:\/\//i.test(x))}
+async function loadURLs(){const n=$('u-profile').value||$('p-list').value;if(!n)return;const d=await json('/api/urls?profile='+encodeURIComponent(n));$('u-text').value=d.urls.join('\n');$('u-list').innerHTML=d.urls.map((u,i)=>'<label><input type=checkbox value="'+i+'"> '+u+'</label>').join('<br>')}
+async function saveURLs(mode,remove){const n=$('u-profile').value||$('p-list').value;const urls=parseURLs();const body={profile:n,urls:urls,mode:mode,remove:remove||[]};const r=await fetch('/api/urls',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const res=await r.json();$('status').textContent=res.status||res.error;loadURLs();loadProfile()}
+async function addURLs(){await saveURLs('append',[])}
+async function replaceURLs(){await saveURLs('replace',[])}
+async function removeURLs(){const n=$('u-profile').value||$('p-list').value;const d=await json('/api/urls?profile='+encodeURIComponent(n));const picked=[...$('u-list').querySelectorAll('input:checked')].map(x=>d.urls[parseInt(x.value)]);await saveURLs('append',picked)}
 async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value;const d=await json('/api/prompt?profile='+encodeURIComponent(n));$('pr-out').value=d.prompt}
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
@@ -2335,6 +2352,78 @@ func guiHandler() http.Handler {
 		b.WriteString("\nTASK: Identify further high-value pages, articles, documentation and datasets that match these keywords and extend the curated content. Explain briefly why each source is relevant. All results, all pages you provide and the entire report must always be written in English.\n")
 		writeJSON(w, map[string]string{"prompt": b.String()})
 	})
+	mux.HandleFunc("/api/urls", func(w http.ResponseWriter, r *http.Request) {
+		name := filepath.Base(r.URL.Query().Get("profile"))
+		if r.Method == http.MethodPost {
+			var body struct {
+				Profile string   `json:"profile"`
+				Urls    []string `json:"urls"`
+				Mode    string   `json:"mode"`
+				Remove  []string `json:"remove"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				http.Error(w, err.Error(), 400)
+				return
+			}
+			resolved, err := resolveProfileName(body.Profile)
+			if err != nil {
+				http.Error(w, err.Error(), 404)
+				return
+			}
+			path := "profiles/" + resolved + ".yaml"
+			b, err := os.ReadFile(path)
+			if err != nil {
+				http.Error(w, err.Error(), 404)
+				return
+			}
+			existing := profileSeedURLs(string(b))
+			removed := make(map[string]bool)
+			for _, u := range body.Remove {
+				removed[strings.TrimSpace(u)] = true
+			}
+			kept := []string{}
+			for _, u := range existing {
+				if !removed[u] {
+					kept = append(kept, u)
+				}
+			}
+			added := normalizeSeedURLs(body.Urls)
+			var final []string
+			if body.Mode == "replace" && len(removed) == 0 {
+				final = added
+			} else {
+				seen := make(map[string]bool)
+				for _, u := range kept {
+					seen[u] = true
+				}
+				final = append(final, kept...)
+				for _, u := range added {
+					if !seen[u] {
+						seen[u] = true
+						final = append(final, u)
+					}
+				}
+			}
+			text := replaceSeedBlock(string(b), final)
+			if err := os.WriteFile(path, []byte(text), 0644); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			writeJSON(w, map[string]interface{}{"status": "saved", "urls": len(final), "profile": resolved})
+			return
+		}
+		resolved, err := resolveProfileName(name)
+		if err != nil {
+			http.Error(w, err.Error(), 404)
+			return
+		}
+		b, err := os.ReadFile("profiles/" + resolved + ".yaml")
+		if err != nil {
+			http.Error(w, err.Error(), 404)
+			return
+		}
+		writeJSON(w, map[string]interface{}{"profile": resolved, "urls": profileSeedURLs(string(b))})
+	})
 	mux.HandleFunc("/api/rejections", func(w http.ResponseWriter, r *http.Request) {
 		reason := r.URL.Query().Get("reason")
 		app.RejectionMu.Lock()
@@ -2416,6 +2505,8 @@ func guiHandler() http.Handler {
 			"download_ms":   app.DownloadMS,
 			"accepted":      app.AcceptedDocs,
 			"not_accepted":  visits - app.AcceptedDocs,
+			"network":       networkRequestsTotal(),
+			"cache_io":      storelib.Operations(),
 			"running":       running,
 			"running_count": runningCount,
 			"rejections":    reasons,
@@ -2785,6 +2876,86 @@ func expandKeywords(words []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// normalizeSeedURLs filters and trims a list of candidate seed URLs.
+func normalizeSeedURLs(raw []string) []string {
+	seen := make(map[string]bool)
+	out := []string{}
+	for _, value := range raw {
+		value = strings.TrimSpace(strings.Trim(value, `"'`))
+		u, err := url.Parse(value)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || seen[value] {
+			continue
+		}
+		seen[value] = true
+		out = append(out, value)
+	}
+	return out
+}
+
+// profileSeedURLs reads the bootstrapingLinks list from a profile.
+func profileSeedURLs(text string) []string {
+	urls := []string{}
+	inList := false
+	for _, line := range strings.Split(text, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "bootstrapingLinks:") {
+			inList = true
+			continue
+		}
+		if inList {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+				continue
+			}
+			if strings.HasPrefix(trimmed, "-") {
+				urls = append(urls, strings.TrimSpace(strings.TrimPrefix(trimmed, "-")))
+				continue
+			}
+			if !strings.HasPrefix(line, " ") && !strings.HasPrefix(line, "\t") &&
+				strings.Contains(trimmed, ":") {
+				break
+			}
+		}
+	}
+	return normalizeSeedURLs(urls)
+}
+
+// replaceSeedBlock rewrites the bootstrapingLinks list of a profile.
+func replaceSeedBlock(text string, urls []string) string {
+	lines := strings.Split(text, "\n")
+	start, end := -1, -1
+	for i, line := range lines {
+		if strings.HasPrefix(strings.TrimSpace(line), "bootstrapingLinks:") {
+			start = i + 1
+			for j := i + 1; j < len(lines); j++ {
+				trimmed := strings.TrimSpace(lines[j])
+				if trimmed == "" {
+					continue
+				}
+				if strings.HasPrefix(trimmed, "-") {
+					end = j + 1
+					continue
+				}
+				break
+			}
+			if end < 0 {
+				end = start
+			}
+			break
+		}
+	}
+	newLines := []string{}
+	for _, u := range urls {
+		newLines = append(newLines, `- "`+u+`"`)
+	}
+	if start < 0 {
+		return strings.TrimRight(text, "\n") + "\nbootstrapingLinks:\n" + strings.Join(newLines, "\n") + "\n"
+	}
+	result := append([]string{}, lines[:start]...)
+	result = append(result, newLines...)
+	result = append(result, lines[end:]...)
+	return strings.Join(result, "\n")
 }
 
 // runGUI starts the embedded local web interface on loopback only.

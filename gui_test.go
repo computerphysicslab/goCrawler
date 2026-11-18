@@ -11,6 +11,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+	"unicode"
+
+	"goCrawler/robotspolicy"
+	"goCrawler/storelib"
 )
 
 // withGUIApp installs a fresh crawler for a test and restores the previous one.
@@ -158,6 +163,12 @@ func TestGUIStatsEndpoint(t *testing.T) {
 			stats["online"].(float64) != 3 || stats["accepted"].(float64) != 5 ||
 			stats["error"].(string) != "sample error" || stats["not_accepted"].(float64) != 5 ||
 			stats["running_count"].(float64) != 0 {
+			if _, ok := stats["network"].(float64); !ok {
+				t.Fatalf("missing network metric: %v", stats)
+			}
+			if _, ok := stats["cache_io"].(float64); !ok {
+				t.Fatalf("missing cache_io metric: %v", stats)
+			}
 			t.Fatalf("unexpected stats: %v", stats)
 		}
 		reasons, ok := stats["rejections"].(map[string]interface{})
@@ -402,22 +413,33 @@ func TestGUIKeywordsMorphologicalGrouping(t *testing.T) {
 	})
 }
 
-// jsDelimitersBalanced ignores quoted strings and checks that all JS delimiters match.
+// jsDelimitersBalanced ignores quoted strings and regex literals when checking JS delimiters.
 func jsDelimitersBalanced(js string) bool {
 	var stack []rune
 	var quote rune
-	escaped := false
+	escaped, inRegex, inClass := false, false, false
+	prevSignificant := ' '
 	for _, r := range js {
+		if inRegex {
+			if escaped {
+				escaped = false
+			} else if r == '\\' {
+				escaped = true
+			} else if r == '[' {
+				inClass = true
+			} else if r == ']' {
+				inClass = false
+			} else if r == '/' && !inClass {
+				inRegex = false
+			}
+			continue
+		}
 		if quote != 0 {
 			if escaped {
 				escaped = false
-				continue
-			}
-			if r == '\\' {
+			} else if r == '\\' {
 				escaped = true
-				continue
-			}
-			if r == quote {
+			} else if r == quote {
 				quote = 0
 			}
 			continue
@@ -425,6 +447,10 @@ func jsDelimitersBalanced(js string) bool {
 		switch r {
 		case '\'', '"', '`':
 			quote = r
+		case '/':
+			if strings.ContainsRune("=(,[!:|&?{; ", prevSignificant) {
+				inRegex = true
+			}
 		case '{', '(', '[':
 			stack = append(stack, r)
 		case '}', ')', ']':
@@ -437,8 +463,11 @@ func jsDelimitersBalanced(js string) bool {
 			}
 			stack = stack[:len(stack)-1]
 		}
+		if !unicode.IsSpace(r) {
+			prevSignificant = r
+		}
 	}
-	return len(stack) == 0 && quote == 0
+	return len(stack) == 0 && quote == 0 && !inRegex
 }
 
 func TestGUIScriptIsSyntacticallyBalanced(t *testing.T) {
@@ -641,6 +670,128 @@ func TestGUIRejectionRowsAreClickable(t *testing.T) {
 		}
 		if !strings.Contains(body, `id="reason-detail"`) {
 			t.Fatal("rejection detail container is missing")
+		}
+	})
+}
+
+func TestGUIURLManagerAddRemoveReplace(t *testing.T) {
+	withGUIApp(t, func() {
+		if err := os.MkdirAll("profiles", 0755); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join("profiles", "url_manager_test.yaml")
+		initial := "scoreThreshold: 10\nlinkOk: |\n  stack\nbootstrapingLinks:\n- \"https://example.org/a\"\n"
+		if err := os.WriteFile(path, []byte(initial), 0644); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(path)
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+
+		code, body := guiRequest(t, server, "GET", "/api/urls?profile=url_manager_test", "")
+		if code != 200 || !strings.Contains(body, "https://example.org/a") {
+			t.Fatalf("GET urls = %d %q", code, body)
+		}
+
+		add := `{"profile":"url_manager_test","urls":["https://example.org/b","not-a-url","https://example.org/b"],"mode":"append"}`
+		code, body = guiRequest(t, server, "POST", "/api/urls", add)
+		if code != 200 || !strings.Contains(body, `"urls":2`) {
+			t.Fatalf("add = %d %q", code, body)
+		}
+		got, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(got), "not-a-url") || strings.Count(string(got), "https://example.org/b") != 1 {
+			t.Fatalf("invalid or duplicated URL in profile: %q", got)
+		}
+
+		remove := `{"profile":"url_manager_test","urls":[],"mode":"append","remove":["https://example.org/a"]}`
+		code, body = guiRequest(t, server, "POST", "/api/urls", remove)
+		if code != 200 {
+			t.Fatalf("remove = %d %q", code, body)
+		}
+		got, _ = os.ReadFile(path)
+		if strings.Contains(string(got), "https://example.org/a") {
+			t.Fatalf("removed URL still present: %q", got)
+		}
+
+		replace := `{"profile":"url_manager_test","urls":["https://example.org/z"],"mode":"replace"}`
+		code, body = guiRequest(t, server, "POST", "/api/urls", replace)
+		if code != 200 || !strings.Contains(body, `"urls":1`) {
+			t.Fatalf("replace = %d %q", code, body)
+		}
+		got, _ = os.ReadFile(path)
+		if !strings.Contains(string(got), "https://example.org/z") || strings.Contains(string(got), "https://example.org/b") {
+			t.Fatalf("replace did not rewrite seed list: %q", got)
+		}
+	})
+}
+
+func TestGUIHasURLTab(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		_, body := guiRequest(t, server, "GET", "/", "")
+		for _, fragment := range []string{`data-tab="urls"`, `id="urls"`, `id="u-profile"`, `id="u-text"`, "hazURL"} {
+			if !strings.Contains(body, fragment) {
+				t.Fatalf("GUI HTML missing %q", fragment)
+			}
+		}
+		if !jsDelimitersBalanced(strings.Split(strings.Split(body, "<script>")[1], "</script>")[0]) {
+			t.Fatal("GUI JavaScript is not balanced after adding hazURL")
+		}
+	})
+}
+
+func TestNetworkAndCacheIOCounters(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+
+	withGUIApp(t, func() {
+		networkRequests.Store(0)
+		robotspolicy.ResetStats()
+		storelib.ResetStats()
+		app.HTTPClient = &http.Client{Timeout: 2 * time.Second}
+
+		before := networkRequestsTotal()
+		resp, err := proxyGet(server.URL+"/page", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if got := networkRequestsTotal(); got <= before {
+			t.Fatalf("network counter did not increase: %d -> %d", before, got)
+		}
+
+		store, err := storelib.Init(storelib.BackendLocal, filepath.Join(t.TempDir(), "stats.db"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer store.Close()
+		beforeIO := storelib.Operations()
+		store.Exists("k")
+		store.Set("k", "v")
+		store.Get("k")
+		if got := storelib.Operations(); got < beforeIO+3 {
+			t.Fatalf("cache I/O counter did not increase: %d -> %d", beforeIO, got)
+		}
+	})
+}
+
+func TestGUIMetricsInHTML(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		_, body := guiRequest(t, server, "GET", "/", "")
+		for _, fragment := range []string{`id="s-net"`, `id="s-io"`, "Net reqs", "Cache I/O"} {
+			if !strings.Contains(body, fragment) {
+				t.Fatalf("GUI HTML missing %q", fragment)
+			}
 		}
 	})
 }
