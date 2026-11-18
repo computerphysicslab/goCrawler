@@ -3,7 +3,10 @@ logs/*
 cache/*
 output/*
 profiles/*
+!profiles/examples/
+!profiles/examples/*.yaml
 corpusfreqlib/freq-index.json
+corpusfreqlib/all.num
 gocrawler-linux-amd64
 
 robots-cache.json

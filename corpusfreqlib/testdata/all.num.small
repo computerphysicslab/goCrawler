@@ -1,0 +1,4 @@
+1000 the at0 10
+500 image nn1 8
+250 stack nn1 5
+100 noise nn1 3

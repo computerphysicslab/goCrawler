@@ -143,6 +143,45 @@ func saveFreqIndex() {
 	}
 }
 
+// GenerateIndex rebuilds the compressed frequency index from BNC-style sources.
+func GenerateIndex(bncPath, contemporaryPath, outputPath string) error {
+	eng, err := loadCorpus(bncPath)
+	if err != nil {
+		return err
+	}
+	cont, err := loadCorpus(contemporaryPath)
+	if err != nil {
+		return err
+	}
+	theEng, theCont := eng["the"].numTotal, cont["the"].numTotal
+	if theEng == 0 || theCont == 0 {
+		return fmt.Errorf("both source corpora must contain the token 'the'")
+	}
+	factor := float64(theEng) / float64(theCont)
+
+	index := make(map[string]int, len(eng)+len(cont))
+	for token, item := range eng {
+		index[token] = item.numTotal
+	}
+	for token, item := range cont {
+		index[token] = eng[token].numTotal + int(factor*float64(item.numTotal))
+	}
+	b, err := json.Marshal(index)
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	if _, err := zw.Write(b); err != nil {
+		return err
+	}
+	if err := zw.Close(); err != nil {
+		return err
+	}
+	return os.WriteFile(outputPath, buf.Bytes(), 0644)
+}
+
 // Init loads and normalizes the English reference corpora.
 func Init() error {
 	if loadFreqIndex() {
@@ -151,7 +190,7 @@ func Init() error {
 	var err error
 	corpusFreqsEng, err = loadCorpus("./corpusfreqlib/all.num")
 	if err != nil {
-		return err
+		return fmt.Errorf("corpus frequency index unavailable: %w (run 'make freq-index' with the full all.num source or restore corpusfreqlib/freq-index.json.gz)", err)
 	}
 	corpusFreqsCont, err = loadCorpus("./corpusfreqlib/contemporaryEnglish.txt")
 	if err != nil {

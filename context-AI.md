@@ -1051,3 +1051,18 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   incrementales, P66 modularización por fases, P67 streaming/memoria.
 - P27 (SSE) se mantiene como punto de apalancamiento máximo. Diferidos: plugins/WASM, wrapper
   Wails/Fyne y Docker; rechazado el "fix" de cliente HTTP por ya implementado.
+
+
+## 33. P61/P62/P63/P59 implementados (v1.8.15, 2026-11-18)
+
+- Onboarding: badges en README, cabecera Go corregida a 1.26+, `CONTRIBUTING.md`, plantillas de
+  issue/PR y perfiles de ejemplo versionados en `profiles/examples/` (el resto sigue en .gitignore).
+- Notificaciones: `notifyWebhookURL`/`notifyDesktop` + `notifyOnCompletion`/`notifyOnError` y
+  `rejectionNotifyThreshold`. Eventos `crawl_completed`, `crawl_error` y `rejection_threshold` (una
+  vez por motivo). Webhook JSON con timeout; desktop via notify-send/osascript/PowerShell sin shell.
+- Accesibilidad GUI: modo alto contraste y reduced-motion con persistencia, skip link, foco visible,
+  Alt+1..7 para pestañas y Ctrl/Cmd+K para enfocar búsqueda. Tests de delimitadores JS ✅.
+- Datos de frecuencia: `freq-index.json.gz` es el artefacto canónico; `all.num` (18 MB) eliminado
+  del repo y generable con `make freq-index`; fixtures pequeños en `corpusfreqlib/testdata/` y
+  `corpusfreqlib.GenerateIndex()` con herramienta en `tools/generate_freq_index.go`.
+- Verificación: `go vet`, `go test -race ./...`, `--selftest` y `git diff --check` ✅.

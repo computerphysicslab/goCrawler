@@ -1,0 +1,20 @@
+# Minimal starter profile: general English corpus.
+# Copy to profiles/ and edit the seeds before running.
+
+curatedDomains: |
+  example\.com|example\.org
+
+linkOk: |
+  research|article|guide|documentation|tutorial
+
+regexRankingKeywords: |
+  (?i)\W(research|article|guide|documentation|tutorial|method|result|example)\W
+
+minDocLen: 50
+maxDocLen: 100000
+scoreThreshold: 10
+rankingStrategy: hybrid
+maxLinksPerPage: 100
+
+bootstrapingLinks:
+- "https://example.org/research/start-here"

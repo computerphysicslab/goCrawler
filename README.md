@@ -1,5 +1,10 @@
 # goCrawler
 
+[![CI](https://github.com/computerphysicslab/goCrawler/actions/workflows/ci.yml/badge.svg)](https://github.com/computerphysicslab/goCrawler/actions/workflows/ci.yml)
+[![Go 1.26+](https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go)](https://go.dev/)
+[![Latest release](https://img.shields.io/github/v/release/computerphysicslab/goCrawler)](https://github.com/computerphysicslab/goCrawler/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 **Topic-restricted web crawler and text-mining tool for building curated English corpora.**
 
 goCrawler does not crawl the web indiscriminately. Starting from a small set of seed URLs, it
@@ -11,8 +16,9 @@ By default, downloaded pages are cached in a **local SQLite database**, so no ex
 required. Redis remains supported as an alternative cache backend.
 
 - Demo video: <https://youtu.be/7IDkNYcMXxU>
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md) · shareable starter profiles in [`profiles/examples/`](profiles/examples/)
 - Author: Juan Ignacio Pérez Sacristán (`computerphysicslab`)
-- Module: `goCrawler` · Go 1.20
+- Module: `goCrawler` · Go 1.26+ (`toolchain go1.26.11` in `go.mod`)
 
 ---
 
@@ -116,7 +122,7 @@ For each downloaded page (`doNextLink`, `crawler.go:1089`):
 | `crawler.go` | Single `package main` entry point (~1560 lines): downloading, filtering, scoring, output. |
 | `storelib/` | Pluggable cache interface (`Exists`, `Get`, `Set`, `Close`) with SQLite and Redis backends. |
 | `redislib/` | Redis client wrapper built on `redigo` (single shared connection, TCP `:6379`). |
-| `corpusfreqlib/` | English reference frequencies from the British National Corpus (`all.num`) and a contemporary English corpus; `Freq(token)` exposes standard word frequencies. |
+| `corpusfreqlib/` | English reference frequencies from the British National Corpus and a contemporary English corpus; `Freq(token)` exposes standard frequencies. The tracked `freq-index.json.gz` is authoritative; see [docs/FREQUENCY_DATA.md](docs/FREQUENCY_DATA.md). |
 | `iolib/` | File helpers: `FileExists`, `CopyFileContents`, `String2file`, `String2fileAppend`, `File2string`. |
 | `stringlib/` | String helpers: `RmNewLines`, `IsNumeric`. |
 | `profiles/` | Example per-topic YAML profiles (Crypto, Litecoin, COVID-19, VAERS, Machine Learning, Revolution, astrophotography, ...). |
@@ -187,6 +193,10 @@ all checks pass.
 | `addUrl` | Optional external indexer endpoint (currently commented out). |
 | `cacheBackend` | `local` (SQLite, default) or `redis`. |
 | `cachePath` | SQLite database path (default `./cache/cache.db`). |
+| `notifyWebhookURL` | Optional JSON webhook for crawl notifications (treated as a secret). |
+| `notifyDesktop` | Use the OS notifier (`notify-send`/`osascript`/PowerShell), default `false`. |
+| `notifyOnCompletion` / `notifyOnError` | Emit those events once a channel is configured, default `true`. |
+| `rejectionNotifyThreshold` | Notify once per rejection reason when its counter reaches N (`0` disables). |
 | `maxDownloadMB` | Maximum size of a downloaded page in MiB (default `5`). |
 | `logLevel` | Structured log level: `debug`, `info`, `warn` or `error` (default `info`). |
 | `respectRobots` | Fetch and honour `robots.txt` before each online download (default `true`). |
@@ -374,6 +384,15 @@ The link pool, domain counters, uniqueness signatures and accumulated frequencie
 SQLite store under `state:crawl` every 50 links and at shutdown. Running with `--resume` restores
 them, appends to `ranking-URL.csv` and the corpus instead of truncating them, and continues from the
 last processed index. Without `--resume`, any previous state is cleared at startup.
+
+### Notifications (optional)
+
+Set `notifyWebhookURL` in `crawler.yaml` to receive JSON POSTs, and/or `notifyDesktop: true` to use
+the local notifier (`notify-send`, `osascript` or PowerShell). Events are `crawl_completed`,
+`crawl_error` and `rejection_threshold`; completion/error notices are on by default once a channel
+is configured and can be disabled with `notifyOnCompletion` / `notifyOnError`. Set
+`rejectionNotifyThreshold: 1000` to get one notice per rejection reason when its counter is
+reached. Webhook URLs are treated as secrets and are never logged.
 
 ## Security scan
 

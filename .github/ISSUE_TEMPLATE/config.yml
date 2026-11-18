@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Roadmap
+    url: https://github.com/computerphysicslab/goCrawler/blob/master/roadmap.md
+    about: Check whether the idea is already planned (P-numbers) before opening an issue.
+  - name: Contributing guide
+    url: https://github.com/computerphysicslab/goCrawler/blob/master/CONTRIBUTING.md
+    about: Build, test and pull-request conventions.

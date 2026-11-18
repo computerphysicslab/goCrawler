@@ -1179,3 +1179,20 @@ func TestGUISendsNoStoreHeaders(t *testing.T) {
 		}
 	})
 }
+
+func TestGUIAccessibilityControls(t *testing.T) {
+	for _, token := range []string{
+		`class="skip" href="#main"`,
+		`id="btn-contrast"`,
+		`id="btn-motion"`,
+		`function toggleContrast()`,
+		`function toggleMotion()`,
+		`document.addEventListener('keydown'`,
+		`body.reduce-motion *`,
+		`:focus-visible`,
+	} {
+		if !strings.Contains(guiHTML, token) {
+			t.Errorf("guiHTML missing accessibility token %q", token)
+		}
+	}
+}

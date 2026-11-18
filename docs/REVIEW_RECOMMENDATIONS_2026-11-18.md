@@ -1,5 +1,8 @@
 # Review of external recommendation (2026-11-18)
 
+**Update (v1.8.15):** P61, P62, P63 and P59 have been implemented; the rest remain in section 1 of
+the roadmap.
+
 Source: external deep analysis of goCrawler v1.8.14 shared by the author. This document records
 which suggestions are worth adopting, which are already solved, and which are rejected, with my
 own effort ratings. The roadmap only receives the accepted items.

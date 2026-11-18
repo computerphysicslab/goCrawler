@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -489,5 +490,73 @@ func TestDownloadCachedPDF(t *testing.T) {
 				t.Fatalf("PDF cache: content=%q err=%v", cached, err)
 			}
 		})
+	})
+}
+
+func TestNotificationWebhookAndThresholdOnce(t *testing.T) {
+	payloads := make(chan map[string]any, 10)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var payload map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Errorf("decode payload: %v", err)
+		}
+		payloads <- payload
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	withApp(t, func() {
+		app.NotifyWebhookURL = server.URL
+		app.NotifyDesktop = false
+		app.RejectionNotifyThreshold = 2
+
+		notify("manual", "hello", nil)
+		select {
+		case payload := <-payloads:
+			if payload["event"] != "manual" || payload["message"] != "hello" {
+				t.Fatalf("unexpected payload: %v", payload)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatal("webhook notification was not delivered")
+		}
+
+		for i := 0; i < 3; i++ {
+			recordRejection("custom_reason", "", "", "")
+		}
+		select {
+		case payload := <-payloads:
+			if payload["event"] != "rejection_threshold" || payload["reason"] != "custom_reason" {
+				t.Fatalf("unexpected threshold payload: %v", payload)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatal("threshold notification was not delivered")
+		}
+		select {
+		case payload := <-payloads:
+			t.Fatalf("threshold notification sent more than once: %v", payload)
+		case <-time.After(100 * time.Millisecond):
+		}
+	})
+}
+
+func TestNotifyCompletionCanBeDisabled(t *testing.T) {
+	payloads := make(chan map[string]any, 10)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var payload map[string]any
+		json.NewDecoder(r.Body).Decode(&payload)
+		payloads <- payload
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	withApp(t, func() {
+		app.NotifyWebhookURL = server.URL
+		app.NotifyOnCompletion = false
+		notifyCompletion(5)
+		select {
+		case payload := <-payloads:
+			t.Fatalf("completion notification sent while disabled: %v", payload)
+		case <-time.After(100 * time.Millisecond):
+		}
 	})
 }

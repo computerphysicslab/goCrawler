@@ -1,0 +1,25 @@
+# Optional PDF ingestion profile.
+# PDFs are blocked by regexLinkBannedTokens in crawler.yaml until process_pdf is true.
+# The existing URL whitelist and banned-domain rules still apply.
+
+curatedDomains: |
+  example\.com|example\.org|nasa\.gov
+
+linkOk: |
+  pdf|report|paper|publication|documentation|research
+
+regexRankingKeywords: |
+  (?i)\W(report|paper|publication|research|method|result|abstract|study|analysis)\W
+
+minDocLen: 80
+maxDocLen: 100000
+scoreThreshold: 10
+rankingStrategy: hybrid
+maxLinksPerPage: 100
+
+process_pdf: true
+pdf_max_bytes: 26214400
+pdf_pages_limit: 200
+
+bootstrapingLinks:
+- "https://example.org/reports/sample.pdf"

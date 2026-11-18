@@ -1,0 +1,21 @@
+# Strict-politeness profile: single worker via CLI, slow per-domain delay.
+# Pair with: go run crawler.go strict-slow -workers 1
+
+curatedDomains: |
+  example\.org
+
+linkOk: |
+  documentation|reference|guide
+
+regexRankingKeywords: |
+  (?i)\W(documentation|reference|guide|manual|specification|example)\W
+
+minDocLen: 50
+maxDocLen: 100000
+scoreThreshold: 10
+rankingStrategy: tfidf
+maxLinksPerPage: 50
+crawlDelayMs: 2000
+
+bootstrapingLinks:
+- "https://example.org/documentation/"

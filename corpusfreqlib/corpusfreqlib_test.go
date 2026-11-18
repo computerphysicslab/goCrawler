@@ -1,6 +1,9 @@
 package corpusfreqlib
 
 import (
+	"compress/gzip"
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -60,5 +63,42 @@ func TestInitAndFreq(t *testing.T) {
 	}
 	if Freq("definitely-not-a-real-token-xyz") != 0 {
 		t.Fatal("unknown token should have zero frequency")
+	}
+}
+
+func TestGenerateIndexFromSmallFixture(t *testing.T) {
+	dir := t.TempDir()
+	output := filepath.Join(dir, "freq-index.json.gz")
+	err := GenerateIndex(
+		filepath.Join("testdata", "all.num.small"),
+		filepath.Join("testdata", "contemporaryEnglish.small.txt"),
+		output,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	zr, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zr.Close()
+	b, err := io.ReadAll(zr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := make(map[string]int)
+	if err := json.Unmarshal(b, &index); err != nil {
+		t.Fatal(err)
+	}
+	if index["the"] <= 0 || index["image"] <= 0 {
+		t.Fatalf("unexpected generated index: %v", index)
+	}
+	if _, ok := index["noise"]; !ok {
+		t.Fatal("generated index lost a BNC-only token")
 	}
 }

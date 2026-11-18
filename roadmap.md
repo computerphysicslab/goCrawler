@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.14 (2026-11-18). Section 1 lists the remaining GUI backlog (P24–P47) plus the newly accepted P52–P67 items.
+**Current version:** v1.8.15 (2026-11-18). Section 1 lists the remaining GUI backlog (P24–P47) plus the accepted P52–P67 items.
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -17,10 +17,6 @@ The review document contains the reasoning, the rejected suggestions and the fac
 
 | ID | Effort | Item |
 |---|---|---|
-| P61 | S | Onboarding pack: README badges + Go version fix, `CONTRIBUTING.md`, issue/PR templates, tracked `profiles/examples/` |
-| P62 | S | Notification hooks: webhook/desktop notice on completion, errors or rejection-threshold breach |
-| P63 | S | Accessibility polish: high-contrast and reduced-motion modes, keyboard navigation on top of P45 |
-| P59 | S | Large-file hygiene: make `freq-index.json.gz` primary and generate/move the 18 MB `all.num` (keep a small offline fixture) |
 | P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
 | P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
@@ -54,9 +50,9 @@ The review document contains the reasoning, the rejected suggestions and the fac
 
 
 **Recommended next step:** P27 (SSE) is the highest-leverage item; it makes P24, P25, P34 and P36
-much cheaper. Ship telemetry/control first, then the small S items (P61–P63, P59).
+much cheaper. Ship telemetry/control first, then the remaining P52/P54/P56/P64/P65 items.
 
-Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8) and PDF support P48–P51 (v1.8.14).
+Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8), PDF support P48–P51 (v1.8.14) and onboarding/notifications/accessibility/large-file hygiene P61–P63/P59 (v1.8.15).
 
 ---
 
@@ -74,6 +70,7 @@ Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P2
 | v1.7.0 | 2026-11-17 | All deferred items closed: `Crawler` struct replacing globals (P19), `setup/crawl/report` split (P16), validated config loader (P17), dirty-tracked incremental state (P15), local hashing-embedding semantic ranking (P20) and the embedded web workbench GUI with profile editor, run monitor, corpus viewer, FTS5 search, keyword extraction and feedback loop (P21) |
 | v1.6.0 | 2026-11-17 | Senior-audit fixes P01–P14 and CLI tests P18: HTTP status/content checks, public-suffix fix, FTS5 query sanitisation, fail-fast loggers, space-separated CLI flags and `-config`, SQLite busy timeout, robots slot reservation, prebuilt gzip frequency index, graceful Ctrl-C, generic per-domain delay, pool pruning, bounded dedup sets, top-K frequencies, document-level language detection, CLI/top-K tests; Windows CI CRLF fix |
 | v1.8.14 | 2026-11-18 | PDF support (P48–P51): opt-in `process_pdf` profile flags, raw fetch split before the HTML Content-Type gate, pure-Go `pdftextlib` extraction with page/size limits, PDF cache prefix, new rejection reasons and tests |
+| v1.8.15 | 2026-11-18 | Onboarding pack, notification hooks, Workbench accessibility and large-file hygiene (P61–P63, P59): badges/CONTRIBUTING/templates/examples, webhook + desktop notices, high-contrast/reduced-motion/keyboard navigation, generated frequency index with small offline fixtures |
 
 ### Historically completed items (1–35)
 

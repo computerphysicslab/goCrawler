@@ -1,3 +1,15 @@
+## [v1.8.15] - 2026-11-18
+
+### Added
+- Onboarding (P61): README badges, Go 1.26 header fix, `CONTRIBUTING.md`, issue/PR templates and
+  tracked `profiles/examples/`.
+- Notifications (P62): optional webhook and desktop notices for `crawl_completed`, `crawl_error`
+  and per-reason `rejection_threshold` events.
+- Accessibility (P63): high-contrast and reduced-motion modes with persistence, visible focus,
+  skip link, Alt+1..7 tab switching and Ctrl/Cmd+K search focus.
+- Frequency data (P59): `freq-index.json.gz` is authoritative, `all.num` is generated via
+  `make freq-index`, and tiny offline fixtures keep loader/generator tests self-contained.
+
 ## [v1.8.14] - 2026-11-18
 
 ### Added

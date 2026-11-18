@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
@@ -72,52 +73,57 @@ type rejectionEvent struct {
 
 type Crawler struct {
 	// configuration
-	RegexBannedDomains    string
-	RegexLinkBannedTokens string
-	CuratedDomains        string
-	RegexLinkOk           string
-	EngStopWordsWOthe     string
-	EngStopWords          string
-	EngLowRelevancyWords  string
-	RegexStopwords        string
-	RegexRankingKeywords  string
-	ReRankingExtended     *regexp.Regexp
-	ProxyHost             string
-	ProxyUser             string
-	ProxyPass             string
-	DownloadTimeout       time.Duration
-	MaxDownloadBytes      int64
-	ProcessPDF            bool
-	PDFMaxBytes           int64
-	PDFPagesLimit         int
-	BootstrapLinks        []string
-	MinDocLen             int
-	MaxDocLen             int
-	MaxLinksPerPage       int
-	CrawlDelay            time.Duration
-	RankingStrategy       string
-	Synonyms              map[string][]string
-	ScoreThreshold        float64
-	AddURL                string
-	CacheBackend          string
-	CachePath             string
-	UserAgent             string
-	RespectRobots         bool
-	LogLevel              string
-	ProfileName           string
-	TargetLanguage        string
-	MinLanguageConfidence float64
-	ConfigFile            string
-	CLIWorkers            int
-	CLIDryRun             bool
-	CLIQuery              string
-	CLIExplore            bool
-	CLIGenerate           string
-	ShowVersion           bool
-	ShowLicense           bool
-	GUIPort               int
-	GUILastError          string
-	ResumeEnabled         bool
+	RegexBannedDomains       string
+	RegexLinkBannedTokens    string
+	CuratedDomains           string
+	RegexLinkOk              string
+	EngStopWordsWOthe        string
+	EngStopWords             string
+	EngLowRelevancyWords     string
+	RegexStopwords           string
+	RegexRankingKeywords     string
+	ReRankingExtended        *regexp.Regexp
+	ProxyHost                string
+	ProxyUser                string
+	ProxyPass                string
+	DownloadTimeout          time.Duration
+	MaxDownloadBytes         int64
+	ProcessPDF               bool
+	PDFMaxBytes              int64
+	PDFPagesLimit            int
+	BootstrapLinks           []string
+	MinDocLen                int
+	MaxDocLen                int
+	MaxLinksPerPage          int
+	CrawlDelay               time.Duration
+	RankingStrategy          string
+	Synonyms                 map[string][]string
+	ScoreThreshold           float64
+	AddURL                   string
+	CacheBackend             string
+	CachePath                string
+	UserAgent                string
+	RespectRobots            bool
+	LogLevel                 string
+	ProfileName              string
+	NotifyWebhookURL         string
+	NotifyDesktop            bool
+	NotifyOnCompletion       bool
+	NotifyOnError            bool
+	RejectionNotifyThreshold int
+	TargetLanguage           string
+	MinLanguageConfidence    float64
+	ConfigFile               string
+	CLIWorkers               int
+	CLIDryRun                bool
+	CLIQuery                 string
+	CLIExplore               bool
+	CLIGenerate              string
+	ShowVersion              bool
+	ShowLicense              bool
+	GUIPort                  int
+	GUILastError             string
+	ResumeEnabled            bool
 
 	// state
 	LPool             []aLink
@@ -131,6 +137,7 @@ type Crawler struct {
 	CorpusDocCount    int
 	RejectionCounts   map[string]int
 	RejectionEvents   map[string][]rejectionEvent
+	notifiedReasons   map[string]bool
 	RejectionMu       sync.Mutex
 	QueueEvents       []queueEvent
 	QueueMu           sync.Mutex
@@ -184,6 +191,7 @@ func newCrawler() *Crawler {
 		CorpusDocFreq:    make(map[string]int),
 		RejectionCounts:  make(map[string]int),
 		RejectionEvents:  make(map[string][]rejectionEvent),
+		notifiedReasons:  make(map[string]bool),
 		QueueEvents:      []queueEvent{},
 		RejectedLinkSets: map[string]map[string]struct{}{
 			"linksNotOk.log":                 {},
@@ -191,17 +199,19 @@ func newCrawler() *Crawler {
 			"linksNotOk.ParseRequestURI.log": {},
 			"robotsBlocked.log":              {},
 		},
-		DomainLastReq:   make(map[string]time.Time),
-		HTTPClient:      &http.Client{Timeout: 10 * time.Second},
-		Logger:          slog.New(slog.NewTextHandler(os.Stdout, nil)),
-		LogDownload:     log.New(io.Discard, "", 0),
-		LogCGI:          log.New(io.Discard, "", 0),
-		LogDomainFailed: log.New(io.Discard, "", 0),
-		CLIWorkers:      4,
-		GUIPort:         8765,
-		TargetLanguage:  "English",
-		CachePath:       "./cache/cache.db",
-		LogLevel:        "info",
+		DomainLastReq:      make(map[string]time.Time),
+		HTTPClient:         &http.Client{Timeout: 10 * time.Second},
+		Logger:             slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		LogDownload:        log.New(io.Discard, "", 0),
+		LogCGI:             log.New(io.Discard, "", 0),
+		LogDomainFailed:    log.New(io.Discard, "", 0),
+		CLIWorkers:         4,
+		GUIPort:            8765,
+		TargetLanguage:     "English",
+		CachePath:          "./cache/cache.db",
+		LogLevel:           "info",
+		NotifyOnCompletion: true,
+		NotifyOnError:      true,
 	}
 }
 
@@ -219,6 +229,7 @@ func (c *Crawler) ResetForProfile(profile string) {
 	c.CorpusDocCount = 0
 	c.RejectionCounts = make(map[string]int)
 	c.RejectionEvents = make(map[string][]rejectionEvent)
+	c.notifiedReasons = make(map[string]bool)
 	c.AcceptedDocs = 0
 	c.LastProcessedLink = 0
 	c.StateDirty = false
@@ -512,7 +523,18 @@ func countRejection(reason string) {
 func recordRejection(reason, url, detail, text string) {
 	app.CrawlMu.Lock()
 	app.RejectionCounts[reason]++
+	count := app.RejectionCounts[reason]
+	threshold := app.RejectionNotifyThreshold
+	shouldNotify := threshold > 0 && count >= threshold && !app.notifiedReasons[reason]
+	if shouldNotify {
+		app.notifiedReasons[reason] = true
+	}
 	app.CrawlMu.Unlock()
+
+	if shouldNotify {
+		notify("rejection_threshold", fmt.Sprintf("rejection reason %q reached %d", reason, count),
+			map[string]any{"reason": reason, "count": count})
+	}
 
 	app.RejectionMu.Lock()
 	defer app.RejectionMu.Unlock()
@@ -522,6 +544,118 @@ func recordRejection(reason, url, detail, text string) {
 		events = events[len(events)-10:]
 	}
 	app.RejectionEvents[reason] = events
+}
+
+const notificationTimeout = 3 * time.Second
+
+// crawlSummary returns a consistent snapshot of the final counters.
+func crawlSummary() (int, map[string]int) {
+	app.CrawlMu.Lock()
+	defer app.CrawlMu.Unlock()
+	counts := make(map[string]int, len(app.RejectionCounts))
+	for k, v := range app.RejectionCounts {
+		counts[k] = v
+	}
+	return app.AcceptedDocs, counts
+}
+
+// notify dispatches an optional webhook and desktop notification.
+func notify(event, message string, extra map[string]any) {
+	if app.NotifyWebhookURL == "" && !app.NotifyDesktop {
+		return
+	}
+	payload := map[string]any{
+		"event":   event,
+		"message": message,
+		"profile": app.ProfileName,
+		"time":    time.Now().UTC().Format(time.RFC3339),
+	}
+	for k, v := range extra {
+		payload[k] = v
+	}
+
+	if app.NotifyWebhookURL != "" {
+		body, err := json.Marshal(payload)
+		if err != nil {
+			app.Logger.Error("cannot encode notification", "error", err)
+		} else {
+			ctx, cancel := context.WithTimeout(context.Background(), notificationTimeout)
+			req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, app.NotifyWebhookURL, bytes.NewReader(body))
+			if reqErr != nil {
+				cancel()
+				app.Logger.Error("cannot create notification request", "error", reqErr)
+			} else {
+				req.Header.Set("Content-Type", "application/json")
+				client := &http.Client{Timeout: notificationTimeout}
+				resp, doErr := client.Do(req)
+				if doErr != nil {
+					app.Logger.Warn("notification webhook failed", "event", event, "error", doErr)
+				} else {
+					io.Copy(io.Discard, resp.Body)
+					resp.Body.Close()
+					if resp.StatusCode >= 300 {
+						app.Logger.Warn("notification webhook status", "event", event, "status", resp.StatusCode)
+					}
+				}
+				cancel()
+			}
+		}
+	}
+
+	if app.NotifyDesktop {
+		go func() {
+			if err := sendDesktopNotification(event + ": " + message); err != nil {
+				app.Logger.Debug("desktop notification unavailable", "error", err)
+			}
+		}()
+	}
+}
+
+// sanitizeNotifyText keeps desktop notification strings on one line.
+func sanitizeNotifyText(s string) string {
+	replacer := strings.NewReplacer("\\", "\\\\", `"`, `\"`, "\r", " ", "\n", " ")
+	return replacer.Replace(s)
+}
+
+// sendDesktopNotification uses the platform's local notifier, never a shell.
+func sendDesktopNotification(message string) error {
+	title := "goCrawler"
+	clean := sanitizeNotifyText(message)
+	var name string
+	var args []string
+	switch runtime.GOOS {
+	case "linux":
+		name, args = "notify-send", []string{title, clean}
+	case "darwin":
+		name, args = "osascript", []string{"-e", `display notification "` + clean + `" with title "` + title + `"`}
+	case "windows":
+		name = "powershell"
+		args = []string{"-NoProfile", "-Command",
+			`Add-Type -AssemblyName System.Windows.Forms;$n=New-Object System.Windows.Forms.NotifyIcon;$n.Icon=[System.Drawing.SystemIcons]::Information;$n.Visible=$true;$n.ShowBalloonTip(3000,"` + title + `","` + clean + `",[System.Windows.Forms.ToolTipIcon]::Info)`}
+	default:
+		return fmt.Errorf("desktop notifications unsupported on %s", runtime.GOOS)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), notificationTimeout)
+	defer cancel()
+	return exec.CommandContext(ctx, name, args...).Run()
+}
+
+// notifyCompletion sends the end-of-crawl notification when enabled.
+func notifyCompletion(processed int) {
+	if !app.NotifyOnCompletion {
+		return
+	}
+	accepted, counts := crawlSummary()
+	notify("crawl_completed", fmt.Sprintf("crawl finished: %d processed, %d accepted", processed, accepted),
+		map[string]any{"processed": processed, "accepted": accepted, "rejections": counts})
+}
+
+// notifyError sends an error notification when enabled.
+func notifyError(message string) {
+	if !app.NotifyOnError {
+		return
+	}
+	notify("crawl_error", message, map[string]any{"profile": app.ProfileName})
 }
 
 // rejectionSummary returns the rejection counters as log attributes.
@@ -2118,6 +2252,18 @@ func yamlInitGeneral() error {
 	if app.UserAgent == "" {
 		app.UserAgent = "goCrawler/1.0 (+https://github.com/computerphysicslab/goCrawler)"
 	}
+	app.NotifyWebhookURL = strings.TrimSpace(viper.GetString("notifyWebhookURL"))
+	app.NotifyDesktop = viper.GetBool("notifyDesktop")
+	if viper.IsSet("notifyOnCompletion") {
+		app.NotifyOnCompletion = viper.GetBool("notifyOnCompletion")
+	}
+	if viper.IsSet("notifyOnError") {
+		app.NotifyOnError = viper.GetBool("notifyOnError")
+	}
+	app.RejectionNotifyThreshold = viper.GetInt("rejectionNotifyThreshold")
+	if app.RejectionNotifyThreshold < 0 {
+		app.RejectionNotifyThreshold = 0
+	}
 
 	fmt.Printf("\n\nlogLevel: %s", app.LogLevel)
 	fmt.Printf("\nrespectRobots: %v", app.RespectRobots)
@@ -2288,7 +2434,7 @@ const (
 	linkStaleTimeout  = 60 * time.Second
 )
 
-const appVersion = "1.8.14"
+const appVersion = "1.8.15"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
@@ -2444,15 +2590,22 @@ const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawl
 <style>
 :root{--bg:#0d1219;--panel:#16212e;--input:#0b1119;--text:#dfe7ee;--muted:#8fa3b8;--accent:#4fc3f7;--border:#2c3e50;--radius:10px;--space:8px;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 body.light{--bg:#f4f7fb;--panel:#ffffff;--input:#ffffff;--text:#1a2533;--muted:#5a6b7c;--accent:#0b6fa4;--border:#d7e0e9}
+body.hc{--bg:#000000;--panel:#000000;--input:#000000;--text:#ffffff;--muted:#dddddd;--accent:#ffff00;--border:#ffffff}
+body.light.hc{--bg:#ffffff;--panel:#ffffff;--input:#ffffff;--text:#000000;--muted:#333333;--accent:#0033aa;--border:#000000}
+body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:var(--bg);padding:var(--space);z-index:10}
+.skip:focus{left:var(--space)}
 *{box-sizing:border-box}body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;margin:0;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45}
-header{padding:calc(var(--space)*1.5) calc(var(--space)*2.5);background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:var(--space)}
+header{padding:calc(var(--space)*1.5) calc(var(--space)*2.5);background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space)}
 nav{display:flex;flex-wrap:wrap;background:var(--panel);border-bottom:1px solid var(--border);padding:0 calc(var(--space)*2)}
 nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:calc(var(--space)*1.25) calc(var(--space)*2);cursor:pointer;font-size:14px;transition:color .15s,border-color .15s}
 nav button:hover{color:var(--text)}nav button.on{color:var(--accent);border-bottom-color:var(--accent)}
 main{padding:calc(var(--space)*2.5)}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:calc(var(--space)*2);margin-bottom:calc(var(--space)*2);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 textarea,input,select{width:100%;background:var(--input);color:var(--text);border:1px solid var(--border);border-radius:calc(var(--radius)/2);padding:var(--space);margin:6px 0;font-family:var(--mono);font-size:13px}
-button.act{background:var(--accent);color:var(--bg);border:0;border-radius:calc(var(--radius)/2);padding:var(--space) calc(var(--space)*2);cursor:pointer;transition:filter .15s,transform .1s}
+button.act{background:var(--accent);color:var(--bg);border:0;border-radius:calc(var(--radius)/2);padding:var(--space) calc(var(--space)*2);min-height:36px;cursor:pointer;transition:filter .15s,transform .1s}
 button.act:hover{filter:brightness(1.12)}button.act:active{transform:translateY(1px)}
 button.act:disabled{opacity:.4;cursor:not-allowed;filter:none}
 pre{background:var(--input);padding:var(--space);border-radius:calc(var(--radius)/2);white-space:pre-wrap;max-height:380px;overflow:auto;font-family:var(--mono);font-size:12px}
@@ -2466,8 +2619,9 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 .bar{height:10px;background:var(--accent);border-radius:5px;margin:3px 0}
 @media(max-width:760px){.about-row{flex-direction:column}.about-qr{flex:1 1 auto}}header,nav{padding-left:var(--space);padding-right:var(--space)}main{padding:var(--space)}.row>*{flex:1 1 100%}nav button{padding:var(--space)}}
 </style></head><body>
-<header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span><button class="act" onclick="toggleTheme()">Theme</button></header>
-<nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main>
+<a class="skip" href="#main">Skip to content</a>
+<header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span><button class="act" id="btn-theme" onclick="toggleTheme()" aria-label="Toggle dark and light theme">Theme</button><button class="act" id="btn-contrast" onclick="toggleContrast()" aria-label="Toggle high contrast" aria-pressed="false">Contrast</button><button class="act" id="btn-motion" onclick="toggleMotion()" aria-label="Toggle reduced motion" aria-pressed="false">Motion</button></header>
+<nav role="tablist" aria-label="Workbench sections"><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main id="main">
 <section id="dash" hidden><div class="card"><div class="kpi-grid"><div class="kpi-card"><span class="kpi-label">Pages visited</span><span class="kpi-value" id="s-visits">0</span></div><div class="kpi-card"><span class="kpi-label">Cache hits</span><span class="kpi-value" id="s-cache">0</span></div><div class="kpi-card"><span class="kpi-label">Online</span><span class="kpi-value" id="s-online">0</span></div><div class="kpi-card"><span class="kpi-label">Download ms</span><span class="kpi-value" id="s-ms">0</span></div><div class="kpi-card"><span class="kpi-label">Accepted</span><span class="kpi-value" id="s-accepted">0</span></div><div class="kpi-card"><span class="kpi-label">Not accepted</span><span class="kpi-value" id="s-rejected">0</span></div><div class="kpi-card"><span class="kpi-label">Crawls running</span><span class="kpi-value" id="s-running">0</span></div><div class="kpi-card"><span class="kpi-label">Net reqs</span><span class="kpi-value" id="s-net">0</span></div><div class="kpi-card"><span class="kpi-label">Cache I/O</span><span class="kpi-value" id="s-io">0</span></div><div class="kpi-card"><span class="kpi-label">URLs/s</span><span class="kpi-value" id="s-rate">0</span></div><div class="kpi-card"><span class="kpi-label">Avg ms</span><span class="kpi-value" id="s-lat">0</span></div><div class="kpi-card"><span class="kpi-label">Queue</span><span class="kpi-value" id="s-queue">0</span></div><div class="kpi-card"><span class="kpi-label">Go routines</span><span class="kpi-value" id="s-goroutines">0</span></div></div></div><div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>URL queue</h3><p class="muted">Pending: <b id="q-total">0</b>. States: requested → retrieved/failed → removed.</p><div id="queue-list"></div></div>
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><select id="w-workers"><option value="1">1 worker</option><option value="2">2 workers</option><option value="4" selected>4 workers</option><option value="8">8 workers</option></select><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
@@ -2479,10 +2633,20 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 <section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><div id="k-out"></div><button class="act" onclick="applyKeywords()">Apply to profile</button> <button class="act" onclick="applyAndRun()">Apply &amp; Re-run</button></div></section>
 </main><script>
 const $=id=>document.getElementById(id);
+const navButtons=()=>[...document.querySelectorAll('nav button')];
 if(localStorage.getItem('gc-theme')==='light')document.body.classList.add('light');
 function toggleTheme(){document.body.classList.toggle('light');localStorage.setItem('gc-theme',document.body.classList.contains('light')?'light':'dark')}
+function setPressed(id,on){const b=$(id);if(b)b.setAttribute('aria-pressed',on?'true':'false')}
+function applyContrast(on){document.body.classList.toggle('hc',on);localStorage.setItem('gc-contrast',on?'on':'off');setPressed('btn-contrast',on)}
+function applyMotion(reduce){document.body.classList.toggle('reduce-motion',reduce);localStorage.setItem('gc-motion',reduce?'reduce':'full');setPressed('btn-motion',reduce)}
+applyContrast(localStorage.getItem('gc-contrast')==='on');
+applyMotion(localStorage.getItem('gc-motion')==='reduce'||(!localStorage.getItem('gc-motion')&&window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches));
+function toggleContrast(){applyContrast(!document.body.classList.contains('hc'))}
+function toggleMotion(){applyMotion(!document.body.classList.contains('reduce-motion'))}
 
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus','prompt','urls','about'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
+function selectTab(index){const b=navButtons()[index];if(b)b.click()}
+navButtons().forEach((b,i)=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.title='Alt+'+(i+1);b.onclick=()=>{navButtons().forEach(x=>{x.classList.remove('on');x.setAttribute('aria-selected','false')});b.classList.add('on');b.setAttribute('aria-selected','true');['prof','dash','keys','corpus','prompt','urls','about'].forEach(t=>$(t).hidden=t!==b.dataset.tab)}});
+document.addEventListener('keydown',e=>{if(e.altKey&&e.key>='1'&&e.key<='7'){e.preventDefault();selectTab(parseInt(e.key,10)-1)}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('[data-tab=corpus]').click();setTimeout(()=>$('q').focus(),0)}});
 async function json(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
 async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?(s.stopping?'stopping...':('running ('+s.running_count+')')):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
 async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;$('u-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;$('u-profile').value=match;}loadProfile()}
@@ -2553,6 +2717,7 @@ func launchGUICrawl(profile string) error {
 		startIndex, cleanup, err := setupRuntime(resolved)
 		if err != nil {
 			app.GUILastError = err.Error()
+			notifyError(err.Error())
 			return
 		}
 		defer cleanup()
@@ -3635,6 +3800,7 @@ func reportResults(finalIndex int) {
 	dumpFrequencies(finalIndex, true)
 	app.Logger.Info("crawl finished", "processed", finalIndex,
 		"accepted", app.AcceptedDocs, "rejections", rejectionSummary())
+	notifyCompletion(finalIndex)
 	fmt.Println("\n\n\n***** Done!!!")
 }
 
@@ -3666,6 +3832,7 @@ func run() error {
 
 	startIndex, cleanup, err := setupRuntime(app.ProfileName)
 	if err != nil {
+		notifyError(err.Error())
 		return err
 	}
 	defer cleanup()
