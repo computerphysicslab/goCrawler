@@ -62,10 +62,19 @@ func TestGUIRootAndAssets(t *testing.T) {
 
 func TestGUIProfilesEndpoint(t *testing.T) {
 	withGUIApp(t, func() {
+		if err := os.MkdirAll("profiles", 0755); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join("profiles", "gui_list_test.yaml")
+		if err := os.WriteFile(path, []byte("scoreThreshold: 1\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(path)
+
 		server := httptest.NewServer(guiHandler())
 		defer server.Close()
 		code, body := guiRequest(t, server, "GET", "/api/profiles", "")
-		if code != 200 || !strings.Contains(body, "astrophotography") {
+		if code != 200 || !strings.Contains(body, "gui_list_test") {
 			t.Fatalf("profiles = %d %q", code, body)
 		}
 	})
