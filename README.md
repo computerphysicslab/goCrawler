@@ -127,9 +127,11 @@ For each downloaded page (`doNextLink`, `crawler.go:1089`):
 
 ## Requirements
 
-- **Go 1.26 or newer** (`go 1.26.0`, toolchain `go1.26.11` in `go.mod`). The Makefile uses
-  `GO ?= go1.26.11`; override it with `make GO=go ...` if your toolchain is newer. Dependencies are
-  downloaded automatically by the Go toolchain.
+- **Go 1.26 or newer** (`go 1.26.0`, toolchain `go1.26.11` in `go.mod`). If your `go` is older
+  (e.g. 1.20.3), it cannot parse `go.mod`; install the 1.26 toolchain with
+  `go install golang.org/dl/go1.26.11@latest && go1.26.11 download`, then either call
+  `go1.26.11 run crawler.go ...` or put a symlink to it earlier in `PATH`
+  (`ln -sf ~/sdk/go1.26.11/bin/go ~/.local/bin/go`). The Makefile uses `GO ?= go1.26.11`.
 - A writable working directory.
 - **No Redis required** for the default setup. Redis 5+ is only needed if `cacheBackend: redis` is
   selected. The SQLite driver (`modernc.org/sqlite v1.31.0`) is pure Go: no CGO or system SQLite

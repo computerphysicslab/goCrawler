@@ -747,3 +747,10 @@ curado correspondiente (o el documento completo si es razonable) además de la U
   `iolib.String2file` no cerraba el fichero. Corregido (y `File2string` devuelve "" si open falla).
 - CI final: **todos los jobs en verde** en ubuntu, windows y macOS (`gh run view` verificado).
 - Release v1.6.0 con 6 assets reconstruidos con el fix; se eliminó el .deb sobrante de v1.5.0.
+
+## 27. Herramienta Go del sistema (2026-11-17)
+
+El `go` del sistema era 1.20.3 y no puede leer `go.mod` (`go 1.26.0` + directiva `toolchain`).
+Solución aplicada en este equipo: symlink usuario `~/.local/bin/go -> ~/sdk/go1.26.11/bin/go`
+(ese directorio va antes que `/usr/bin` en PATH). Verificado: `go version` → 1.26.11 y
+`go run crawler.go -query=drizzle` devuelve resultados FTS5 correctamente. Documentado en README.
