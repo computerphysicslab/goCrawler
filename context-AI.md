@@ -342,10 +342,13 @@ lo registro aquí y ajusto las secciones anteriores si hace falta.)_
 
 ### Políticas habituales de trabajo (reglas permanentes)
 
-- **Refrescar SIEMPRE la lista de tareas en la columna derecha de OpenCode**: usar la herramienta
-  de tareas (todowrite) al iniciar cualquier trabajo, marcar `in_progress` antes de empezar,
-  actualizar el estado en tiempo real (no agrupar completados al final) y dejar todo completado o
-  con el bloqueo explicado antes de responder. El usuario lo ha pedido expresamente (2026-11-17).
+- **Refrescar SIEMPRE la lista de tareas en la columna derecha de OpenCode** (regla reiterada por el
+  usuario el 2026-11-18): usar la herramienta de tareas (`todowrite`) **al iniciar cualquier trabajo**,
+  antes del primer tool call de fondo; mantener **exactamente una** tarea en `in_progress`; actualizar
+  los estados **en tiempo real, paso a paso**, nunca agrupar completados al final; añadir tareas
+  nuevas en cuanto aparecen instrucciones; dejar todo completado (o con el bloqueo explicado) antes
+  de responder. El usuario quiere ver **la evolución del trabajo en la columna derecha** en cada
+  momento, no solo el resultado final. No responder sin haber refrescado la lista.
 - Todo el **código y la documentación del repo en inglés** (este `context-ai.md` es el diario
   histórico en español; se mantiene en ambas copias).
 - Mantener el entorno limpio tras las pruebas (Redis parado, perfiles copiados a la raíz borrados).
