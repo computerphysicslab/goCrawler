@@ -3,7 +3,15 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.3] - 2026-11-18
+## [v1.7.4] - 2026-11-18
+
+### Changed
+- Workbench tabs reordered: Profiles (default), Crawler launcher, Keyword lab, Corpus search.
+- On load, the last executed profile is selected automatically from session log filenames.
+- Keyword lab: expanded English stopword list, significance-based ranking (corpus frequency vs BNC)
+  with Count/Docs/Score columns and per-keyword removal before applying to the profile.
+
+ - 2026-11-18
 
 ### Added
 - Workbench dashboard: Start/Stop buttons now reflect run state, active crawl count, not-accepted

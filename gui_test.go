@@ -62,6 +62,16 @@ func TestGUIRootAndAssets(t *testing.T) {
 		if !strings.Contains(body, `id="btn-stop" class="act" onclick="stopCrawl()" disabled`) {
 			t.Fatal("Stop button should start disabled")
 		}
+		prof := strings.Index(body, `data-tab="prof"`)
+		dash := strings.Index(body, `data-tab="dash"`)
+		keys := strings.Index(body, `data-tab="keys"`)
+		corpus := strings.Index(body, `data-tab="corpus"`)
+		if prof < 0 || dash < prof || keys < dash || corpus < keys {
+			t.Fatalf("tab order wrong: prof=%d dash=%d keys=%d corpus=%d", prof, dash, keys, corpus)
+		}
+		if !strings.Contains(body, `<section id="prof"><div class="card">`) || !strings.Contains(body, `<section id="dash" hidden>`) {
+			t.Fatal("Profiles should be the visible default tab")
+		}
 	})
 }
 
@@ -209,8 +219,13 @@ func TestGUIKeywordsExtractAndApply(t *testing.T) {
 		server := httptest.NewServer(guiHandler())
 		defer server.Close()
 		code, body := guiRequest(t, server, "GET", "/api/keywords?profile="+name, "")
-		if code != 200 || !strings.Contains(body, "keywords") {
+		if code != 200 || !strings.Contains(body, "keywords") || !strings.Contains(body, "details") {
 			t.Fatalf("keywords = %d %q", code, body)
+		}
+		for _, stop := range []string{`"cannot"`, `"not"`, `"these"`, `"with"`} {
+			if strings.Contains(body, stop) {
+				t.Fatalf("stopword %s leaked into extracted keywords", stop)
+			}
 		}
 		apply := `{"profile":"` + name + `","keywords":["stacking","drizzle"]}`
 		code, body = guiRequest(t, server, "POST", "/api/keywords/apply", apply)
@@ -265,4 +280,31 @@ func minInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func TestGUILastProfileFromLog(t *testing.T) {
+	withGUIApp(t, func() {
+		oldCwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chdir(t.TempDir()); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Chdir(oldCwd)
+		if err := os.MkdirAll("logs", 0755); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join("logs", "LastProfileTest-2026-11-18-Z12-00-00.txt")
+		if err := os.WriteFile(path, []byte("session"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(path)
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/api/last-profile", "")
+		if code != 200 || !strings.Contains(body, "LastProfileTest") {
+			t.Fatalf("last-profile = %d %q", code, body)
+		}
+	})
 }

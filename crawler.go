@@ -2163,37 +2163,37 @@ func generateProfile(seed, output string) error {
 const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawler Workbench</title>
 <style>body{font-family:system-ui;margin:0;background:#10151c;color:#dfe7ee}header{padding:12px 20px;background:#1b2733}nav button{background:none;border:0;color:#9fb3c8;padding:10px 16px;cursor:pointer;font-size:15px}nav button.on{color:#fff;border-bottom:2px solid #4fc3f7}main{padding:18px 22px}.card{background:#1b2733;border-radius:8px;padding:14px;margin-bottom:14px}textarea,input,select{width:100%;background:#0e1620;color:#dfe7ee;border:1px solid #2c3e50;border-radius:4px;padding:8px;box-sizing:border-box;margin:6px 0}button.act{background:#2b6cb0;color:#fff;border:0;border-radius:4px;padding:8px 14px;cursor:pointer}button.act:disabled{opacity:.4;cursor:not-allowed;background:#455a6b}pre{background:#0e1620;padding:10px;border-radius:4px;white-space:pre-wrap;max-height:380px;overflow:auto}table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid #2c3e50;text-align:left}.row{display:flex;gap:12px}.row>*{flex:1}.muted{color:#8fa3b8}</style></head><body>
 <header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span></header>
-<nav><button class="on" data-tab="dash">Dashboard</button><button data-tab="prof">Profiles</button><button data-tab="corpus">Corpus</button><button data-tab="keys">Keyword lab</button></nav><main>
-<section id="dash"><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div></div></div>
+<nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button></nav><main>
+<section id="dash" hidden><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div></div></div>
 <div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
-<section id="prof" hidden><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
+<section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
-<section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><pre id="k-out"></pre><button class="act" onclick="applyKeywords()">Apply to profile</button></div></section>
+<section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><div id="k-out"></div><button class="act" onclick="applyKeywords()">Apply to profile</button></div></section>
 </main><script>
 const $=id=>document.getElementById(id);
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['dash','prof','corpus','keys'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
 async function json(u,o){const r=await fetch(u,o);return r.json()}
 async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
-async function profiles(){const p=await json('/api/profiles');$('p-list').innerHTML=p.map(x=>'<option>'+x+'</option>').join('');loadProfile()}
+async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');$('p-list').innerHTML=p.map(x=>'<option>'+x+'</option>').join('');if(last.profile&&p.includes(last.profile))$('p-list').value=last.profile;loadProfile()}
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
 async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
-async function extract(){const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));$('k-out').textContent=d.keywords.join(' ')}
-async function applyKeywords(){const n=$('k-profile').value;const kws=$('k-out').textContent.split(/\s+/).filter(Boolean);const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws})});$('status').textContent=(await r.json()).status}
+let extracted=[];async function extract(){const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th><th></th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+'</td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td><td><button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td></tr>').join('')+'</table>'}function removeKeyword(w){extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
+async function applyKeywords(){const n=$('k-profile').value;const kws=extracted;const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws})});$('status').textContent=(await r.json()).status}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
 async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping';stats()}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
 setInterval(stats,1500);stats();profiles()
 </script></body></html>`
 
-var guiStopwords = map[string]bool{
-	"with": true, "this": true, "that": true, "from": true, "will": true, "each": true,
-	"when": true, "have": true, "your": true, "their": true, "into": true, "than": true,
-	"about": true, "them": true, "then": true, "only": true, "very": true, "more": true,
-	"most": true, "some": true, "such": true, "also": true, "just": true, "were": true,
-	"was": true, "are": true, "the": true, "and": true, "for": true, "you": true,
-	"its": true, "not": true, "but": true, "can": true, "all": true, "one": true,
+var guiStopwords = map[string]bool{}
+var guiStopwordList = `a about above after again against all almost also although always am among an and another any anybody anyone anything are around as at back be because been before being below between both but by can cannot cant could did do does doing done down during each either else enough etc even ever every few first for from further get gets getting had has have having he her here hers herself him himself his how however i if in into is it its itself just last later least less let like made make many may me might more most much must my myself near need neither never new no nor not now of off often on once one only or other others our ours ourselves out over own perhaps rather same she should since so some someone something still such than that the their theirs them themselves then there therefore these they this those though through to too toward under until up upon us use used very was we were what whatever when whenever where whether which while who whoever why will with within without would yes yet you your yours yourself yourselves`
+
+func init() {
+	for _, word := range strings.Fields(guiStopwordList) {
+		guiStopwords[word] = true
+	}
 }
 
 var guiCrawling atomic.Bool
@@ -2229,6 +2229,9 @@ func guiHandler() http.Handler {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, guiHTML)
+	})
+	mux.HandleFunc("/api/last-profile", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, map[string]string{"profile": lastExecutedProfile()})
 	})
 	mux.HandleFunc("/api/profiles", func(w http.ResponseWriter, r *http.Request) {
 		names := []string{}
@@ -2340,32 +2343,50 @@ func guiHandler() http.Handler {
 	mux.HandleFunc("/api/keywords", func(w http.ResponseWriter, r *http.Request) {
 		docs := corpusDocuments(500)
 		counts := make(map[string]int)
+		docFreq := make(map[string]int)
 		for _, d := range docs {
+			seen := make(map[string]bool)
 			for _, tok := range tokenize(d["text"]) {
 				lower := strings.ToLower(tok)
-				if len(tok) > 3 && !guiStopwords[lower] && corpusfreqlib.Freq(tok) < 100 {
-					counts[strings.ToLower(tok)]++
+				if len(tok) > 3 && !guiStopwords[lower] {
+					counts[lower]++
+					seen[lower] = true
 				}
+			}
+			for word := range seen {
+				docFreq[word]++
 			}
 		}
 		type item struct {
-			Word  string
-			Count int
+			Word  string  `json:"word"`
+			Count int     `json:"count"`
+			Docs  int     `json:"docs"`
+			Score float64 `json:"score"`
 		}
 		items := []item{}
 		for word, count := range counts {
-			items = append(items, item{word, count})
+			baseline := corpusfreqlib.Freq(word)
+			score := float64(count) * math.Log(1+float64(docFreq[word])) / math.Log(2+float64(baseline))
+			items = append(items, item{word, count, docFreq[word], score})
 		}
-		sort.Slice(items, func(i, j int) bool { return items[i].Count > items[j].Count })
+		sort.Slice(items, func(i, j int) bool {
+			if items[i].Score == items[j].Score {
+				return items[i].Word < items[j].Word
+			}
+			return items[i].Score > items[j].Score
+		})
 		words := []string{}
+		details := []item{}
 		for i, it := range items {
 			if i >= 40 {
 				break
 			}
 			words = append(words, it.Word)
+			details = append(details, it)
 		}
-		writeJSON(w, map[string]interface{}{"keywords": words})
+		writeJSON(w, map[string]interface{}{"keywords": words, "details": details})
 	})
+
 	mux.HandleFunc("/api/keywords/apply", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			Profile  string   `json:"profile"`
@@ -2429,6 +2450,21 @@ func guiHandler() http.Handler {
 	})
 
 	return mux
+}
+
+// lastExecutedProfile derives the most recent profile from session log filenames.
+func lastExecutedProfile() string {
+	files, err := filepath.Glob("logs/*-Z??-??-??.txt")
+	if err != nil || len(files) == 0 {
+		return ""
+	}
+	sort.Slice(files, func(i, j int) bool { return files[i] > files[j] })
+	base := filepath.Base(files[0])
+	parts := strings.Split(base, "-20")
+	if len(parts) < 2 {
+		return ""
+	}
+	return parts[0]
 }
 
 // runGUI starts the embedded local web interface on loopback only.

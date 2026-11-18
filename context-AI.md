@@ -796,3 +796,12 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   recuentos son por párrafo/enlace, no por página).
 - Verificado con crawl real: visits=22, accepted=13, not_accepted=9, razones `stopword_ratio`,
   `too_short`, `non_english`, `low_relevancy`.
+
+## 32. Workbench v1.7.4 (2026-11-18)
+
+- Pestañas: Profiles (por defecto) → Crawler launcher → Keyword lab → Corpus search.
+- `/api/last-profile`: deduce el último perfil ejecutado de `logs/<Profile>-YYYY-MM-DD-ZHH-MM-SS.txt`;
+  el GUI lo selecciona al cargar.
+- Keyword lab: stopwords inglesas ampliadas (~180 términos, incluye cannot/not/these/with); ranking
+  por significación `count * log(1+docs) / log(2+freq_BNC)`; tabla con Word/Count/Docs/Score y botón
+  para eliminar keywords antes de aplicarlas al perfil.
