@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -409,5 +410,84 @@ func TestStaleReservedLinkIsRecovered(t *testing.T) {
 		if url != "https://example.org/stack" {
 			t.Fatalf("stale link was not recovered: %q", url)
 		}
+	})
+}
+
+func testPDFBytes(text string) []byte {
+	var buf bytes.Buffer
+	offsets := make([]int, 6)
+	buf.WriteString("%PDF-1.4\n")
+	offsets[1] = buf.Len()
+	buf.WriteString("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+	offsets[2] = buf.Len()
+	buf.WriteString("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n")
+	offsets[3] = buf.Len()
+	buf.WriteString("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n")
+	stream := "BT /F1 12 Tf 72 720 Td (" + text + ") Tj ET\n"
+	offsets[4] = buf.Len()
+	fmt.Fprintf(&buf, "4 0 obj\n<< /Length %d >>\nstream\n", len(stream))
+	buf.WriteString(stream)
+	buf.WriteString("endstream\nendobj\n")
+	offsets[5] = buf.Len()
+	buf.WriteString("5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n")
+	xref := buf.Len()
+	buf.WriteString("xref\n0 6\n0000000000 65535 f \n")
+	for i := 1; i <= 5; i++ {
+		fmt.Fprintf(&buf, "%010d 00000 n \n", offsets[i])
+	}
+	fmt.Fprintf(&buf, "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n", xref)
+	return buf.Bytes()
+}
+
+func TestPDFURLGate(t *testing.T) {
+	withApp(t, func() {
+		link := "https://siril.org/files/doc.pdf"
+		if !isBanned(link, "siril.org") {
+			t.Fatal("PDF URL accepted while process_pdf is false")
+		}
+		app.ProcessPDF = true
+		if isBanned(link, "siril.org") {
+			t.Fatal("PDF URL rejected while process_pdf is true")
+		}
+		if !isBanned(link, "facebook.com") {
+			t.Fatal("domain ban should still apply")
+		}
+		if !isBanned("https://siril.org/login", "siril.org") {
+			t.Fatal("non-PDF banned token should still apply")
+		}
+	})
+}
+
+func TestDownloadCachedPDF(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Write(testPDFBytes("Hello PDF world"))
+	}))
+	defer server.Close()
+
+	withApp(t, func() {
+		withTempWorkDir(t, func() {
+			if err := initFileLoggers(); err != nil {
+				t.Fatal(err)
+			}
+			defer closeFileLoggers()
+			app.CacheStore = &memoryStore{data: map[string]string{}}
+			app.HTTPClient = &http.Client{Timeout: 2 * time.Second}
+			app.DownloadTimeout = 2 * time.Second
+
+			if _, _, err := downloadCached(server.URL + "/doc.pdf"); err == nil {
+				t.Fatal("PDF accepted while process_pdf is false")
+			}
+
+			app.ProcessPDF = true
+			content, links, err := downloadCached(server.URL + "/doc.pdf")
+			if err != nil || !strings.Contains(content, "Hello PDF world") || len(links) != 0 {
+				t.Fatalf("PDF download: content=%q links=%v err=%v", content, links, err)
+			}
+			cached, _, err := downloadCached(server.URL + "/doc.pdf")
+			if err != nil || cached != content {
+				t.Fatalf("PDF cache: content=%q err=%v", cached, err)
+			}
+		})
 	})
 }

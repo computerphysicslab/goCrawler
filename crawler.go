@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -47,6 +48,7 @@ import (
 
 	"goCrawler/corpusfreqlib"
 	"goCrawler/iolib"
+	"goCrawler/pdftextlib"
 	"goCrawler/robotspolicy"
 	"goCrawler/storelib"
 	"goCrawler/stringlib"
@@ -85,6 +87,9 @@ type Crawler struct {
 	ProxyPass             string
 	DownloadTimeout       time.Duration
 	MaxDownloadBytes      int64
+	ProcessPDF            bool
+	PDFMaxBytes           int64
+	PDFPagesLimit         int
 	BootstrapLinks        []string
 	MinDocLen             int
 	MaxDocLen             int
@@ -166,6 +171,8 @@ type Crawler struct {
 func newCrawler() *Crawler {
 	return &Crawler{
 		MaxDownloadBytes: 5 << 20,
+		PDFMaxBytes:      25 << 20,
+		PDFPagesLimit:    pdftextlib.DefaultPageLimit,
 		RankingStrategy:  "hybrid",
 		Synonyms:         make(map[string][]string),
 		LinkIndex:        make(map[string]int),
@@ -607,13 +614,22 @@ func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	return
 }
 
-// download fetches a page and returns its plain text and extracted links.
-func download(urlLink string) (string, []string, error) {
+// fetchedPage holds a downloaded response body and its declared content type.
+type fetchedPage struct {
+	Body        []byte
+	ContentType string
+}
+
+// errPDFDetected signals that the response is a PDF document.
+var errPDFDetected = errors.New("download: pdf document")
+
+// fetchPage downloads the body of urlLink up to the applicable size limit.
+func fetchPage(urlLink string) (*fetchedPage, error) {
 	app.LogDownload.Printf("\n%s", urlLink)
 	domain := getDomain(urlLink)
 	if domainHadFailed(domain) {
 		app.LogDownload.Printf("\tPreviously failed")
-		return "", nil, errors.New("download: Previously failed")
+		return nil, errors.New("download: Previously failed")
 	}
 	app.LogDownload.Printf("\tRequested")
 
@@ -621,7 +637,7 @@ func download(urlLink string) (string, []string, error) {
 	if err != nil {
 		app.LogDownload.Printf("\tHttp transport error:\n\t\t%s", err)
 		domainReportFailed(domain)
-		return "", nil, err
+		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		app.LogDownload.Printf("\tHTTP status: %d", resp.StatusCode)
@@ -629,36 +645,74 @@ func download(urlLink string) (string, []string, error) {
 			domainReportFailed(domain)
 		}
 		resp.Body.Close()
-		return "", nil, fmt.Errorf("download: HTTP %d", resp.StatusCode)
+		return nil, fmt.Errorf("download: HTTP %d", resp.StatusCode)
 	}
-	if ct := resp.Header.Get("Content-Type"); ct != "" &&
-		!strings.Contains(ct, "html") && !strings.Contains(ct, "text") && !strings.Contains(ct, "xml") {
-		app.LogDownload.Printf("\tUnsupported content type: %s", ct)
+
+	contentType := resp.Header.Get("Content-Type")
+	limit := app.MaxDownloadBytes
+	if app.ProcessPDF && app.PDFMaxBytes > limit &&
+		(isPDFURL(urlLink) || strings.Contains(strings.ToLower(contentType), "application/pdf")) {
+		limit = app.PDFMaxBytes
+	}
+
+	bodyBytes, err := ioutil.ReadAll(io.LimitReader(resp.Body, limit+1))
+	if err != nil {
+		app.LogDownload.Printf("\t%s%s", "Read error: ", err)
 		resp.Body.Close()
+		return nil, err
+	}
+	resp.Body.Close() // must close
+	app.LogDownload.Printf("\tFetched %d bytes (%s)", len(bodyBytes), contentType)
+
+	return &fetchedPage{Body: bodyBytes, ContentType: contentType}, nil
+}
+
+// isPDFURL reports whether the URL path ends in .pdf.
+func isPDFURL(link string) bool {
+	u, err := url.Parse(link)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(path.Ext(u.Path), ".pdf")
+}
+
+// isPDFPage detects PDF documents by Content-Type or magic bytes.
+func isPDFPage(page *fetchedPage) bool {
+	if strings.Contains(strings.ToLower(page.ContentType), "application/pdf") {
+		return true
+	}
+	return bytes.HasPrefix(page.Body, []byte("%PDF-"))
+}
+
+// htmlFromPage converts an HTML response body into plain text and links.
+func htmlFromPage(page *fetchedPage) (string, []string, error) {
+	if ct := page.ContentType; ct != "" &&
+		!strings.Contains(ct, "html") && !strings.Contains(ct, "text") && !strings.Contains(ct, "xml") {
 		return "", nil, fmt.Errorf("download: unsupported content type %s", ct)
 	}
 
-	// Read the response body.
-	bodyBytes, err := ioutil.ReadAll(io.LimitReader(resp.Body, app.MaxDownloadBytes))
+	links := collectlinks.All(bytes.NewReader(page.Body))
+	plain, err := html2text.FromString(string(page.Body), html2text.Options{PrettyTables: false})
 	if err != nil {
-		app.LogDownload.Printf("\t%s%s", "Read error: ", err)
 		return "", nil, err
 	}
-	resp.Body.Close() // must close
-	resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	return plain, links, nil
+}
 
-	// Extract links from the HTML body.
-	links := collectlinks.All(resp.Body) // Here we use the collectlinks package
-
-	// Convert the HTML body to plain text.
-	plain, err := html2text.FromString(string(bodyBytes), html2text.Options{PrettyTables: false})
+// download fetches a page and returns its plain text and extracted links.
+func download(urlLink string) (string, []string, error) {
+	page, err := fetchPage(urlLink)
 	if err != nil {
-		app.LogDownload.Printf("\t%s%s", "html2text.FromString fails: ", err)
 		return "", nil, err
 	}
-
+	if app.ProcessPDF && isPDFPage(page) {
+		return "", nil, errPDFDetected
+	}
+	plain, links, err := htmlFromPage(page)
+	if err != nil {
+		return "", nil, err
+	}
 	app.LogDownload.Printf("\t%s len(plain): %d len(links): %d", "Ok: ", len(plain), len(links))
-
 	return plain, links, nil
 }
 
@@ -692,12 +746,22 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 	respectCrawlDelay(urlLink)
 
 	start := time.Now()
-	cached.Content, cached.Links, err = download(urlLink)
+	page, err := fetchPage(urlLink)
 	app.DownloadMS += time.Since(start).Milliseconds()
 	if err != nil {
 		return "", nil, err
 	}
+	if app.ProcessPDF && isPDFPage(page) {
+		app.OnlineDownloads++
+		return downloadPDFCached(urlLink, page)
+	}
+
+	content, links, err = htmlFromPage(page)
+	if err != nil {
+		return "", nil, err
+	}
 	app.OnlineDownloads++
+	cached.Content, cached.Links = content, links
 	encoded, marshalErr := json.Marshal(cached)
 	if marshalErr != nil {
 		app.Logger.Error("cannot marshal cache entry", "error", marshalErr)
@@ -705,7 +769,50 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 		app.Logger.Error("cannot write cache entry", "error", setErr)
 	}
 	fmt.Printf(" [ONLINE]")
-	return cached.Content, cached.Links, nil
+	return content, links, nil
+}
+
+// downloadPDFCached extracts text from a PDF page and caches the result.
+func downloadPDFCached(urlLink string, page *fetchedPage) (string, []string, error) {
+	cacheKey := "pdf_" + urlLink
+	var cached CachedData
+	if app.CacheStore.Exists(cacheKey) {
+		value := app.CacheStore.Get(cacheKey)
+		if value != "" {
+			if err := json.Unmarshal([]byte(value), &cached); err != nil {
+				app.Logger.Warn("discarding corrupt pdf cache entry", "key", cacheKey, "error", err)
+			} else {
+				app.CacheHits++
+				fmt.Printf(" [CACHE]")
+				return cached.Content, nil, nil
+			}
+		}
+	}
+
+	if int64(len(page.Body)) > app.PDFMaxBytes {
+		recordRejection("too_large", urlLink, fmt.Sprintf("%d bytes > max %d", len(page.Body), app.PDFMaxBytes), "")
+		return "", nil, fmt.Errorf("download: pdf too large (%d bytes)", len(page.Body))
+	}
+
+	text, pages, err := pdftextlib.Extract(page.Body, app.PDFPagesLimit)
+	if err != nil {
+		recordRejection("invalid_pdf", urlLink, err.Error(), "")
+		app.Logger.Debug("pdf extraction failed", "url", urlLink, "error", err)
+		return "", nil, err
+	}
+	if strings.TrimSpace(text) == "" {
+		recordRejection("pdf_no_text", urlLink, "no extractable text layer", "")
+		return "", nil, errors.New("download: pdf has no text layer")
+	}
+	app.Logger.Debug("pdf extracted", "url", urlLink, "pages", pages, "chars", len(text))
+
+	encoded, marshalErr := json.Marshal(CachedData{Content: text})
+	if marshalErr != nil {
+		app.Logger.Error("cannot marshal pdf cache entry", "error", marshalErr)
+	} else if setErr := app.CacheStore.Set(cacheKey, string(encoded)); setErr != nil {
+		app.Logger.Error("cannot write pdf cache entry", "error", setErr)
+	}
+	return text, nil, nil
 }
 
 // getDomain extracts the host name from a URL.
@@ -756,6 +863,11 @@ func increaseDomainCounter(domain string) {
 func isBanned(link string, domain string) bool {
 	if len(reBannedDomains.FindStringSubmatch(domain)) > 0 {
 		return true
+	}
+
+	// PDF URLs stay banned unless the profile explicitly opts in.
+	if app.ProcessPDF && isPDFURL(link) {
+		return false
 	}
 
 	if len(reBannedTokens.FindStringSubmatch(link)) > 0 {
@@ -2083,6 +2195,13 @@ func yamlInitSpecific() error {
 		app.RankingStrategy = "hybrid"
 	}
 	app.Synonyms = parseSynonyms(vp.GetString("synonyms"))
+	app.ProcessPDF = vp.GetBool("process_pdf")
+	if v := vp.GetInt64("pdf_max_bytes"); v > 0 {
+		app.PDFMaxBytes = v
+	}
+	if v := vp.GetInt("pdf_pages_limit"); v > 0 {
+		app.PDFPagesLimit = v
+	}
 	buildRankingRegex()
 	if app.MaxLinksPerPage <= 0 {
 		app.MaxLinksPerPage = 200
@@ -2169,7 +2288,7 @@ const (
 	linkStaleTimeout  = 60 * time.Second
 )
 
-const appVersion = "1.8.8"
+const appVersion = "1.8.14"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {

@@ -1,3 +1,11 @@
+## [v1.8.14] - 2026-11-18
+
+### Added
+- Optional PDF ingestion: profile flags `process_pdf`, `pdf_max_bytes`, `pdf_pages_limit`; raw
+  response fetch split from the HTML-only Content-Type gate; `pdftextlib` uses pure-Go
+  `github.com/ledongthuc/pdf` to extract text; PDFs cached under a `pdf_` prefix and filtered by the
+  same corpus pipeline; new `too_large`, `invalid_pdf` and `pdf_no_text` rejection reasons.
+
 ## [v1.6.1] - 2026-11-18
 
 ### Fixed

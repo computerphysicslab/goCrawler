@@ -1,8 +1,8 @@
 # PDF support analysis
 
 **Date:** 2026-11-18
-**Status:** analysis / design (not implemented yet)
-**Related roadmap IDs:** P48–P51
+**Status:** implemented in v1.8.14 (P48–P51 complete)
+**Library used:** `github.com/ledongthuc/pdf` v0.0.0-20261020125853-5e46805f718e
 
 ## 1. Goal
 
@@ -90,8 +90,8 @@ Split `download()` into:
    content-type rejection.
 2. `download()` — wraps `fetchBody` and keeps the current HTML/text/XML + `collectlinks` +
    `html2text` behaviour for HTML.
-3. `downloadPDF()` — wraps `fetchBody`, accepts `application/pdf` or `%PDF-` magic bytes and hands
-   the raw bytes to `pdftextlib`.
+3. `downloadPDFCached()` — uses the already fetched bytes, accepts `application/pdf` or `%PDF-`
+   magic bytes, extracts text with `pdftextlib`, caches it under `pdf_` and returns it with no links.
 
 - Enforce `pdf_max_bytes` while reading (`io.LimitReader` + final size check); reuse
   `app.MaxDownloadBytes` as the hard ceiling.
@@ -160,3 +160,17 @@ The existing SQLite schema may need a column or a metadata JSON field; prefer a 
 - Some PDFs are password protected; they must fail fast, not block workers.
 - Very large PDFs could stress memory; hard caps and `io.LimitReader` are mandatory.
 - Adding a dependency increases the attack surface; `govulncheck` must stay clean after wiring.
+
+
+## 7. Implementation (v1.8.14)
+
+- `pdftextlib/pdftextlib.go` wraps `pdf.NewReader(bytes.NewReader(data), size)`, iterates pages with
+  `Page(i).GetPlainText(nil)` up to `pdf_pages_limit`, skips unreadable pages and returns
+  `ErrNoText` when no text layer exists.
+- `crawler.go` adds `ProcessPDF`, `PDFMaxBytes` and `PDFPagesLimit` to `Crawler`; `yamlInitSpecific`
+  loads them from each profile. `isBanned()` skips the `pdf` token only for PDF URLs when enabled.
+- `fetchPage()` reads the body **before** the HTML Content-Type gate; `htmlFromPage()` keeps the
+  previous HTML behaviour; `downloadPDFCached()` handles extraction, cache and new rejection
+  reasons. Extracted PDF text flows through the same filters, corpus writer and FTS5 index.
+- Tests: `pdftextlib` unit tests with a generated single-page PDF, `TestPDFURLGate` and
+  `TestDownloadCachedPDF` (including cache reuse).

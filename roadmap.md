@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.8 (2026-11-18). Section 1 lists the new GUI Studio backlog (P22–P47).
+**Current version:** v1.8.14 (2026-11-18). Section 1 lists the remaining GUI Studio backlog (P24–P47).
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -10,15 +10,12 @@ table; full details of the senior audit and the GUI proposal are in `docs/`.
 
 ## 1. Pending work — ordered by increasing difficulty
 
-Sources: `docs/GUI_STUDIO_ANALYSIS.md`, `docs/GUI_MOCKUP_ANALYSIS.md` and
-`docs/PDF_SUPPORT_ANALYSIS.md` (2026-11-18). Items are sorted by increasing effort; React/Vue
-frontends are explicitly rejected (they would break the zero-dependency single-binary design).
-PDF support uses the pure-Go BSD-3 library `github.com/ledongthuc/pdf`; MuPDF/UniPDF options were
-rejected for native dependencies / commercial licensing.
+Sources: `docs/GUI_STUDIO_ANALYSIS.md` and `docs/GUI_MOCKUP_ANALYSIS.md` (2026-11-18). Items are
+sorted by increasing effort; React/Vue frontends are explicitly rejected (they would break the
+zero-dependency single-binary design).
 
 | ID | Effort | Item |
 |---|---|---|
-| P48 | S | PDF support: opt-in profile flags (`process_pdf`, `pdf_max_bytes`, `pdf_pages_limit`) loaded in `yamlInitSpecific`; skip `reBannedTokens` for PDFs when enabled (profiles cannot override it today) |
 | P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
 | P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
@@ -31,20 +28,17 @@ rejected for native dependencies / commercial licensing.
 | P43 | M | Domain heatmap (accepted pages per domain) |
 | P45 | M | Command palette (Cmd/Ctrl+K) for quick actions |
 | P46 | M | Report export to Markdown and print-to-PDF |
-| P49 | M | Split raw `fetchBody()` from `download()` so the body is read before the HTML-only Content-Type check; size cap, `%PDF-` validation and timeout |
-| P50 | M | `pdftextlib` wrapper around `ledongthuc/pdf` for text extraction with page limit and graceful failures |
 | P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) in SQLite |
 | P29 | L | Audit table with instant search and filters by HTTP status and Content-Type |
 | P37 | L | Structured profile editor: chips, live regex validation, YAML advanced view |
 | P39 | L | Profile version history (snapshot per run with diff) |
 | P42 | L | Corpus Explorer: virtualised list, keyword highlighting, filters, export MD/JSON/CSV |
 | P44 | L | Session comparison between two runs of the same profile |
-| P51 | L | Full PDF pipeline/corpus integration (`source_type`, `page_count`), rejection reasons and tests |
 | P30 | XL | Interactive topology graph and URL inspection drawer |
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
 
-Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8).
+Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8) and PDF support P48–P51 (v1.8.14).
 
 ---
 
@@ -61,6 +55,7 @@ Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P2
 | v1.5.0 | 2026-11-17 | Roadmap refactor, senior audit, GUI design analysis, changelog and version tags, cross-platform release |
 | v1.7.0 | 2026-11-17 | All deferred items closed: `Crawler` struct replacing globals (P19), `setup/crawl/report` split (P16), validated config loader (P17), dirty-tracked incremental state (P15), local hashing-embedding semantic ranking (P20) and the embedded web workbench GUI with profile editor, run monitor, corpus viewer, FTS5 search, keyword extraction and feedback loop (P21) |
 | v1.6.0 | 2026-11-17 | Senior-audit fixes P01–P14 and CLI tests P18: HTTP status/content checks, public-suffix fix, FTS5 query sanitisation, fail-fast loggers, space-separated CLI flags and `-config`, SQLite busy timeout, robots slot reservation, prebuilt gzip frequency index, graceful Ctrl-C, generic per-domain delay, pool pruning, bounded dedup sets, top-K frequencies, document-level language detection, CLI/top-K tests; Windows CI CRLF fix |
+| v1.8.14 | 2026-11-18 | PDF support (P48–P51): opt-in `process_pdf` profile flags, raw fetch split before the HTML Content-Type gate, pure-Go `pdftextlib` extraction with page/size limits, PDF cache prefix, new rejection reasons and tests |
 
 ### Historically completed items (1–35)
 

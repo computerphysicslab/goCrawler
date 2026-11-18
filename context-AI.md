@@ -1026,3 +1026,15 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   asumen HTML.
 - Ajustado `docs/PDF_SUPPORT_ANALYSIS.md` (fetchBody previo al gate, flags en profile, prefijo de
   caché `pdf_`, razones `too_large`/`invalid_pdf`) y roadmap P48/P49.
+
+
+## 31. Soporte PDF implementado (P48-P51, v1.8.14, 2026-11-18)
+
+- Añadida dependencia pura Go `github.com/ledongthuc/pdf` (BSD-3). Nuevo paquete `pdftextlib` con
+  `Extract(data, pageLimit)`; páginas ilegibles se omiten y PDFs sin capa de texto dan `ErrNoText`.
+- `Crawler` gana `ProcessPDF`, `PDFMaxBytes` (25 MiB) y `PDFPagesLimit` (200), cargados en
+  `yamlInitSpecific()`. `isBanned()` solo exempta el token `pdf` para URLs .pdf cuando está activo.
+- `fetchPage()` separa la descarga cruda del gate HTML; `downloadPDFCached()` extrae, cachea bajo
+  prefijo `pdf_` y registra `too_large`/`invalid_pdf`/`pdf_no_text`. El texto pasa por los mismos
+  filtros, corpus y FTS5.
+- Tests nuevos: extracción unitaria, gate de URL y descarga/cache de PDF. `go test ./...` ✅.

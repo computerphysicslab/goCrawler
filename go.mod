@@ -10,6 +10,8 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/jackdanger/collectlinks v0.0.0-20160421202702-24c4ee2870ba
 	github.com/kljensen/snowball v0.6.0
+	github.com/ledongthuc/pdf v0.0.0-20261020125853-5e46805f718e
+	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/viper v1.7.1
 	github.com/temoto/robotstxt v1.1.2
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
@@ -30,7 +32,6 @@ require (
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/cast v1.3.0 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect

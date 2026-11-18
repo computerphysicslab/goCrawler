@@ -53,6 +53,8 @@ required. Redis remains supported as an alternative cache backend.
 - **Persistent page cache**: SQLite (default) or Redis; repeated runs reuse downloaded pages and
   avoid network load.
 - **Zero required services**: the default setup needs only Go and a writable working directory.
+- **Optional PDF ingestion**: profiles can opt in to download PDFs and index their extracted text
+  with the pure-Go `ledongthuc/pdf` library (no CGO); size and page limits keep it safe.
 
 ---
 
@@ -206,6 +208,10 @@ minDocLen: 50            # minimum curated text length
 maxDocLen: 100000        # maximum curated text length
 scoreThreshold: 20       # minimum relevance score (default 0 if omitted)
 
+process_pdf: true        # allow downloading PDFs (default false)
+pdf_max_bytes: 26214400  # per-PDF size cap in bytes (default 25 MiB)
+pdf_pages_limit: 200     # maximum pages to extract (default 200)
+
 bootstrapingLinks:       # seed URLs
 - "https://example.com/start/here"
 ```
@@ -216,6 +222,10 @@ The effective URL whitelist is built as
 `yamlInitSpecific()` looks for `<name>.yaml` in `profiles/` first and falls back to the working
 directory for backwards compatibility. The argument to `go run crawler.go <name>` is the profile
 name without its extension; the resolved path is printed as `profile file:` at startup.
+
+PDF URLs stay in `regexLinkBannedTokens` by default. Setting `process_pdf: true` bypasses that
+single token check for `.pdf` URLs when the profile is loaded; banned domains and the `linkOk`
+whitelist still apply. Extracted text is cached under a separate `pdf_` prefix.
 
 ### Proxy (optional)
 
