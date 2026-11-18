@@ -2242,7 +2242,7 @@ const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawl
 const $=id=>document.getElementById(id);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus','prompt'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
 async function json(u,o){const r=await fetch(u,o);return r.json()}
-async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
+async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
 async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;}loadProfile()}
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
@@ -2457,6 +2457,19 @@ func guiHandler() http.Handler {
 		writeJSON(w, map[string]interface{}{"results": results})
 	})
 	mux.HandleFunc("/api/keywords", func(w http.ResponseWriter, r *http.Request) {
+		excluded := make(map[string]bool)
+		if name := filepath.Base(r.URL.Query().Get("profile")); name != "" && name != "." {
+			if resolved, err := resolveProfileName(name); err == nil {
+				if b, err := os.ReadFile("profiles/" + resolved + ".yaml"); err == nil {
+					for _, word := range yamlBlockAlternatives(string(b), "excludedKeywords:") {
+						for _, variant := range keywordFamily(word) {
+							excluded[variant] = true
+						}
+						excluded[strings.ToLower(word)] = true
+					}
+				}
+			}
+		}
 		docs := corpusDocuments(500)
 		type group struct {
 			forms map[string]int
@@ -2467,7 +2480,7 @@ func guiHandler() http.Handler {
 			seen := make(map[string]bool)
 			for _, tok := range tokenize(d["text"]) {
 				lower := strings.ToLower(tok)
-				if len(tok) <= 3 || guiStopwords[lower] {
+				if len(tok) <= 3 || guiStopwords[lower] || excluded[lower] {
 					continue
 				}
 				stem := snowballeng.Stem(lower, false)
@@ -2574,6 +2587,30 @@ func guiHandler() http.Handler {
 		}
 		text = replaceYamlBlock(text, "linkOk:", strings.Join(final, "|"))
 		text = replaceYamlBlock(text, "regexRankingKeywords:", `(?i)\W(`+strings.Join(final, "|")+`)\W`)
+		excludedSet := make(map[string]bool)
+		for _, word := range yamlBlockAlternatives(text, "excludedKeywords:") {
+			excludedSet[word] = true
+		}
+		for _, word := range body.Removed {
+			for _, variant := range keywordFamily(word) {
+				excludedSet[variant] = true
+			}
+		}
+		for _, word := range final {
+			delete(excludedSet, word)
+		}
+		if len(excludedSet) > 0 {
+			blockNames := []string{}
+			for word := range excludedSet {
+				blockNames = append(blockNames, word)
+			}
+			sort.Strings(blockNames)
+			if !strings.Contains(text, "excludedKeywords:") {
+				text += "\nexcludedKeywords: |\n  " + strings.Join(blockNames, "|") + "\n"
+			} else {
+				text = replaceYamlBlock(text, "excludedKeywords:", strings.Join(blockNames, "|"))
+			}
+		}
 		if err := os.WriteFile(path, []byte(text), 0644); err != nil {
 			http.Error(w, err.Error(), 500)
 			return

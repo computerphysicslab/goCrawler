@@ -3,7 +3,17 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.9] - 2026-11-18
+## [v1.8.0] - 2026-11-18
+
+### Fixed
+- Keywords removed in the Keyword Lab are now persisted as an `excludedKeywords` block in the
+  profile and filtered out on every subsequent extraction, so they never reappear.
+- Rejection reason rows in the dashboard now carry the click handler that opens the last 10 cases.
+
+### Added
+- Integration tests covering the full remove → apply → re-extract cycle and clickable rejection rows.
+
+ - 2026-11-18
 
 ### Changed
 - Prompt generator includes complete curated documents (no truncation) and explicitly requires that

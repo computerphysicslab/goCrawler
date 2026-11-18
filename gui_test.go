@@ -239,8 +239,14 @@ func TestGUIKeywordsExtractAndApply(t *testing.T) {
 			t.Fatal(err)
 		}
 		content := string(got)
-		if strings.Contains(content, "old") {
-			t.Fatalf("removed keyword is still in the profile: %q", content)
+		active := yamlBlockAlternatives(content, "linkOk:")
+		for _, word := range active {
+			if word == "old" || strings.HasPrefix(word, "old") {
+				t.Fatalf("removed keyword is still active in the profile: %q", content)
+			}
+		}
+		if !strings.Contains(content, "excludedKeywords:") {
+			t.Fatalf("excluded keywords block missing: %q", content)
 		}
 		for _, form := range []string{"stack", "stacks", "stacking", "drizzle", "drizzles", "drizzling"} {
 			if !strings.Contains(content, form) {
@@ -549,6 +555,92 @@ func TestGUIRejectionEventsEndpoint(t *testing.T) {
 		}
 		if payload.Events[9].URL != "https://example.org/11" || payload.Events[9].Detail == "" {
 			t.Fatalf("latest event wrong: %+v", payload.Events[9])
+		}
+	})
+}
+
+func TestGUIExcludedKeywordsDoNotReappear(t *testing.T) {
+	withGUIApp(t, func() {
+		oldCwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+		}
+		dir := t.TempDir()
+		if err := os.MkdirAll(filepath.Join(dir, "profiles"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(filepath.Join(dir, "logs"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		profile := "linkOk: |\n  stack|image|value\nregexRankingKeywords: |\n  (?i)\\W(stack|image|value)\\W\n"
+		if err := os.WriteFile(filepath.Join(dir, "profiles", "exclude_test.yaml"), []byte(profile), 0644); err != nil {
+			t.Fatal(err)
+		}
+		text := "Stacking astronomical images requires calibration and value of every frame. " +
+			"Image processing with stacking removes noise and improves the final picture."
+		if err := os.WriteFile(filepath.Join(dir, "logs", "corpusCuratedText.log"),
+			[]byte("https://example.org/a\n"+text+"\n----\nhttps://example.org/b\n"+text+"\n----\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chdir(dir); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Chdir(oldCwd)
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+
+		_, body := guiRequest(t, server, "GET", "/api/keywords?profile=exclude_test", "")
+		var first struct{ Keywords []string }
+		if err := json.Unmarshal([]byte(body), &first); err != nil {
+			t.Fatal(err)
+		}
+		foundValue := false
+		for _, word := range first.Keywords {
+			if word == "value" || word == "values" {
+				foundValue = true
+			}
+		}
+		if !foundValue {
+			t.Fatalf("value should be present before removal: %v", first.Keywords)
+		}
+
+		apply := `{"profile":"exclude_test","keywords":["stack","image"],"removed":["value"]}`
+		code, body := guiRequest(t, server, "POST", "/api/keywords/apply", apply)
+		if code != 200 {
+			t.Fatalf("apply = %d %q", code, body)
+		}
+		profileAfter, err := os.ReadFile("profiles/exclude_test.yaml")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(profileAfter), "excludedKeywords:") || !strings.Contains(string(profileAfter), "value") {
+			t.Fatalf("excluded keywords were not persisted: %q", profileAfter)
+		}
+
+		_, body = guiRequest(t, server, "GET", "/api/keywords?profile=exclude_test", "")
+		var second struct{ Keywords []string }
+		if err := json.Unmarshal([]byte(body), &second); err != nil {
+			t.Fatal(err)
+		}
+		for _, word := range second.Keywords {
+			if word == "value" || word == "values" {
+				t.Fatalf("excluded keyword reappeared: %v", second.Keywords)
+			}
+		}
+	})
+}
+
+func TestGUIRejectionRowsAreClickable(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		_, body := guiRequest(t, server, "GET", "/", "")
+		if !strings.Contains(body, `class=clickable onclick="showReason(\'`) {
+			t.Fatal("rejection rows are missing the click handler")
+		}
+		if !strings.Contains(body, `id="reason-detail"`) {
+			t.Fatal("rejection detail container is missing")
 		}
 	})
 }

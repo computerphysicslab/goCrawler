@@ -856,3 +856,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - El dashboard muestra las filas de razones como clicables; al pulsarlas se despliegan los últimos
   casos con enlaces `target="_blank"` y el motivo concreto (p. ej. "detected French ... expected
   English", "7 tokens < min 50", "score 4.2 < threshold 10").
+
+## 38. Exclusiones persistentes y drill-down de rechazos (v1.8.0, 2026-11-18)
+
+- Bug: las keywords eliminadas reaparecían porque solo se quitaban del corpus activo, no se
+  persistía la exclusión. Ahora `/api/keywords/apply` escribe un bloque `excludedKeywords: |` en el
+  perfil (con la familia morfológica) y `/api/keywords?profile=...` lo filtra en cada extracción.
+- Bug: las filas de razones se generaban sin `onclick` (sustitución de string fallida). Restaurado
+  `class=clickable onclick="showReason('reason')"`; verificado en HTML servido.
+- Tests de integración: ciclo extraer → eliminar → aplicar → extraer de nuevo, y presencia del
+  handler en las filas.
