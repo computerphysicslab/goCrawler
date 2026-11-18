@@ -3,7 +3,13 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.8.0] - 2026-11-18
+## [v1.8.1] - 2026-11-18
+
+### Added
+- Persistent `robots.txt` cache on disk (`cache/robots-cache.json`) with a seven-day TTL; rules and
+  `Crawl-delay` survive process restarts. Stale entries are refetched automatically.
+
+ - 2026-11-18
 
 ### Fixed
 - Keywords removed in the Keyword Lab are now persisted as an `excludedKeywords` block in the

@@ -869,3 +869,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   `class=clickable onclick="showReason('reason')"`; verificado en HTML servido.
 - Tests de integración: ciclo extraer → eliminar → aplicar → extraer de nuevo, y presencia del
   handler en las filas.
+
+## 39. Caché persistente de robots.txt (v1.8.1, 2026-11-18)
+
+- `robotspolicy.NewWithCache(userAgent, timeout, path)` guarda el cuerpo de cada `robots.txt` en
+  `cache/robots-cache.json` (junto a `cache.db`), con `FetchedAt` y TTL de **7 días**. Al reiniciar se
+  reconstruyen los grupos y el `Crawl-delay` sin volver a pedir el fichero. Escritura atómica
+  (tmp + rename).
+- Entradas caducadas se refrescan; fallos de red no se persisten.
+- Tests: persistencia entre dos instancias (una sola petición HTTP) y expiración tras 8 días.
+- Los ficheros `robots-cache.json` están en `.gitignore`.
