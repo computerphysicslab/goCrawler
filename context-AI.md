@@ -892,3 +892,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - `/api/stats` expone `network` y `cache_io`; el dashboard muestra "Net reqs" y "Cache I/O".
 - Ambos contadores se ponen a cero en `ResetForProfile`. Verificado con crawl real: visits=22,
   cache=22, network=0 (todo desde caché), cache_io=47.
+
+## 41. Propuestas GUI Studio al roadmap (v1.8.3, 2026-11-18)
+
+- Analizadas 9 propuestas externas. Aclaración importante: el repo **no** usa React; el Workbench es
+  un único string HTML/CSS/JS embebido en `crawler.go` y servido por `guiHandler()`, así que no hace
+  falta mockup externo: se edita directamente y se cubre con `gui_test.go`.
+- Todas aportan valor; añadidas como **P22–P30**, ordenadas de fácil a difícil: tema claro/oscuro,
+  KPIs de velocidad/latencia/cola/goroutines, consola de eventos + exportación, Pause/Drain,
+  configurador en vivo, SSE, registros de auditoría por URL, tabla filtrable y grafo/drawer.
+- Recomendación: P22–P26 para la próxima release; P29–P30 para v2 (necesitan datos estructurados).

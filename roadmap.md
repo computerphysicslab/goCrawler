@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.7.0 (2026-11-17). All roadmap items are now implemented.
+**Current version:** v1.8.2 (2026-11-18). Section 1 lists the new GUI Studio backlog (P22–P30).
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -8,10 +8,24 @@ table; full details of the senior audit and the GUI proposal are in `docs/`.
 
 ---
 
-## 1. Pending work
+## 1. Pending work — ordered by increasing difficulty
 
-**None.** All items from the senior audit and the GUI analysis are implemented in v1.7.0.
-New findings should be added here with their effort estimate.
+Source: `docs/GUI_STUDIO_ANALYSIS.md` (2026-11-18). All nine proposals are valid; none is
+implemented. P22–P26 are recommended for the next release; P27–P30 need structured per-URL data.
+
+| ID | Effort | Item |
+|---|---|---|
+| P22 | S | Dark/light mode, monospace URLs/metrics and higher information density in the Workbench |
+| P23 | S/M | Live KPI cards: URLs/s, average download latency, pending queue depth and active goroutines |
+| P24 | M | Filterable event console (INFO/WARN/ERR) with one-click export to JSON, CSV and Sitemap XML |
+| P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop, using the existing `stopRequested` flag plus a drain mode |
+| P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent and include/exclude patterns without editing YAML |
+| P27 | M | Replace 1.5 s polling with Server-Sent Events (`/api/events`) pushing telemetry |
+| P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) persisted in SQLite |
+| P29 | L | Audit table with instant search and filters by HTTP status and Content-Type |
+| P30 | XL | Interactive topology graph and URL inspection drawer (headers, metadata, incoming/outgoing links) |
+
+Items P01–P21 of the senior audit and GUI MVP are **complete**.
 
 ---
 

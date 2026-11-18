@@ -3,7 +3,13 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.8.2] - 2026-11-18
+## [v1.8.3] - 2026-11-18
+
+### Added
+- `docs/GUI_STUDIO_ANALYSIS.md`: assessment of nine GUI proposals against the real embedded interface.
+- Roadmap backlog P22–P30 (GUI Studio), sorted by increasing effort.
+
+ - 2026-11-18
 
 ### Added
 - Workbench metrics "Net reqs" (HTTP requests including robots.txt) and "Cache I/O" (cache
