@@ -501,3 +501,10 @@ func TestConfigKeysLoad(t *testing.T) {
 		t.Fatalf("config keys not loaded: min=%d max=%d backend=%s", app.MinDocLen, app.MaxDocLen, app.CacheBackend)
 	}
 }
+
+func TestGUIPortDefault(t *testing.T) {
+	c := newCrawler()
+	if c.GUIPort != 8765 {
+		t.Fatalf("default GUI port = %d, want 8765", c.GUIPort)
+	}
+}

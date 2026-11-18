@@ -2371,6 +2371,9 @@ func runGUI() error {
 		writeJSON(w, map[string]string{"status": "stopped"})
 	})
 
+	if app.GUIPort <= 0 || app.GUIPort > 65535 {
+		app.GUIPort = 8765
+	}
 	addr := fmt.Sprintf("127.0.0.1:%d", app.GUIPort)
 	fmt.Printf("goCrawler Workbench: http://%s\n", addr)
 	listener, err := net.Listen("tcp", addr)
