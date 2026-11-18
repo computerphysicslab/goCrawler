@@ -902,3 +902,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   KPIs de velocidad/latencia/cola/goroutines, consola de eventos + exportación, Pause/Drain,
   configurador en vivo, SSE, registros de auditoría por URL, tabla filtrable y grafo/drawer.
 - Recomendación: P22–P26 para la próxima release; P29–P30 para v2 (necesitan datos estructurados).
+
+## 42. Segunda propuesta GUI al roadmap (v1.8.4, 2026-11-18)
+
+- Analizada en `docs/GUI_MOCKUP_ANALYSIS.md`. Se descarta React/Vue (rompería el binario único sin
+  dependencias); se mantienen las APIs `/api/*` y el HTML embebido.
+- Añadidas ideas nuevas como P31–P47: design tokens, responsive, activity feed, gráfico de rechazos,
+  sidebar, progress ring/ETA, editor estructurado con chips y validación, diff y versiones del
+  perfil, Keyword Lab 2.0, Apply & Re-run, Corpus Explorer, heatmap de dominios, comparación de
+  sesiones, command palette, export Markdown/PDF y análisis de impacto de keywords.
+- Backlog completo P22–P47 ordenado por esfuerzo; priorizar P22–P36 antes de los ítems L/XL.

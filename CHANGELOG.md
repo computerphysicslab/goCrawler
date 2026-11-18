@@ -3,7 +3,15 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.8.3] - 2026-11-18
+## [v1.8.4] - 2026-11-18
+
+### Added
+- `docs/GUI_MOCKUP_ANALYSIS.md`: assessment of the second GUI proposal; React/Vue explicitly rejected.
+- Roadmap P31–P47 (design tokens, responsive layout, activity feed, charts, sidebar, structured
+  editor, version history, corpus explorer, session comparison, command palette, exports and
+  keyword impact analysis), merged into the effort-ordered backlog.
+
+ - 2026-11-18
 
 ### Added
 - `docs/GUI_STUDIO_ANALYSIS.md`: assessment of nine GUI proposals against the real embedded interface.

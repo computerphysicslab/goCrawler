@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.2 (2026-11-18). Section 1 lists the new GUI Studio backlog (P22–P30).
+**Current version:** v1.8.2 (2026-11-18). Section 1 lists the new GUI Studio backlog (P22–P47).
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -10,20 +10,39 @@ table; full details of the senior audit and the GUI proposal are in `docs/`.
 
 ## 1. Pending work — ordered by increasing difficulty
 
-Source: `docs/GUI_STUDIO_ANALYSIS.md` (2026-11-18). All nine proposals are valid; none is
-implemented. P22–P26 are recommended for the next release; P27–P30 need structured per-URL data.
+Sources: `docs/GUI_STUDIO_ANALYSIS.md` and `docs/GUI_MOCKUP_ANALYSIS.md` (2026-11-18). Items are
+sorted by increasing effort; React/Vue frontends are explicitly rejected (they would break the
+zero-dependency single-binary design).
 
 | ID | Effort | Item |
 |---|---|---|
-| P22 | S | Dark/light mode, monospace URLs/metrics and higher information density in the Workbench |
-| P23 | S/M | Live KPI cards: URLs/s, average download latency, pending queue depth and active goroutines |
-| P24 | M | Filterable event console (INFO/WARN/ERR) with one-click export to JSON, CSV and Sitemap XML |
-| P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop, using the existing `stopRequested` flag plus a drain mode |
-| P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent and include/exclude patterns without editing YAML |
-| P27 | M | Replace 1.5 s polling with Server-Sent Events (`/api/events`) pushing telemetry |
-| P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) persisted in SQLite |
+| P22 | S | Dark/light mode, monospace URLs/metrics and higher information density |
+| P31 | S | Design tokens (CSS variables), 4/8 px spacing, consistent radius/elevation, subtle CSS animations |
+| P33 | S | Responsive layout for narrow screens (CSS media queries) |
+| P41 | S | "Apply & Re-run" with confirmation in Keyword Lab |
+| P23 | S/M | Live KPI cards: URLs/s, average latency, pending queue depth, active goroutines |
+| P35 | S/M | Rejection bar/donut chart using CSS/SVG (no chart library) |
+| P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
+| P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
+| P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
+| P27 | M | Replace 1.5 s polling with Server-Sent Events (`/api/events`) |
+| P32 | M | Fixed sidebar navigation with active profile selector and crawler status indicator |
+| P34 | M | Live activity feed: last 20 processed URLs with status colours (`/api/activity`) |
+| P36 | M | Progress ring and ETA estimate for the current crawl |
+| P38 | M | Visual diff of profile changes before saving |
+| P40 | M | Keyword Lab 2.0: sortable/filterable table, score-vs-frequency scatter, multi-select, diff preview |
+| P43 | M | Domain heatmap (accepted pages per domain) |
+| P45 | M | Command palette (Cmd/Ctrl+K) for quick actions |
+| P46 | M | Report export to Markdown and print-to-PDF |
+| P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) in SQLite |
 | P29 | L | Audit table with instant search and filters by HTTP status and Content-Type |
-| P30 | XL | Interactive topology graph and URL inspection drawer (headers, metadata, incoming/outgoing links) |
+| P37 | L | Structured profile editor: chips, live regex validation, YAML advanced view |
+| P39 | L | Profile version history (snapshot per run with diff) |
+| P42 | L | Corpus Explorer: virtualised list, keyword highlighting, filters, export MD/JSON/CSV |
+| P44 | L | Session comparison between two runs of the same profile |
+| P30 | XL | Interactive topology graph and URL inspection drawer |
+| P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
+
 
 Items P01–P21 of the senior audit and GUI MVP are **complete**.
 
