@@ -1196,3 +1196,69 @@ func TestGUIAccessibilityControls(t *testing.T) {
 		}
 	}
 }
+
+func TestGUICorpusTabAndExportControls(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/", "")
+		if code != 200 {
+			t.Fatalf("root status = %d", code)
+		}
+		for _, fragment := range []string{
+			`<button data-tab="corpus">Corpus</button>`,
+			`id="c-profile"`,
+			`onclick="saveCorpus()"`,
+			`/api/corpus/save`,
+			`id="c-download"`,
+		} {
+			if !strings.Contains(body, fragment) {
+				t.Errorf("GUI HTML missing %q", fragment)
+			}
+		}
+	})
+}
+
+func TestGUICorpusSaveAndDownload(t *testing.T) {
+	withGUIApp(t, func() {
+		withTempWorkDir(t, func() {
+			if err := os.MkdirAll("profiles", 0755); err != nil {
+				t.Fatal(err)
+			}
+			profile := "curatedDomains: a\\.org\nlinkOk: stack\nregexRankingKeywords: (?i)\\W(stack|stacking)\\W\n"
+			if err := os.WriteFile("profiles/topic.yaml", []byte(profile), 0644); err != nil {
+				t.Fatal(err)
+			}
+			corpus := "https://a.org/stack/guide\nImage stacking with Siril improves the stack signal.\n----\n\n\n\n" +
+				"https://b.org/other/page\nUnrelated text without keywords.\n----\n\n\n\n"
+			if err := os.WriteFile("logs/corpusCuratedText.log", []byte(corpus), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			server := httptest.NewServer(guiHandler())
+			defer server.Close()
+			code, body := guiRequest(t, server, "POST", "/api/corpus/save", `{"profile":"topic"}`)
+			if code != 200 {
+				t.Fatalf("save status = %d body=%q", code, body)
+			}
+			var info corpusExportInfo
+			if err := json.Unmarshal([]byte(body), &info); err != nil {
+				t.Fatal(err)
+			}
+			if info.Documents != 1 || info.Profile != "topic" {
+				t.Fatalf("unexpected export info: %+v", info)
+			}
+			content, err := os.ReadFile(info.File)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(content), "https://a.org/stack/guide") || strings.Contains(string(content), "b.org") {
+				t.Fatalf("unexpected exported corpus: %q", content)
+			}
+			code, downloaded := guiRequest(t, server, "GET", info.Download, "")
+			if code != 200 || !strings.Contains(downloaded, "https://a.org/stack/guide") {
+				t.Fatalf("download status = %d body=%q", code, downloaded)
+			}
+		})
+	})
+}

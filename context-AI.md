@@ -1066,3 +1066,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   del repo y generable con `make freq-index`; fixtures pequeños en `corpusfreqlib/testdata/` y
   `corpusfreqlib.GenerateIndex()` con herramienta en `tools/generate_freq_index.go`.
 - Verificación: `go vet`, `go test -race ./...`, `--selftest` y `git diff --check` ✅.
+
+
+## 34. Workbench: pestaña Corpus y export por perfil (v1.8.16, 2026-11-18)
+
+- Renombrada "Corpus search" a "Corpus". La pestaña conserva la búsqueda FTS5 y añade un selector de
+  perfil + botón "Save corpus".
+- `saveProfileCorpus(profile)` filtra `logs/corpusCuratedText.log` con `linkOk`/`curatedDomains` y
+  `regexRankingKeywords` del perfil seleccionado (sin tocar la config global) y escribe
+  `output/corpus-<perfil>.txt`. Endpoints: POST `/api/corpus/save` y GET `/api/corpus/download`.
+- Tests HTTP en `gui_test.go` comprueban el TXT filtrado y la descarga; nombres de archivo saneados.

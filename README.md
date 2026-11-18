@@ -58,6 +58,8 @@ required. Redis remains supported as an alternative cache backend.
   English) are subtracted to surface *topic-specific* terms.
 - **Persistent page cache**: SQLite (default) or Redis; repeated runs reuse downloaded pages and
   avoid network load.
+- **Corpus export**: the Workbench Corpus tab searches with FTS5 or exports a profile-matched TXT
+  file containing every curated document that fits the selected profile.
 - **Zero required services**: the default setup needs only Go and a writable working directory.
 - **Optional PDF ingestion**: profiles can opt in to download PDFs and index their extracted text
   with the pure-Go `ledongthuc/pdf` library (no CGO); size and page limits keep it safe.
@@ -366,8 +368,11 @@ This is roadmap item 14; it is **not implemented**. Use `go test -race` when imp
 | `-version`, `-license` | print version or license and exit |
 | `-gui`, `-gui-port=N` | start the embedded web Workbench on `127.0.0.1:N` (default 8765) |
 
-The Workbench ends with an **About** tab showing version, copyright, MIT license, author, links,
-platform, bundled components and a QR code pointing to the repository.
+The **Corpus** tab combines FTS5 search with a profile selector: choosing a profile and clicking
+**Save corpus** writes `output/corpus-<profile>.txt` with all accepted documents whose URL and text
+match that profile, then offers a download link. The Workbench ends with an **About** tab showing
+version, copyright, MIT license, author, links, platform, bundled components and a QR code pointing
+to the repository.
 
 `-h`/`--help` prints the usage summary. Multi-language corpora can be selected with the profile
 keys `language` (default `English`) and `minLanguageConfidence`.

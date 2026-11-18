@@ -1,3 +1,13 @@
+## [v1.8.16] - 2026-11-18
+
+### Changed
+- Workbench tab "Corpus search" renamed to "Corpus".
+
+### Added
+- Profile-based corpus export in the Corpus tab: select a profile and save every curated document
+  whose URL and text match it to `output/corpus-<profile>.txt`, with a download link
+  (`/api/corpus/download`).
+
 ## [v1.8.15] - 2026-11-18
 
 ### Added

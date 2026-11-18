@@ -71,6 +71,14 @@ type rejectionEvent struct {
 	Time   time.Time `json:"time"`
 }
 
+type corpusExportInfo struct {
+	File       string `json:"file"`
+	Download   string `json:"download"`
+	Documents  int    `json:"documents"`
+	Characters int    `json:"characters"`
+	Profile    string `json:"profile"`
+}
+
 type Crawler struct {
 	// configuration
 	RegexBannedDomains       string
@@ -2434,7 +2442,7 @@ const (
 	linkStaleTimeout  = 60 * time.Second
 )
 
-const appVersion = "1.8.15"
+const appVersion = "1.8.16"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
@@ -2617,16 +2625,18 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 .kpi-label{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpi-value{display:block;font-family:var(--mono);font-size:19px;font-weight:600;color:var(--accent);line-height:1.25}
 .bar{height:10px;background:var(--accent);border-radius:5px;margin:3px 0}
+#c-download:not([hidden]){display:inline-block;padding:var(--space) calc(var(--space)*2);background:var(--input);border:1px solid var(--border);border-radius:calc(var(--radius)/2);color:var(--accent)}
 @media(max-width:760px){.about-row{flex-direction:column}.about-qr{flex:1 1 auto}}header,nav{padding-left:var(--space);padding-right:var(--space)}main{padding:var(--space)}.row>*{flex:1 1 100%}nav button{padding:var(--space)}}
 </style></head><body>
 <a class="skip" href="#main">Skip to content</a>
 <header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span><button class="act" id="btn-theme" onclick="toggleTheme()" aria-label="Toggle dark and light theme">Theme</button><button class="act" id="btn-contrast" onclick="toggleContrast()" aria-label="Toggle high contrast" aria-pressed="false">Contrast</button><button class="act" id="btn-motion" onclick="toggleMotion()" aria-label="Toggle reduced motion" aria-pressed="false">Motion</button></header>
-<nav role="tablist" aria-label="Workbench sections"><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main id="main">
+<nav role="tablist" aria-label="Workbench sections"><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main id="main">
 <section id="dash" hidden><div class="card"><div class="kpi-grid"><div class="kpi-card"><span class="kpi-label">Pages visited</span><span class="kpi-value" id="s-visits">0</span></div><div class="kpi-card"><span class="kpi-label">Cache hits</span><span class="kpi-value" id="s-cache">0</span></div><div class="kpi-card"><span class="kpi-label">Online</span><span class="kpi-value" id="s-online">0</span></div><div class="kpi-card"><span class="kpi-label">Download ms</span><span class="kpi-value" id="s-ms">0</span></div><div class="kpi-card"><span class="kpi-label">Accepted</span><span class="kpi-value" id="s-accepted">0</span></div><div class="kpi-card"><span class="kpi-label">Not accepted</span><span class="kpi-value" id="s-rejected">0</span></div><div class="kpi-card"><span class="kpi-label">Crawls running</span><span class="kpi-value" id="s-running">0</span></div><div class="kpi-card"><span class="kpi-label">Net reqs</span><span class="kpi-value" id="s-net">0</span></div><div class="kpi-card"><span class="kpi-label">Cache I/O</span><span class="kpi-value" id="s-io">0</span></div><div class="kpi-card"><span class="kpi-label">URLs/s</span><span class="kpi-value" id="s-rate">0</span></div><div class="kpi-card"><span class="kpi-label">Avg ms</span><span class="kpi-value" id="s-lat">0</span></div><div class="kpi-card"><span class="kpi-label">Queue</span><span class="kpi-value" id="s-queue">0</span></div><div class="kpi-card"><span class="kpi-label">Go routines</span><span class="kpi-value" id="s-goroutines">0</span></div></div></div><div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>URL queue</h3><p class="muted">Pending: <b id="q-total">0</b>. States: requested → retrieved/failed → removed.</p><div id="queue-list"></div></div>
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><select id="w-workers"><option value="1">1 worker</option><option value="2">2 workers</option><option value="4" selected>4 workers</option><option value="8">8 workers</option></select><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
-<section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
+<section id="corpus" hidden><div class="card"><h3>Search the curated corpus</h3><p class="muted">Full-text search over the accepted documents (SQLite FTS5).</p><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div>
+<div class="card"><h3>Save corpus for a profile</h3><p class="muted">Select a profile and export every curated document whose URL and text match it to a TXT file.</p><select id="c-profile"></select><button class="act" onclick="saveCorpus()">Save corpus</button> <a id="c-download" hidden>Download TXT</a><pre id="c-out"></pre></div></section>
 <section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><select id="pr-profile"></select><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
 <section id="about" hidden><div class="about-row"><div class="card about-info"><h3 id="a-name">goCrawler Workbench</h3><p class="muted" id="a-desc"></p><p>Version <b id="a-version"></b> — <span id="a-date"></span></p><p id="a-copyright"></p><p>License: <b id="a-license"></b> · Go: <span id="a-go"></span> · Platform: <span id="a-platform"></span></p><p>Contact: <a id="a-author" href="#"></a> · <a id="a-linkedin" href="#" target="_blank" rel="noopener">LinkedIn</a></p><p><a id="a-repo" href="#" target="_blank" rel="noopener">Repository</a> · <a id="a-issues" href="#" target="_blank" rel="noopener">Issues</a> · <a id="a-changelog" href="#" target="_blank" rel="noopener">Changelog</a> · <a id="a-roadmap" href="#" target="_blank" rel="noopener">Roadmap</a></p><p>Components: <span id="a-components" class="muted"></span></p></div><div class="card about-qr"><h3>Scan to open the repository</h3><img id="a-qr" alt="QR code of the repository" style="max-width:180px"></div></div></section>
 <section id="urls" hidden><div class="card"><h3>URL Seeds</h3><p class="muted">Seeds in profile: <b id="u-count">0</b> URLs. Paste one URL per line; duplicates are ignored. Add, replace or remove seeds; changes are written to the profile YAML.</p><select id="u-profile"></select><textarea id="u-text" rows="12" placeholder="https://example.org/page"></textarea><div><button class="act" onclick="addURLs()">Add URLs</button> <button class="act" onclick="replaceURLs()">Replace all</button> <button class="act" onclick="removeURLs()">Remove selected</button></div><div id="u-list"></div></div></section>
@@ -2649,10 +2659,11 @@ navButtons().forEach((b,i)=>{b.setAttribute('role','tab');b.setAttribute('aria-s
 document.addEventListener('keydown',e=>{if(e.altKey&&e.key>='1'&&e.key<='7'){e.preventDefault();selectTab(parseInt(e.key,10)-1)}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('[data-tab=corpus]').click();setTimeout(()=>$('q').focus(),0)}});
 async function json(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
 async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?(s.stopping?'stopping...':('running ('+s.running_count+')')):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
-async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;$('u-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;$('u-profile').value=match;}loadProfile()}
+async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;$('u-profile').innerHTML=opts;if($('c-profile'))$('c-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;$('u-profile').value=match;if($('c-profile'))$('c-profile').value=match;}loadProfile()}
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n;if($('u-profile')){$('u-profile').value=n;loadURLs()}}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
 async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
+async function saveCorpus(){const n=$('c-profile').value;if(!n){$('c-out').textContent='Select a profile first';return}try{const r=await fetch('/api/corpus/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n})});const d=await r.json();if(!r.ok)throw new Error(d.error||JSON.stringify(d));$('c-out').textContent=d.documents+' documents, '+d.characters+' characters\n'+d.file;$('c-download').href=d.download;$('c-download').textContent='Download '+d.file;$('c-download').hidden=false}catch(e){$('c-out').textContent='Error: '+e.message}}
 let extracted=[];let removed=[];async function extract(){removed=[];const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+' <button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td></tr>').join('')+'</table>'}function removeKeyword(w){removed.push(w);extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
 async function applyKeywords(){const n=$('k-profile').value;const kws=extracted;const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws,removed:removed})});const res=await r.json();$('status').textContent=res.status+' ('+res.keywords+' keywords)';document.querySelector('[data-tab=prof]').click();profiles()}
 function parseURLs(){return $('u-text').value.split(/\r?\n/).map(x=>x.trim().replace(/^["']|["']$/g,'')).map(x=>{const m=x.match(/\((https?:\/\/[^)]+)\)/);return m?m[1]:x}).map(x=>x.replace(/[.,;)]+$/,'')).filter(x=>/^https?:\/\//i.test(x))}
@@ -3053,6 +3064,43 @@ func guiHandler() http.Handler {
 			}
 		}
 		writeJSON(w, map[string]interface{}{"results": results})
+	})
+	mux.HandleFunc("/api/corpus/save", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "use POST", http.StatusMethodNotAllowed)
+			return
+		}
+		var body struct {
+			Profile string `json:"profile"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		info, err := saveProfileCorpus(body.Profile)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		writeJSON(w, info)
+	})
+	mux.HandleFunc("/api/corpus/download", func(w http.ResponseWriter, r *http.Request) {
+		resolved, err := resolveProfileName(r.URL.Query().Get("profile"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		path := filepath.Join("output", "corpus-"+safeProfileFilename(resolved)+".txt")
+		content, err := os.ReadFile(path)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		name := "corpus-" + safeProfileFilename(resolved) + ".txt"
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, name))
+		w.Header().Set("Content-Length", strconv.Itoa(len(content)))
+		w.Write(content)
 	})
 	mux.HandleFunc("/api/keywords", func(w http.ResponseWriter, r *http.Request) {
 		excluded := make(map[string]bool)
@@ -3510,6 +3558,92 @@ func runGUI() error {
 func writeJSON(w http.ResponseWriter, value interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(value)
+}
+
+// safeProfileFilename keeps profile names inside output/ without path traversal.
+func safeProfileFilename(name string) string {
+	var b strings.Builder
+	for _, r := range name {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '-' || r == '_' {
+			b.WriteRune(r)
+		} else {
+			b.WriteRune('_')
+		}
+	}
+	if b.Len() == 0 {
+		return "profile"
+	}
+	return b.String()
+}
+
+// profileCorpusMatchers builds the URL and keyword matchers for one profile.
+func profileCorpusMatchers(profile string) (string, *regexp.Regexp, *regexp.Regexp, error) {
+	resolved, err := resolveProfileName(profile)
+	if err != nil {
+		return "", nil, nil, err
+	}
+	vp := viper.New()
+	vp.SetConfigFile("profiles/" + resolved + ".yaml")
+	if err := vp.ReadInConfig(); err != nil {
+		return "", nil, nil, err
+	}
+
+	linkExpr := `(?i)^https*://.*(` + stringlib.RmNewLines(vp.GetString("linkOk")) + `|` +
+		stringlib.RmNewLines(vp.GetString("curatedDomains")) + `)`
+	linkRe, err := regexp.Compile(linkExpr)
+	if err != nil {
+		return "", nil, nil, fmt.Errorf("invalid linkOk/curatedDomains: %w", err)
+	}
+
+	var keywordRe *regexp.Regexp
+	if keywordExpr := stringlib.RmNewLines(vp.GetString("regexRankingKeywords")); keywordExpr != "" {
+		keywordRe, err = regexp.Compile(keywordExpr)
+		if err != nil {
+			return "", nil, nil, fmt.Errorf("invalid regexRankingKeywords: %w", err)
+		}
+	}
+	return resolved, linkRe, keywordRe, nil
+}
+
+// saveProfileCorpus exports curated documents matching a profile to a TXT file.
+func saveProfileCorpus(profile string) (corpusExportInfo, error) {
+	resolved, linkRe, keywordRe, err := profileCorpusMatchers(profile)
+	if err != nil {
+		return corpusExportInfo{}, err
+	}
+	if err := os.MkdirAll("output", 0755); err != nil {
+		return corpusExportInfo{}, err
+	}
+
+	safe := safeProfileFilename(resolved)
+	relPath := filepath.Join("output", "corpus-"+safe+".txt")
+	var b strings.Builder
+	fmt.Fprintf(&b, "goCrawler corpus export\nProfile: %s\nGenerated: %s\n\n",
+		resolved, time.Now().UTC().Format(time.RFC3339))
+
+	documents := 0
+	for _, doc := range corpusDocuments(1 << 30) {
+		docURL, text := doc["url"], doc["text"]
+		if !linkRe.MatchString(docURL) {
+			continue
+		}
+		if keywordRe != nil && !keywordRe.MatchString(text) {
+			continue
+		}
+		documents++
+		fmt.Fprintf(&b, "================================================================================\nURL: %s\n--------------------------------------------------------------------------------\n%s\n\n", docURL, text)
+	}
+	content := b.String()
+	if err := os.WriteFile(relPath, []byte(content), 0644); err != nil {
+		return corpusExportInfo{}, err
+	}
+	return corpusExportInfo{
+		File:       relPath,
+		Download:   "/api/corpus/download?profile=" + url.QueryEscape(resolved),
+		Documents:  documents,
+		Characters: len(content),
+		Profile:    resolved,
+	}, nil
 }
 
 // corpusDocuments reads accepted documents from the curated corpus.
