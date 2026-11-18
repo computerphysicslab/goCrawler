@@ -864,7 +864,9 @@ func lPoolDump() {
 	jsonFile, err := os.Create("./output/LPool.json")
 	if err != nil {
 		log.Println(err)
+		return
 	}
+	defer jsonFile.Close()
 	jsonFile.Write(jdata)
 }
 
@@ -874,7 +876,12 @@ func domainCounterDump() {
 	if err != nil {
 		fmt.Println("domainCounterDump error: ", err)
 	}
-	jsonFile, err := os.Create("./output/app.DomainCounter.json")
+	jsonFile, err := os.Create("./output/domainCounter.json")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer jsonFile.Close()
 	jsonFile.Write(jdata)
 }
 
