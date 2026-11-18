@@ -930,3 +930,14 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - P35: gráfico de barras de rechazos en CSS/SVG sin librerías (`#reject-chart`).
 - P41: botón "Apply & Re-run" con `confirm()` que aplica keywords y lanza un crawl.
 - Tests del HTML y de las métricas; `node --check` del JS embebido ✅.
+
+## 45. Incidencia URLs Markdown y duplicados (v1.8.7, 2026-11-18)
+
+- El usuario pegó 20 URLs en formato Markdown `[url](url)`; `parseURLs()` solo aceptaba líneas que
+  empezaban por `http`, así que las descartó silenciosamente: por eso el crawl siguiente dio
+  **0 net requests** (solo se visitaron semillas ya en caché). Las 20 URLs **no estaban en la caché**.
+- Corregido: `reMarkdownLink` en Go y extracción de `(url)` en JS. Las 20 URLs se añadieron al perfil
+  y la caché sigue limpia para ellas.
+- Segundo problema: `replaceSeedBlock` solo reemplazaba el primer bloque de semillas, acumulando
+  duplicados (105 líneas / 73 únicas). Reescrito para eliminar todas las líneas de semillas antes de
+  escribir. Perfil limpio: 73 semillas únicas, todas las nuevas presentes.

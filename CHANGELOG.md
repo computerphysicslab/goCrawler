@@ -3,7 +3,14 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.8.6] - 2026-11-18
+## [v1.8.7] - 2026-11-18
+
+### Fixed
+- URL Seeds accepts pasted Markdown links `[text](url)` in addition to plain URLs (GUI and API).
+- Seed rewriting now removes all old seed lines before writing, preventing duplicate accumulation
+  (profile had 105 lines for 73 unique URLs).
+
+ - 2026-11-18
 
 ### Added
 - Roadmap S items: CSS design tokens with dark/light toggle and responsive layout (P22/P31/P33),

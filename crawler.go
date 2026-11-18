@@ -2286,7 +2286,7 @@ async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile
 async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
 let extracted=[];let removed=[];async function extract(){removed=[];const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+' <button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td></tr>').join('')+'</table>'}function removeKeyword(w){removed.push(w);extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
 async function applyKeywords(){const n=$('k-profile').value;const kws=extracted;const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws,removed:removed})});const res=await r.json();$('status').textContent=res.status+' ('+res.keywords+' keywords)';document.querySelector('[data-tab=prof]').click();profiles()}
-function parseURLs(){return $('u-text').value.split(/\r?\n/).map(x=>x.trim().replace(/^["']|["']$/g,'')).filter(x=>/^https?:\/\//i.test(x))}
+function parseURLs(){return $('u-text').value.split(/\r?\n/).map(x=>x.trim().replace(/^["']|["']$/g,'')).map(x=>{const m=x.match(/\((https?:\/\/[^)]+)\)/);return m?m[1]:x}).map(x=>x.replace(/[.,;)]+$/,'')).filter(x=>/^https?:\/\//i.test(x))}
 async function loadURLs(){const n=$('u-profile').value||$('p-list').value;if(!n)return;const d=await json('/api/urls?profile='+encodeURIComponent(n));$('u-text').value=d.urls.join('\n');$('u-count').textContent=d.urls.length;$('u-list').innerHTML=d.urls.map((u,i)=>'<label><input type=checkbox value="'+i+'"> '+u+'</label>').join('<br>')}
 async function saveURLs(mode,remove){const n=$('u-profile').value||$('p-list').value;const urls=parseURLs();const body={profile:n,urls:urls,mode:mode,remove:remove||[]};const r=await fetch('/api/urls',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const res=await r.json();$('status').textContent=(res.status||res.error)+' ('+res.urls+' URLs)';loadURLs();loadProfile()}
 async function addURLs(){await saveURLs('append',[])}
@@ -2936,12 +2936,18 @@ func expandKeywords(words []string) []string {
 	return out
 }
 
+var reMarkdownLink = regexp.MustCompile(`\[(https?://[^\]]+)\]\((https?://[^)]+)\)`)
+
 // normalizeSeedURLs filters and trims a list of candidate seed URLs.
 func normalizeSeedURLs(raw []string) []string {
 	seen := make(map[string]bool)
 	out := []string{}
 	for _, value := range raw {
 		value = strings.TrimSpace(strings.Trim(value, `"'`))
+		if match := reMarkdownLink.FindStringSubmatch(value); match != nil {
+			value = match[2]
+		}
+		value = strings.TrimRight(value, ".,;)")
 		u, err := url.Parse(value)
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || seen[value] {
 			continue
@@ -2979,40 +2985,36 @@ func profileSeedURLs(text string) []string {
 	return normalizeSeedURLs(urls)
 }
 
-// replaceSeedBlock rewrites the bootstrapingLinks list of a profile.
+// replaceSeedBlock rewrites the bootstrapingLinks list of a profile, removing
+// any old seed lines elsewhere in the document so duplicates cannot accumulate.
 func replaceSeedBlock(text string, urls []string) string {
 	lines := strings.Split(text, "\n")
-	start, end := -1, -1
-	for i, line := range lines {
-		if strings.HasPrefix(strings.TrimSpace(line), "bootstrapingLinks:") {
-			start = i + 1
-			for j := i + 1; j < len(lines); j++ {
-				trimmed := strings.TrimSpace(lines[j])
-				if trimmed == "" {
-					continue
-				}
-				if strings.HasPrefix(trimmed, "-") {
-					end = j + 1
-					continue
-				}
-				break
+	insertAt := -1
+	cleaned := []string{}
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "bootstrapingLinks:") {
+			if insertAt < 0 {
+				cleaned = append(cleaned, "bootstrapingLinks:")
+				insertAt = len(cleaned)
 			}
-			if end < 0 {
-				end = start
-			}
-			break
+			continue
 		}
+		if strings.HasPrefix(trimmed, "- ") && (strings.Contains(trimmed, "http://") || strings.Contains(trimmed, "https://")) {
+			continue
+		}
+		cleaned = append(cleaned, line)
 	}
 	newLines := []string{}
 	for _, u := range urls {
 		newLines = append(newLines, `- "`+u+`"`)
 	}
-	if start < 0 {
-		return strings.TrimRight(text, "\n") + "\nbootstrapingLinks:\n" + strings.Join(newLines, "\n") + "\n"
+	if insertAt < 0 {
+		return strings.TrimRight(strings.Join(cleaned, "\n"), "\n") + "\nbootstrapingLinks:\n" + strings.Join(newLines, "\n") + "\n"
 	}
-	result := append([]string{}, lines[:start]...)
+	result := append([]string{}, cleaned[:insertAt]...)
 	result = append(result, newLines...)
-	result = append(result, lines[end:]...)
+	result = append(result, cleaned[insertAt:]...)
 	return strings.Join(result, "\n")
 }
 

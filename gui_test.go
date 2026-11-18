@@ -898,3 +898,32 @@ func TestRuntimeKPIHelpers(t *testing.T) {
 		}
 	})
 }
+
+func TestGUIURLManagerAcceptsMarkdownLinks(t *testing.T) {
+	withGUIApp(t, func() {
+		if err := os.MkdirAll("profiles", 0755); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join("profiles", "markdown_url_test.yaml")
+		if err := os.WriteFile(path, []byte("scoreThreshold: 10\nbootstrapingLinks:\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(path)
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		payload := `{"profile":"markdown_url_test","mode":"append","urls":["[https://www.astromatic.net/software/sextractor/](https://www.astromatic.net/software/sextractor/)","https://reproject.readthedocs.io/en/latest/"]}`
+		code, body := guiRequest(t, server, "POST", "/api/urls", payload)
+		if code != 200 || !strings.Contains(body, `"urls":2`) {
+			t.Fatalf("markdown URLs rejected: %d %q", code, body)
+		}
+		_, body = guiRequest(t, server, "GET", "/api/urls?profile=markdown_url_test", "")
+		var list struct{ Urls []string }
+		if err := json.Unmarshal([]byte(body), &list); err != nil {
+			t.Fatal(err)
+		}
+		if len(list.Urls) != 2 || !strings.Contains(list.Urls[0], "astromatic.net") || !strings.Contains(list.Urls[1], "reproject") {
+			t.Fatalf("unexpected URLs: %v", list.Urls)
+		}
+	})
+}
