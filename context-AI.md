@@ -352,6 +352,11 @@ lo registro aquí y ajusto las secciones anteriores si hace falta.)_
   refrescado la lista. Revisado el 2026-11-19: `~/.config/opencode/opencode.jsonc` no bloquea
   `todowrite` y no hay agentes con permisos que lo nieguen; el estado se escribe correctamente, así
   que si el panel no se ve es un asunto de renderizado del TUI (puede requerir reiniciar OpenCode).
+- **Fallo detectado 2026-11-18**: hubo un turno (implementación de la caché persistente de robots.txt)
+  en el que **no se llamó a `todowrite` en absoluto**, por eso la columna derecha quedó desactualizada.
+  Regla reforzada: **ningún turno puede terminar sin una llamada a `todowrite`**, aunque la respuesta
+  sea corta o el trabajo parezca trivial. Si el turno solo documenta, la lista también debe crearse
+  y marcarse completada.
 - Todo el **código y la documentación del repo en inglés** (este `context-ai.md` es el diario
   histórico en español; se mantiene en ambas copias).
 - Mantener el entorno limpio tras las pruebas (Redis parado, perfiles copiados a la raíz borrados).
