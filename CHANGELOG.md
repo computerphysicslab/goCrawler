@@ -1,3 +1,15 @@
+## [v1.8.18] - 2026-11-18
+
+### Added
+- Interactive single-instance guard: if a previous Workbench is running, the CLI lists its PID/port and
+  offers to terminate it (`y/yes/s/si`); non-interactive runs still fail with a clear message.
+- URL Seeds now extracts URLs anywhere in the pasted text (spaces, tabs, line breaks, Markdown links),
+  not only from whole lines.
+
+### Changed
+- PDF responses found while `process_pdf` is disabled now use the explicit `pdf_disabled` rejection
+  reason instead of a generic unsupported content type.
+
 ## [v1.8.17] - 2026-11-18
 
 ### Changed

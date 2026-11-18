@@ -1086,3 +1086,14 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - `runGUI()` ya no busca puertos libres: si el puerto está ocupado, falla con mensaje claro.
 - Ctrl+C/SIGTERM llama a `server.Shutdown()` y libera el lock. Tests: lock duplicado, lock obsoleto
   y puerto ocupado. Verificado con dos lanzamientos reales.
+
+
+## 36. Instancias interactivas, URLs embebidas y PDF disabled (v1.8.18, 2026-11-18)
+
+- `prepareGUIInstances()` usa un registro por instancia en `~/.cache/goCrawler/gui/`; si hay otras
+  vivas, pregunta (solo con TTY) y envía SIGTERM a los PIDs tras confirmación. Locks huérfanos se
+  limpian; sin TTY el mensaje sigue siendo explícito.
+- `parseURLs()` extrae URLs con regex global de todo el texto del textarea (espacios, tabs, saltos,
+  Markdown) y deduplica con `Set`.
+- `downloadCached()` registra `pdf_disabled` cuando se detecta un PDF sin `process_pdf: true`.
+  Activado `process_pdf` en el perfil local `profiles/skystacker-research.yaml` (gitignoreado).

@@ -1320,3 +1320,78 @@ func TestRunGUIFailsOnBusyPort(t *testing.T) {
 		}
 	})
 }
+
+func writeFakeGUIInstance(t *testing.T, pid int, port int) string {
+	t.Helper()
+	dir, err := guiRegistryDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, fmt.Sprintf("fake-%d.pid", pid))
+	if err := os.WriteFile(path, []byte(fmt.Sprintf("%d %d\n", pid, port)), 0644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func TestPrepareGUIInstancesOffersToTerminate(t *testing.T) {
+	oldDir, oldTerminal := guiLockDirOverride, stdinIsTerminal
+	oldConfirm, oldTerminate := confirmTerminate, terminateGUIPID
+	defer func() {
+		guiLockDirOverride, stdinIsTerminal = oldDir, oldTerminal
+		confirmTerminate, terminateGUIPID = oldConfirm, oldTerminate
+	}()
+	guiLockDirOverride = t.TempDir()
+	stdinIsTerminal = func() bool { return true }
+
+	confirms := 0
+	confirmTerminate = func(instances []guiInstance) bool { confirms++; return true }
+	terminated := []int{}
+	terminateGUIPID = func(pid int) error {
+		terminated = append(terminated, pid)
+		dir, _ := guiRegistryDir()
+		if entries, _ := os.ReadDir(dir); len(entries) > 0 {
+			os.Remove(filepath.Join(dir, entries[0].Name()))
+		}
+		return nil
+	}
+
+	writeFakeGUIInstance(t, 1, 9999)
+	if err := prepareGUIInstances(); err != nil {
+		t.Fatal(err)
+	}
+	if confirms != 1 || len(terminated) != 1 || terminated[0] != 1 {
+		t.Fatalf("confirms=%d terminated=%v", confirms, terminated)
+	}
+}
+
+func TestPrepareGUIInstancesCancelledByUser(t *testing.T) {
+	oldDir, oldTerminal := guiLockDirOverride, stdinIsTerminal
+	oldConfirm, oldTerminate := confirmTerminate, terminateGUIPID
+	defer func() {
+		guiLockDirOverride, stdinIsTerminal = oldDir, oldTerminal
+		confirmTerminate, terminateGUIPID = oldConfirm, oldTerminate
+	}()
+	guiLockDirOverride = t.TempDir()
+	stdinIsTerminal = func() bool { return true }
+	confirmTerminate = func([]guiInstance) bool { return false }
+	terminateGUIPID = func(int) error { t.Fatal("should not terminate when cancelled"); return nil }
+
+	writeFakeGUIInstance(t, 1, 9999)
+	err := prepareGUIInstances()
+	if err == nil || !strings.Contains(err.Error(), "cancelled by user") {
+		t.Fatalf("expected cancellation, got %v", err)
+	}
+}
+
+func TestGUIInlineURLParsing(t *testing.T) {
+	for _, token := range []string{
+		`text.match(/https?:`,
+		`new Set()`,
+		`URLs mixed with text`,
+	} {
+		if !strings.Contains(guiHTML, token) {
+			t.Errorf("guiHTML missing inline URL parsing token %q", token)
+		}
+	}
+}

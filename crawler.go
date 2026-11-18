@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"container/heap"
 	"context"
@@ -848,7 +849,7 @@ func download(urlLink string) (string, []string, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	if app.ProcessPDF && isPDFPage(page) {
+	if isPDFPage(page) {
 		return "", nil, errPDFDetected
 	}
 	plain, links, err := htmlFromPage(page)
@@ -894,7 +895,11 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 	if err != nil {
 		return "", nil, err
 	}
-	if app.ProcessPDF && isPDFPage(page) {
+	if isPDFPage(page) {
+		if !app.ProcessPDF {
+			recordRejection("pdf_disabled", urlLink, "PDF found but process_pdf is false", "")
+			return "", nil, errors.New("download: PDF found but process_pdf is disabled in this profile")
+		}
 		app.OnlineDownloads++
 		return downloadPDFCached(urlLink, page)
 	}
@@ -2443,7 +2448,7 @@ const (
 	linkStaleTimeout  = 60 * time.Second
 )
 
-const appVersion = "1.8.17"
+const appVersion = "1.8.18"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
@@ -2642,7 +2647,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 <div class="card"><h3>Save corpus for a profile</h3><p class="muted">Select a profile and export every curated document whose URL and text match it to a TXT file.</p><select id="c-profile"></select><button class="act" onclick="saveCorpus()">Save corpus</button> <a id="c-download" hidden>Download TXT</a><pre id="c-out"></pre></div></section>
 <section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><select id="pr-profile"></select><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
 <section id="about" hidden><div class="about-row"><div class="card about-info"><h3 id="a-name">goCrawler Workbench</h3><p class="muted" id="a-desc"></p><p>Version <b id="a-version"></b> — <span id="a-date"></span></p><p id="a-copyright"></p><p>License: <b id="a-license"></b> · Go: <span id="a-go"></span> · Platform: <span id="a-platform"></span></p><p>Contact: <a id="a-author" href="#"></a> · <a id="a-linkedin" href="#" target="_blank" rel="noopener">LinkedIn</a></p><p><a id="a-repo" href="#" target="_blank" rel="noopener">Repository</a> · <a id="a-issues" href="#" target="_blank" rel="noopener">Issues</a> · <a id="a-changelog" href="#" target="_blank" rel="noopener">Changelog</a> · <a id="a-roadmap" href="#" target="_blank" rel="noopener">Roadmap</a></p><p>Components: <span id="a-components" class="muted"></span></p></div><div class="card about-qr"><h3>Scan to open the repository</h3><img id="a-qr" alt="QR code of the repository" style="max-width:180px"></div></div></section>
-<section id="urls" hidden><div class="card"><h3>URL Seeds</h3><p class="muted">Seeds in profile: <b id="u-count">0</b> URLs. Paste one URL per line; duplicates are ignored. Add, replace or remove seeds; changes are written to the profile YAML.</p><select id="u-profile"></select><textarea id="u-text" rows="12" placeholder="https://example.org/page"></textarea><div><button class="act" onclick="addURLs()">Add URLs</button> <button class="act" onclick="replaceURLs()">Replace all</button> <button class="act" onclick="removeURLs()">Remove selected</button></div><div id="u-list"></div></div></section>
+<section id="urls" hidden><div class="card"><h3>URL Seeds</h3><p class="muted">Seeds in profile: <b id="u-count">0</b> URLs. Paste one URL per line or URLs mixed with text, tabs and line breaks; duplicates are ignored. Changes are written to the profile YAML.</p><select id="u-profile"></select><textarea id="u-text" rows="12" placeholder="https://example.org/page"></textarea><div><button class="act" onclick="addURLs()">Add URLs</button> <button class="act" onclick="replaceURLs()">Replace all</button> <button class="act" onclick="removeURLs()">Remove selected</button></div><div id="u-list"></div></div></section>
 <section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><div id="k-out"></div><button class="act" onclick="applyKeywords()">Apply to profile</button> <button class="act" onclick="applyAndRun()">Apply &amp; Re-run</button></div></section>
 </main><script>
 const $=id=>document.getElementById(id);
@@ -2670,7 +2675,7 @@ async function search(){const d=await json('/api/search?q='+encodeURIComponent($
 async function saveCorpus(){const n=$('c-profile').value;if(!n){$('c-out').textContent='Select a profile first';return}try{const r=await fetch('/api/corpus/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n})});const d=await r.json();if(!r.ok)throw new Error(d.error||JSON.stringify(d));$('c-out').textContent=d.documents+' documents, '+d.characters+' characters\n'+d.file;$('c-download').href=d.download;$('c-download').textContent='Download '+d.file;$('c-download').hidden=false}catch(e){$('c-out').textContent='Error: '+e.message}}
 let extracted=[];let removed=[];async function extract(){removed=[];const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+' <button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td></tr>').join('')+'</table>'}function removeKeyword(w){removed.push(w);extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
 async function applyKeywords(){const n=$('k-profile').value;const kws=extracted;const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws,removed:removed})});const res=await r.json();$('status').textContent=res.status+' ('+res.keywords+' keywords)';document.querySelector('[data-tab=prof]').click();profiles()}
-function parseURLs(){return $('u-text').value.split(/\r?\n/).map(x=>x.trim().replace(/^["']|["']$/g,'')).map(x=>{const m=x.match(/\((https?:\/\/[^)]+)\)/);return m?m[1]:x}).map(x=>x.replace(/[.,;)]+$/,'')).filter(x=>/^https?:\/\//i.test(x))}
+function parseURLs(){const text=$('u-text').value;const found=text.match(/https?:\/\/[^\s<>"']+/gi)||[];const seen=new Set(),out=[];for(let raw of found){const u=raw.replace(/^[<(\["']+/,'').replace(/[>"')\]},.;:!?]+$/,'');if(/^https?:\/\//i.test(u)&&!seen.has(u)){seen.add(u);out.push(u)}}return out}
 async function loadURLs(){const n=$('u-profile').value||$('p-list').value;if(!n)return;const d=await json('/api/urls?profile='+encodeURIComponent(n));$('u-text').value=d.urls.join('\n');$('u-count').textContent=d.urls.length;$('u-list').innerHTML=d.urls.map((u,i)=>'<label><input type=checkbox value="'+i+'"> '+u+'</label>').join('<br>')}
 async function saveURLs(mode,remove){const n=$('u-profile').value||$('p-list').value;const urls=parseURLs();const body={profile:n,urls:urls,mode:mode,remove:remove||[]};const r=await fetch('/api/urls',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const res=await r.json();$('status').textContent=(res.status||res.error)+' ('+res.urls+' URLs)';loadURLs();loadProfile()}
 async function addURLs(){await saveURLs('append',[])}
@@ -3537,8 +3542,8 @@ func replaceSeedBlock(text string, urls []string) string {
 
 var guiLockDirOverride string
 
-// guiLockPath returns a per-user lock file so only one Workbench runs at a time.
-func guiLockPath() (string, error) {
+// guiStateDir returns the per-user directory holding Workbench lock/registry files.
+func guiStateDir() (string, error) {
 	base := guiLockDirOverride
 	var err error
 	if base == "" {
@@ -3551,7 +3556,173 @@ func guiLockPath() (string, error) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err
 	}
+	return dir, nil
+}
+
+// guiLockPath returns the single-instance lock file.
+func guiLockPath() (string, error) {
+	dir, err := guiStateDir()
+	if err != nil {
+		return "", err
+	}
 	return filepath.Join(dir, "gui.lock"), nil
+}
+
+type guiInstance struct {
+	PID  int
+	Port string
+	Path string
+}
+
+// guiRegistryDir holds one file per running Workbench instance.
+func guiRegistryDir() (string, error) {
+	dir, err := guiStateDir()
+	if err != nil {
+		return "", err
+	}
+	instances := filepath.Join(dir, "instances")
+	if err := os.MkdirAll(instances, 0755); err != nil {
+		return "", err
+	}
+	return instances, nil
+}
+
+// listGUIInstances returns other running Workbench instances and prunes stale files.
+func listGUIInstances() ([]guiInstance, error) {
+	dir, err := guiRegistryDir()
+	if err != nil {
+		return nil, err
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	instances := []guiInstance{}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".pid") {
+			continue
+		}
+		path := filepath.Join(dir, entry.Name())
+		content, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		fields := strings.Fields(string(content))
+		pid := 0
+		if len(fields) > 0 {
+			pid, _ = strconv.Atoi(fields[0])
+		}
+		port := "unknown"
+		if len(fields) > 1 {
+			port = fields[1]
+		}
+		if pid == os.Getpid() {
+			continue
+		}
+		if processAlive(pid) {
+			instances = append(instances, guiInstance{PID: pid, Port: port, Path: path})
+		} else {
+			os.Remove(path)
+		}
+	}
+	return instances, nil
+}
+
+// registerGUIInstance advertises this process and returns its unregister function.
+func registerGUIInstance(port int) (func(), error) {
+	dir, err := guiRegistryDir()
+	if err != nil {
+		return nil, err
+	}
+	path := filepath.Join(dir, fmt.Sprintf("%d-%d.pid", os.Getpid(), port))
+	if err := os.WriteFile(path, []byte(fmt.Sprintf("%d %d\n", os.Getpid(), port)), 0644); err != nil {
+		return nil, err
+	}
+	var once sync.Once
+	return func() { once.Do(func() { os.Remove(path) }) }, nil
+}
+
+var stdinIsTerminal = func() bool {
+	info, err := os.Stdin.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
+}
+
+var confirmTerminate = confirmTerminateInstances
+
+// confirmTerminateInstances asks the user whether old instances should be stopped.
+func confirmTerminateInstances(instances []guiInstance) bool {
+	fmt.Println("Another goCrawler Workbench is already running:")
+	for _, inst := range instances {
+		fmt.Printf("  PID %d (port %s)\n", inst.PID, inst.Port)
+	}
+	fmt.Print("Terminate these instances and start a new one? [y/N] ")
+	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(answer)) {
+	case "y", "yes", "s", "si":
+		return true
+	default:
+		return false
+	}
+}
+
+var terminateGUIPID = terminateProcess
+
+// terminateProcess sends SIGTERM (or Kill on Windows) to a PID.
+func terminateProcess(pid int) error {
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return err
+	}
+	if runtime.GOOS == "windows" {
+		return proc.Kill()
+	}
+	return proc.Signal(syscall.SIGTERM)
+}
+
+// prepareGUIInstances offers to close previously registered Workbench instances.
+func prepareGUIInstances() error {
+	instances, err := listGUIInstances()
+	if err != nil {
+		return err
+	}
+	if len(instances) == 0 {
+		return nil
+	}
+
+	details := make([]string, 0, len(instances))
+	for _, inst := range instances {
+		details = append(details, fmt.Sprintf("  PID %d (port %s)", inst.PID, inst.Port))
+	}
+	if !stdinIsTerminal() {
+		return fmt.Errorf("another goCrawler Workbench is already running:\n%s\nstop it before starting a new one", strings.Join(details, "\n"))
+	}
+	if !confirmTerminate(instances) {
+		return fmt.Errorf("cancelled by user")
+	}
+
+	for _, inst := range instances {
+		if !processAlive(inst.PID) {
+			os.Remove(inst.Path)
+			continue
+		}
+		if err := terminateGUIPID(inst.PID); err != nil {
+			return fmt.Errorf("cannot terminate PID %d: %w", inst.PID, err)
+		}
+	}
+	for i := 0; i < 30; i++ {
+		remaining, err := listGUIInstances()
+		if err != nil {
+			return err
+		}
+		if len(remaining) == 0 {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return fmt.Errorf("previous Workbench instances did not stop in time")
 }
 
 // processAlive reports whether a PID still refers to a running process.
@@ -3566,7 +3737,12 @@ func processAlive(pid int) bool {
 	if runtime.GOOS == "windows" {
 		return true
 	}
-	return proc.Signal(syscall.Signal(0)) == nil
+	err = proc.Signal(syscall.Signal(0))
+	if err == nil {
+		return true
+	}
+	// EPERM/EACCES means the process exists but belongs to another user.
+	return errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES)
 }
 
 // acquireGUILock creates the single-instance lock and returns its release function.
@@ -3614,11 +3790,19 @@ func runGUI() error {
 	if app.GUIPort <= 0 || app.GUIPort > 65535 {
 		app.GUIPort = 8765
 	}
+	if err := prepareGUIInstances(); err != nil {
+		return err
+	}
 	release, err := acquireGUILock()
 	if err != nil {
 		return err
 	}
 	defer release()
+	unregister, err := registerGUIInstance(app.GUIPort)
+	if err != nil {
+		return err
+	}
+	defer unregister()
 
 	addr := fmt.Sprintf("127.0.0.1:%d", app.GUIPort)
 	listener, err := net.Listen("tcp", addr)

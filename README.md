@@ -368,10 +368,14 @@ This is roadmap item 14; it is **not implemented**. Use `go test -race` when imp
 | `-version`, `-license` | print version or license and exit |
 | `-gui`, `-gui-port=N` | start the embedded web Workbench on `127.0.0.1:N` (default 8765); only one instance per user is allowed, and a busy port is an error (no silent fallback) |
 
-Only one Workbench can run per user: a lock file in the user cache directory (`~/.cache/goCrawler/gui.lock`
-on Linux) records the running PID and port. Starting a second instance prints an error instead of
-silently binding another port; stale locks left by crashes are recovered. Ctrl+C or SIGTERM shuts the
-server down gracefully and removes the lock.
+Only one Workbench can run per user: a lock file and an instance registry in the user cache directory
+(`~/.cache/goCrawler/` on Linux) record the running PIDs and ports. In an interactive terminal a
+second launch lists the previous instances and asks whether to terminate them (`y`/`yes`/`s`/`si`);
+without a TTY it fails with an explicit message. Stale locks left by crashes are recovered, and
+Ctrl+C or SIGTERM shuts the server down gracefully and removes the lock.
+
+The **URL Seeds** tab extracts URLs from anywhere in the text area — one per line, or mixed with
+prose, tabs and Markdown links — and deduplicates them before saving.
 
 The **Corpus** tab combines FTS5 search with a profile selector: choosing a profile and clicking
 **Save corpus** writes `output/corpus-<profile>.txt` with all accepted documents whose URL and text
