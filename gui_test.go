@@ -1034,3 +1034,38 @@ func TestGUIQueueEndpointAndView(t *testing.T) {
 		}
 	})
 }
+
+func TestGUIKPILayoutAndWorkerSelector(t *testing.T) {
+	withGUIApp(t, func() {
+		if newCrawler().CLIWorkers != 4 {
+			t.Fatal("default worker count should be 4")
+		}
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		_, body := guiRequest(t, server, "GET", "/", "")
+		for _, fragment := range []string{`class="kpi-grid"`, `class="kpi-card"`, `id="w-workers"`, `value="4" selected`} {
+			if !strings.Contains(body, fragment) {
+				t.Fatalf("GUI HTML missing %q", fragment)
+			}
+		}
+		js := strings.Split(strings.Split(body, "<script>")[1], "</script>")[0]
+		if !jsDelimitersBalanced(js) {
+			t.Fatal("GUI JavaScript is not balanced")
+		}
+	})
+}
+
+func TestGUICrawlEndpointAcceptsWorkerCount(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "POST", "/api/crawl",
+			`{"profile":"missing_profile_xyz","workers":3}`)
+		if code != 404 && code != 409 {
+			t.Fatalf("expected profile validation first, got %d %q", code, body)
+		}
+		if app.CLIWorkers != 3 {
+			t.Fatalf("worker count = %d, want 3", app.CLIWorkers)
+		}
+	})
+}

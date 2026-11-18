@@ -966,3 +966,15 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - Componentes separados con ", " en el JS; pestaña About en dos columnas (info izquierda, QR
   derecha) con apilado responsive.
 - El nombre solo en el copyright; contacto = email + https://www.linkedin.com/in/semanticwebarchitect/.
+
+## 49. KPIs en grid y 4 workers por defecto (v1.8.11, 2026-11-18)
+
+- Diagnóstico del cuello de botella: con 1 worker, una petición lenta (hasta 30 s de timeout) bloquea
+  toda la cola aunque haya cientos de URLs pendientes.
+- Solución: `CLIWorkers` por defecto = 4 (también en CLI), selector en el launcher (1/2/4/8) que se
+  envía en el POST `/api/crawl` como `workers`.
+- Protección: las escrituras de `aLink.Status` y las lecturas de `prevState`/`finalStatus` usan
+  `PoolMu`; `go test -race ./...` ✅.
+- KPIs: grid CSS `repeat(auto-fit,minmax(118px,1fr))` con tarjetas etiqueta+valor, evitando el
+  espacio vacío del flex-wrap anterior.
+- Verificado en vivo: 4 workers, visits=22, cola 0 con transiciones requested→retrieved.

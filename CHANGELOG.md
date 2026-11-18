@@ -1,3 +1,10 @@
+## [v1.8.11] - 2026-11-18
+
+### Changed
+- KPI header is now a responsive CSS grid of compact cards (label + value) instead of a wrapping flex row.
+- Crawler launcher defaults to 4 concurrent workers with a selector (1/2/4/8) sent to `/api/crawl`.
+- Link pool status writes are mutex-protected for safe concurrent workers; race tests pass.
+
 ## [v1.8.10] - 2026-11-18
 
 ### Changed

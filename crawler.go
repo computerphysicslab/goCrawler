@@ -188,7 +188,7 @@ func newCrawler() *Crawler {
 		LogDownload:     log.New(io.Discard, "", 0),
 		LogCGI:          log.New(io.Discard, "", 0),
 		LogDomainFailed: log.New(io.Discard, "", 0),
-		CLIWorkers:      1,
+		CLIWorkers:      4,
 		GUIPort:         8765,
 		TargetLanguage:  "English",
 		CachePath:       "./cache/cache.db",
@@ -1850,16 +1850,19 @@ func doNextLink(numLinksProcessed int) bool {
 	fmt.Printf("\n\n* Downloading url: %s", nextLink)
 
 	content, links, err := downloadCached(nextLink)
+	finalStatus := 3
 	if err != nil {
 		recordQueueEvent("failed", nextLink)
-		app.LPool[maxi].Status = 3
 		fmt.Println("\nDownload error: ", strings.Trim(err.Error(), "\n"))
 	} else {
-		app.LPool[maxi].Status = 2
+		finalStatus = 2
 		recordQueueEvent("retrieved", nextLink)
 	}
+	app.PoolMu.Lock()
+	app.LPool[maxi].Status = finalStatus
+	app.PoolMu.Unlock()
 
-	if prevState == 4 && app.LPool[maxi].Status == 2 {
+	if prevState == 4 && finalStatus == 2 {
 		addLinksOf(nextLink, links)
 	}
 
@@ -1920,7 +1923,7 @@ func doNextLink(numLinksProcessed int) bool {
 	dumpFrequencies(numLinksProcessed, false)
 	notifyIndexer(nextLink)
 
-	if prevState == 0 && app.LPool[maxi].Status == 2 {
+	if prevState == 0 && finalStatus == 2 {
 		addLinksOf(nextLink, links)
 	}
 	return true
@@ -2297,15 +2300,18 @@ pre{background:var(--input);padding:var(--space);border-radius:calc(var(--radius
 table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bottom:1px solid var(--border);text-align:left}
 .row{display:flex;flex-wrap:wrap;gap:var(--space)}.row>*{flex:1 1 130px;min-width:110px}
 .muted{color:var(--muted)}.kpi{font-size:20px;font-family:var(--mono);font-weight:600;color:var(--accent)}
-.about-row{display:flex;gap:calc(var(--space)*3);align-items:flex-start}.about-info{flex:1 1 420px;min-width:0}.about-qr{flex:0 0 220px;text-align:center}.bar{height:10px;background:var(--accent);border-radius:5px;margin:3px 0}
+.about-row{display:flex;gap:calc(var(--space)*3);align-items:flex-start}.about-info{flex:1 1 420px;min-width:0}.about-qr{flex:0 0 220px;text-align:center}.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:var(--space)}
+.kpi-card{background:var(--input);border:1px solid var(--border);border-radius:calc(var(--radius)/2);padding:var(--space) calc(var(--space)*1.5);min-width:0}
+.kpi-label{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-value{display:block;font-family:var(--mono);font-size:19px;font-weight:600;color:var(--accent);line-height:1.25}
+.bar{height:10px;background:var(--accent);border-radius:5px;margin:3px 0}
 @media(max-width:760px){.about-row{flex-direction:column}.about-qr{flex:1 1 auto}}header,nav{padding-left:var(--space);padding-right:var(--space)}main{padding:var(--space)}.row>*{flex:1 1 100%}nav button{padding:var(--space)}}
 </style></head><body>
 <header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span><button class="act" onclick="toggleTheme()">Theme</button></header>
 <nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main>
-<section id="dash" hidden><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div><div>Net reqs<div id="s-net">0</div></div><div>Cache I/O<div id="s-io">0</div></div><div>URLs/s<div id="s-rate" class="kpi">0</div></div><div>Avg ms<div id="s-lat" class="kpi">0</div></div><div>Queue<div id="s-queue" class="kpi">0</div></div><div>Go routines<div id="s-goroutines" class="kpi">0</div></div></div></div>
-<div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
+<section id="dash" hidden><div class="card"><div class="kpi-grid"><div class="kpi-card"><span class="kpi-label">Pages visited</span><span class="kpi-value" id="s-visits">0</span></div><div class="kpi-card"><span class="kpi-label">Cache hits</span><span class="kpi-value" id="s-cache">0</span></div><div class="kpi-card"><span class="kpi-label">Online</span><span class="kpi-value" id="s-online">0</span></div><div class="kpi-card"><span class="kpi-label">Download ms</span><span class="kpi-value" id="s-ms">0</span></div><div class="kpi-card"><span class="kpi-label">Accepted</span><span class="kpi-value" id="s-accepted">0</span></div><div class="kpi-card"><span class="kpi-label">Not accepted</span><span class="kpi-value" id="s-rejected">0</span></div><div class="kpi-card"><span class="kpi-label">Crawls running</span><span class="kpi-value" id="s-running">0</span></div><div class="kpi-card"><span class="kpi-label">Net reqs</span><span class="kpi-value" id="s-net">0</span></div><div class="kpi-card"><span class="kpi-label">Cache I/O</span><span class="kpi-value" id="s-io">0</span></div><div class="kpi-card"><span class="kpi-label">URLs/s</span><span class="kpi-value" id="s-rate">0</span></div><div class="kpi-card"><span class="kpi-label">Avg ms</span><span class="kpi-value" id="s-lat">0</span></div><div class="kpi-card"><span class="kpi-label">Queue</span><span class="kpi-value" id="s-queue">0</span></div><div class="kpi-card"><span class="kpi-label">Go routines</span><span class="kpi-value" id="s-goroutines">0</span></div></div></div><div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>URL queue</h3><p class="muted">Pending: <b id="q-total">0</b>. States: requested → retrieved/failed → removed.</p><div id="queue-list"></div></div>
-<div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
+<div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><select id="w-workers"><option value="1">1 worker</option><option value="2">2 workers</option><option value="4" selected>4 workers</option><option value="8">8 workers</option></select><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
 <section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><select id="pr-profile"></select><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
@@ -2336,7 +2342,7 @@ async function applyAndRun(){if(!confirm('Apply extracted keywords and start a n
 async function loadAbout(){const a=await json('/api/about');for(const [id,key] of [['a-name','name'],['a-version','version'],['a-date','release_date'],['a-copyright','copyright'],['a-license','license'],['a-go','go_version'],['a-platform','platform'],['a-desc','description']]){if($(id))$(id).textContent=a[key]}if($('a-components'))$('a-components').textContent=(a.components||[]).join(', ');if($('a-author')){$('a-author').href='mailto:'+a.email;$('a-author').textContent=a.author}if($('a-linkedin'))$('a-linkedin').href=a.linkedin;for(const [id,key] of [['a-repo','repo'],['a-issues','issues'],['a-changelog','changelog'],['a-roadmap','roadmap']]){if($(id)){$(id).href=a[key];$(id).textContent=key}}if($('a-qr'))$('a-qr').src=a.qr}
 async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value;const d=await json('/api/prompt?profile='+encodeURIComponent(n));$('pr-out').value=d.prompt}
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
-async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
+async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value,workers:parseInt($('w-workers').value)})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
 async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping';stats()}
 async function loadQueue(){const q=await json('/api/queue');$('q-total').textContent=q.total;const rows=q.recent.slice(-12).reverse().map(e=>'<div><span class=muted>'+new Date(e.time).toLocaleTimeString()+'</span> <b>'+e.state+'</b> '+e.url+'</div>');const pend=q.pending.slice(0,20).map(p=>'<div><span class=muted>pending</span> '+p.url+'</div>');$('queue-list').innerHTML=rows.join('')+pend.join('')||'<span class=muted>Queue empty</span>'}
 async function showReason(reason){const d=await json('/api/rejections?reason='+encodeURIComponent(reason));if(!d.events||!d.events.length){$('reason-detail').innerHTML='<p class=muted>No cases recorded for '+reason+'</p>';return}$('reason-detail').innerHTML='<h4>Last '+d.events.length+' cases: '+reason+'</h4>'+d.events.slice().reverse().map(e=>'<div class=card><b><a href="'+e.url+'" target="_blank" rel="noopener">'+e.url+'</a></b><div>'+(e.detail||'')+'</div>'+(e.text?'<pre>'+e.text.slice(0,600)+'</pre>':'')+'<span class=muted>'+new Date(e.time).toLocaleString()+'</span></div>').join('')}
@@ -2865,12 +2871,16 @@ func guiHandler() http.Handler {
 		}
 		var body struct {
 			Profile string `json:"profile"`
+			Workers int    `json:"workers"`
 		}
 		json.NewDecoder(r.Body).Decode(&body)
 		name := filepath.Base(body.Profile)
 		if name == "" || name == "." {
 			http.Error(w, "profile required", 400)
 			return
+		}
+		if body.Workers >= 1 && body.Workers <= 32 {
+			app.CLIWorkers = body.Workers
 		}
 		if err := launchGUICrawl(name); err != nil {
 			http.Error(w, err.Error(), 409)
