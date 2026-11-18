@@ -847,3 +847,54 @@ func TestGUIURLCounterAndDeduplication(t *testing.T) {
 		}
 	})
 }
+
+func TestGUISItemsInHTMLAndStats(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		_, body := guiRequest(t, server, "GET", "/", "")
+		for _, fragment := range []string{"toggleTheme", "--accent", "@media(max-width:760px)",
+			`id="s-rate"`, `id="s-lat"`, `id="s-queue"`, `id="s-goroutines"`, `id="reject-chart"`, "applyAndRun"} {
+			if !strings.Contains(body, fragment) {
+				t.Fatalf("GUI HTML missing %q", fragment)
+			}
+		}
+		code, statsBody := guiRequest(t, server, "GET", "/api/stats", "")
+		if code != 200 {
+			t.Fatalf("stats = %d", code)
+		}
+		var stats map[string]interface{}
+		if err := json.Unmarshal([]byte(statsBody), &stats); err != nil {
+			t.Fatal(err)
+		}
+		for _, key := range []string{"rate", "avg_latency", "queue", "goroutines"} {
+			if _, ok := stats[key].(float64); !ok {
+				t.Fatalf("missing numeric metric %q: %v", key, stats)
+			}
+		}
+	})
+}
+
+func TestRuntimeKPIHelpers(t *testing.T) {
+	withGUIApp(t, func() {
+		app.CrawlStartedAt = time.Time{}
+		if crawlRate() != 0 {
+			t.Fatal("rate should be 0 without a start time")
+		}
+		app.CrawlStartedAt = time.Now().Add(-2 * time.Second)
+		app.CacheHits = 20
+		app.OnlineDownloads = 4
+		if r := crawlRate(); r < 10 || r > 14 {
+			t.Fatalf("crawlRate = %v", r)
+		}
+		app.OnlineDownloads = 2
+		app.DownloadMS = 100
+		if got := averageLatency(); got != 50 {
+			t.Fatalf("averageLatency = %v", got)
+		}
+		app.LPool = []aLink{{URL: "https://a.org"}, {URL: "https://b.org"}}
+		if got := queueDepth(); got != 2 {
+			t.Fatalf("queueDepth = %d", got)
+		}
+	})
+}

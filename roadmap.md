@@ -16,12 +16,6 @@ zero-dependency single-binary design).
 
 | ID | Effort | Item |
 |---|---|---|
-| P22 | S | Dark/light mode, monospace URLs/metrics and higher information density |
-| P31 | S | Design tokens (CSS variables), 4/8 px spacing, consistent radius/elevation, subtle CSS animations |
-| P33 | S | Responsive layout for narrow screens (CSS media queries) |
-| P41 | S | "Apply & Re-run" with confirmation in Keyword Lab |
-| P23 | S/M | Live KPI cards: URLs/s, average latency, pending queue depth, active goroutines |
-| P35 | S/M | Rejection bar/donut chart using CSS/SVG (no chart library) |
 | P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
 | P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
@@ -44,7 +38,7 @@ zero-dependency single-binary design).
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
 
-Items P01–P21 of the senior audit and GUI MVP are **complete**.
+Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6).
 
 ---
 

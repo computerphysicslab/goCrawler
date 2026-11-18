@@ -919,3 +919,14 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - `loadURLs()` actualiza el contador con `d.urls.length` y `saveURLs()` muestra el total devuelto.
 - Backend ya descarta duplicados y URLs inválidas; verificado con el perfil skystacker-research (53
   semillas, añadir 3 duplicados → sigue 53).
+
+## 44. Roadmap S completado (v1.8.6, 2026-11-18)
+
+- P22/P31/P33: design tokens con variables CSS, tema claro/oscuro persistente en localStorage,
+  tipografía monoespaciada para URLs/métricas, spacing 4/8, radius consistente, micro-transiciones y
+  media query para pantallas estrechas.
+- P23: `/api/stats` añade `rate`, `avg_latency`, `queue`, `goroutines`; helpers `crawlRate`,
+  `averageLatency`, `queueDepth` con `CrawlStartedAt`.
+- P35: gráfico de barras de rechazos en CSS/SVG sin librerías (`#reject-chart`).
+- P41: botón "Apply & Re-run" con `confirm()` que aplica keywords y lanza un crawl.
+- Tests del HTML y de las métricas; `node --check` del JS embebido ✅.
