@@ -781,3 +781,9 @@ Solución aplicada en este equipo: symlink usuario `~/.local/bin/go -> ~/sdk/go1
 - Bug detectado y corregido durante los tests: el POST de `/api/profile` exigía el nombre en la query
   y `/api/keywords/apply` duplicaba el separador `|`.
 - Cobertura: main 68 %, iolib 74 %, robotspolicy 82 %, storelib 67 %. `go test -race ./...` ✅.
+
+## 30. GUI: puerto ocupado (2026-11-18)
+
+Si queda un proceso GUI anterior escuchando en 8765, el nuevo fallaba con `bind: address already in use`.
+Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puertos consecutivos desde
+8765, imprimiendo la URL real. Verificado: dos instancias simultáneas → 8765 y 8766.

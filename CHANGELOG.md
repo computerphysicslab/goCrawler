@@ -3,7 +3,12 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.1] - 2026-11-18
+## [v1.7.2] - 2026-11-18
+
+### Fixed
+- The Workbench now tries the next 20 ports when the default 8765 is already in use, and prints the actual URL.
+
+ - 2026-11-18
 
 ### Added
 - 65 tests including HTTP tests for every GUI endpoint and an end-to-end crawl with a local server.

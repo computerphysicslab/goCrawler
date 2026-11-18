@@ -2420,12 +2420,22 @@ func runGUI() error {
 	if app.GUIPort <= 0 || app.GUIPort > 65535 {
 		app.GUIPort = 8765
 	}
-	addr := fmt.Sprintf("127.0.0.1:%d", app.GUIPort)
-	fmt.Printf("goCrawler Workbench: http://%s\n", addr)
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
+	base := app.GUIPort
+	var listener net.Listener
+	var addr string
+	var err error
+	for port := base; port < base+20; port++ {
+		addr = fmt.Sprintf("127.0.0.1:%d", port)
+		listener, err = net.Listen("tcp", addr)
+		if err == nil {
+			app.GUIPort = port
+			break
+		}
 	}
+	if listener == nil {
+		return fmt.Errorf("no free port between %d and %d: %w", base, base+19, err)
+	}
+	fmt.Printf("goCrawler Workbench: http://%s\n", addr)
 	return http.Serve(listener, guiHandler())
 }
 
