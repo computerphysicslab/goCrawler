@@ -805,3 +805,12 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - Keyword lab: stopwords inglesas ampliadas (~180 términos, incluye cannot/not/these/with); ranking
   por significación `count * log(1+docs) / log(2+freq_BNC)`; tabla con Word/Count/Docs/Score y botón
   para eliminar keywords antes de aplicarlas al perfil.
+
+## 33. Workbench v1.7.5 (2026-11-18)
+
+- Botón de eliminar keyword dentro de la celda de la palabra (un espacio entre palabra y botón).
+- "Apply to profile" vuelve automáticamente a la pestaña Profiles y recarga el perfil.
+- Agrupación morfológica con `snowballeng.Stem`: `image/images/imaging` → una sola keyword con
+  lista de variantes (`details[].variants`).
+- Quinta pestaña "Prompt generator" + `/api/prompt?profile=NAME`: prompt en inglés con instrucción
+  exhaustiva, keywords, URLs semilla y extractos del texto curado del log.

@@ -66,8 +66,9 @@ func TestGUIRootAndAssets(t *testing.T) {
 		dash := strings.Index(body, `data-tab="dash"`)
 		keys := strings.Index(body, `data-tab="keys"`)
 		corpus := strings.Index(body, `data-tab="corpus"`)
-		if prof < 0 || dash < prof || keys < dash || corpus < keys {
-			t.Fatalf("tab order wrong: prof=%d dash=%d keys=%d corpus=%d", prof, dash, keys, corpus)
+		promptTab := strings.Index(body, `data-tab="prompt"`)
+		if prof < 0 || dash < prof || keys < dash || corpus < keys || promptTab < corpus {
+			t.Fatalf("tab order wrong: prof=%d dash=%d keys=%d corpus=%d prompt=%d", prof, dash, keys, corpus, promptTab)
 		}
 		if !strings.Contains(body, `<section id="prof"><div class="card">`) || !strings.Contains(body, `<section id="dash" hidden>`) {
 			t.Fatal("Profiles should be the visible default tab")
@@ -305,6 +306,80 @@ func TestGUILastProfileFromLog(t *testing.T) {
 		code, body := guiRequest(t, server, "GET", "/api/last-profile", "")
 		if code != 200 || !strings.Contains(body, "LastProfileTest") {
 			t.Fatalf("last-profile = %d %q", code, body)
+		}
+	})
+}
+
+func TestGUIPromptEndpoint(t *testing.T) {
+	withGUIApp(t, func() {
+		if err := os.MkdirAll("profiles", 0755); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join("profiles", "gui_prompt_test.yaml")
+		content := "linkOk: |\n  stack|image\nregexRankingKeywords: |\n  (?i)\\W(stack|image)\\W\nbootstrapingLinks:\n- https://example.org/stacking\n"
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(path)
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/api/prompt?profile=gui_prompt_test", "")
+		if code != 200 {
+			t.Fatalf("prompt = %d %q", code, body)
+		}
+		var payload struct{ Prompt string }
+		if err := json.Unmarshal([]byte(body), &payload); err != nil {
+			t.Fatal(err)
+		}
+		for _, fragment := range []string{"deep and exhaustive investigation", "gui_prompt_test", "https://example.org/stacking", "CURATED CONTENT"} {
+			if !strings.Contains(payload.Prompt, fragment) {
+				t.Fatalf("prompt missing %q: %q", fragment, payload.Prompt)
+			}
+		}
+	})
+}
+
+func TestGUIKeywordsMorphologicalGrouping(t *testing.T) {
+	withGUIApp(t, func() {
+		oldCwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+		}
+		dir := t.TempDir()
+		if err := os.MkdirAll(filepath.Join(dir, "logs"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		text := "Astronomical images and image processing require stacked stars and star detection. " +
+			" stacking integration calibration dark frames flat frames nebulae galaxies pixels"
+		corpus := "https://example.org/a\n" + text + "\n----\n\nhttps://example.org/b\n" + text + "\n----\n"
+		if err := os.WriteFile(filepath.Join(dir, "logs", "corpusCuratedText.log"), []byte(corpus), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chdir(dir); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Chdir(oldCwd)
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/api/keywords?profile=anything", "")
+		if code != 200 {
+			t.Fatalf("keywords = %d %q", code, body)
+		}
+		var payload struct{ Keywords []string }
+		if err := json.Unmarshal([]byte(body), &payload); err != nil {
+			t.Fatal(err)
+		}
+		seen := make(map[string]bool)
+		for _, word := range payload.Keywords {
+			seen[word] = true
+		}
+		if seen["stars"] && seen["star"] {
+			t.Fatal("star and stars should be grouped into one keyword")
+		}
+		if !seen["star"] && !seen["stars"] {
+			t.Fatal("neither star nor stars was extracted")
 		}
 	})
 }

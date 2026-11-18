@@ -3,7 +3,17 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.4] - 2026-11-18
+## [v1.7.5] - 2026-11-18
+
+### Changed
+- Keyword lab: remove button placed next to the word; applying switches back to the Profiles tab.
+- Morphological grouping (Snowball stems): star/stars and image/images are one keyword with variants.
+
+### Added
+- Fifth tab "Prompt generator": builds an English research prompt from profile keywords, seed URLs
+  and curated text excerpts (`/api/prompt`).
+
+ - 2026-11-18
 
 ### Changed
 - Workbench tabs reordered: Profiles (default), Crawler launcher, Keyword lab, Corpus search.
