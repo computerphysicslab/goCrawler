@@ -343,12 +343,15 @@ lo registro aquí y ajusto las secciones anteriores si hace falta.)_
 ### Políticas habituales de trabajo (reglas permanentes)
 
 - **Refrescar SIEMPRE la lista de tareas en la columna derecha de OpenCode** (regla reiterada por el
-  usuario el 2026-11-18): usar la herramienta de tareas (`todowrite`) **al iniciar cualquier trabajo**,
-  antes del primer tool call de fondo; mantener **exactamente una** tarea en `in_progress`; actualizar
-  los estados **en tiempo real, paso a paso**, nunca agrupar completados al final; añadir tareas
-  nuevas en cuanto aparecen instrucciones; dejar todo completado (o con el bloqueo explicado) antes
-  de responder. El usuario quiere ver **la evolución del trabajo en la columna derecha** en cada
-  momento, no solo el resultado final. No responder sin haber refrescado la lista.
+  usuario el 2026-11-18, 2026-11-19): usar la herramienta de tareas (`todowrite`) **en CADA turno**,
+  incluso en respuestas cortas, y antes del primer tool call de fondo; mantener **exactamente una**
+  tarea en `in_progress`; actualizar los estados **en tiempo real, paso a paso**, nunca agrupar
+  completados al final; añadir tareas nuevas en cuanto aparecen instrucciones; dejar todo completado
+  (o con el bloqueo explicado) antes de responder. El usuario quiere ver **la evolución del trabajo
+  en la columna derecha** en cada momento, no solo el resultado final. No responder sin haber
+  refrescado la lista. Revisado el 2026-11-19: `~/.config/opencode/opencode.jsonc` no bloquea
+  `todowrite` y no hay agentes con permisos que lo nieguen; el estado se escribe correctamente, así
+  que si el panel no se ve es un asunto de renderizado del TUI (puede requerir reiniciar OpenCode).
 - Todo el **código y la documentación del repo en inglés** (este `context-ai.md` es el diario
   histórico en español; se mantiene en ambas copias).
 - Mantener el entorno limpio tras las pruebas (Redis parado, perfiles copiados a la raíz borrados).
