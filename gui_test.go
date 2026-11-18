@@ -942,21 +942,26 @@ func TestGUIAboutEndpointAndTab(t *testing.T) {
 			t.Fatal(err)
 		}
 		if about["license"] != "MIT" || about["version"] == "" ||
-			about["repo"] != "https://github.com/computerphysicslab/goCrawler" {
+			about["repo"] != "https://github.com/computerphysicslab/goCrawler" ||
+			about["linkedin"] != "https://www.linkedin.com/in/semanticwebarchitect/" {
 			t.Fatalf("unexpected about payload: %v", about)
 		}
 		qr, ok := about["qr"].(string)
 		if !ok || !strings.HasPrefix(qr, "data:image/png;base64,") {
 			t.Fatalf("missing QR data URL: %v", about["qr"])
 		}
-		for _, field := range []string{"copyright", "author", "email", "go_version", "platform", "components", "changelog", "roadmap", "issues"} {
+		if strings.Contains(about["author"].(string), "Pérez") {
+			t.Fatal("author must contain only contact details, not the name already in copyright")
+		}
+		for _, field := range []string{"copyright", "author", "email", "linkedin", "go_version", "platform", "components", "changelog", "roadmap", "issues"} {
 			if _, ok := about[field]; !ok {
 				t.Fatalf("about is missing %q", field)
 			}
 		}
 
 		_, html := guiRequest(t, server, "GET", "/", "")
-		for _, fragment := range []string{`data-tab="about"`, `id="a-qr"`, `id="a-version"`, "loadAbout"} {
+		for _, fragment := range []string{`data-tab="about"`, `id="a-qr"`, `id="a-version"`, "loadAbout",
+			`about-row`, `about-info`, `about-qr`, `id="a-linkedin"`, `.join(', ')`} {
 			if !strings.Contains(html, fragment) {
 				t.Fatalf("GUI HTML missing %q", fragment)
 			}
@@ -964,6 +969,68 @@ func TestGUIAboutEndpointAndTab(t *testing.T) {
 		js := strings.Split(strings.Split(html, "<script>")[1], "</script>")[0]
 		if !jsDelimitersBalanced(js) {
 			t.Fatal("GUI JavaScript is not balanced after adding About tab")
+		}
+	})
+}
+
+func TestRequestTimeoutIsCappedAt30Seconds(t *testing.T) {
+	withApp(t, func() {
+		if err := yamlInitGeneral(); err != nil {
+			t.Fatal(err)
+		}
+		if app.DownloadTimeout > 30*time.Second || app.DownloadTimeout <= 0 {
+			t.Fatalf("download timeout = %v, want <= 30s", app.DownloadTimeout)
+		}
+	})
+}
+
+func TestGUIQueueEndpointAndView(t *testing.T) {
+	withGUIApp(t, func() {
+		app.LPool = []aLink{
+			{URL: "https://example.org/pending", Status: 0},
+			{URL: "https://example.org/active", Status: 1},
+			{URL: "https://example.org/seed", Status: 4},
+		}
+		recordQueueEvent("requested", "https://example.org/active")
+		recordQueueEvent("retrieved", "https://example.org/done")
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/api/queue", "")
+		if code != 200 {
+			t.Fatalf("queue = %d %q", code, body)
+		}
+		var payload struct {
+			Total   int `json:"total"`
+			Pending []struct {
+				URL   string `json:"url"`
+				State string `json:"state"`
+			} `json:"pending"`
+			Recent []queueEvent `json:"recent"`
+		}
+		if err := json.Unmarshal([]byte(body), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Total != 3 || len(payload.Pending) != 3 || len(payload.Recent) != 2 {
+			t.Fatalf("unexpected queue payload: %s", body)
+		}
+		states := map[string]string{}
+		for _, p := range payload.Pending {
+			states[p.URL] = p.State
+		}
+		if states["https://example.org/active"] != "requested" || states["https://example.org/seed"] != "bootstrap" {
+			t.Fatalf("unexpected states: %v", states)
+		}
+
+		_, html := guiRequest(t, server, "GET", "/", "")
+		for _, fragment := range []string{`id="q-total"`, `id="queue-list"`, "loadQueue"} {
+			if !strings.Contains(html, fragment) {
+				t.Fatalf("GUI HTML missing %q", fragment)
+			}
+		}
+		js := strings.Split(strings.Split(html, "<script>")[1], "</script>")[0]
+		if !jsDelimitersBalanced(js) {
+			t.Fatal("GUI JavaScript is not balanced after adding queue view")
 		}
 	})
 }

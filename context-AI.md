@@ -960,3 +960,9 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   recientes y el launcher los muestra con estados. Podado de enlaces terminados tras cada URL.
 - Verificado: Ctrl+C termina limpiamente ("Interrupt received, saving state..." + "Done"), y la cola
   pasa de 15 pendientes a 0 mostrando transiciones requested→retrieved.
+
+## 48. Ajustes finales del About (v1.8.10, 2026-11-18)
+
+- Componentes separados con ", " en el JS; pestaña About en dos columnas (info izquierda, QR
+  derecha) con apilado responsive.
+- El nombre solo en el copyright; contacto = email + https://www.linkedin.com/in/semanticwebarchitect/.

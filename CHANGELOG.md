@@ -1,3 +1,9 @@
+## [v1.8.10] - 2026-11-18
+
+### Changed
+- About tab: components joined with ", ", text on the left and repository QR on the right, and the
+  author name no longer duplicated (copyright keeps the name; contact shows email and LinkedIn).
+
 ## [v1.8.9] - 2026-11-18
 
 ### Fixed
