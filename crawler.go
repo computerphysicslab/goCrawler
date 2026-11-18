@@ -2940,7 +2940,8 @@ func guiHandler() http.Handler {
 			"components": []string{"Go standard library (net/http, database/sql, log/slog)",
 				"modernc.org/sqlite", "github.com/temoto/robotstxt", "github.com/abadojack/whatlanggo",
 				"jaytaylor.com/html2text", "github.com/jackdanger/collectlinks", "github.com/spf13/viper",
-				"github.com/skip2/go-qrcode"},
+				"github.com/skip2/go-qrcode", "github.com/kljensen/snowball", "github.com/ledongthuc/pdf",
+				"github.com/gomodule/redigo", "github.com/computerphysicslab/goPackages"},
 			"qr": qr,
 		})
 	})
