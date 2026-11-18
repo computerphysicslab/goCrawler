@@ -164,6 +164,7 @@ func newCrawler() *Crawler {
 		LogCGI:          log.New(io.Discard, "", 0),
 		LogDomainFailed: log.New(io.Discard, "", 0),
 		CLIWorkers:      1,
+		GUIPort:         8765,
 		TargetLanguage:  "English",
 		CachePath:       "./cache/cache.db",
 		LogLevel:        "info",
