@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.18 (2026-11-18). Section 1 lists the remaining GUI backlog (P24–P47) plus the accepted P52–P67 items.
+**Current version:** v1.8.19 (2026-11-18). Section 1 lists the remaining GUI backlog (P24–P47) plus the accepted P52–P67 items.
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -74,6 +74,7 @@ Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P2
 | v1.8.16 | 2026-11-18 | Workbench Corpus tab: profile-matched TXT corpus export with download link |
 | v1.8.17 | 2026-11-18 | Single-instance Workbench lock with stale recovery, graceful SIGINT/SIGTERM shutdown and no silent port fallback |
 | v1.8.18 | 2026-11-18 | Interactive termination of previous Workbench instances, inline URL capture in URL Seeds and clear `pdf_disabled` rejection |
+| v1.8.19 | 2026-11-18 | Default-yes instance prompt and scoped corpus export (all / last crawl / today) with session markers |
 
 ### Historically completed items (1–35)
 

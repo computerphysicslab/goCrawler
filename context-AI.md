@@ -1097,3 +1097,12 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   Markdown) y deduplica con `Set`.
 - `downloadCached()` registra `pdf_disabled` cuando se detecta un PDF sin `process_pdf: true`.
   Activado `process_pdf` en el perfil local `profiles/skystacker-research.yaml` (gitignoreado).
+
+
+## 37. Confirmación por defecto y volcados por ámbito (v1.8.19, 2026-11-18)
+
+- `confirmAnswer()` devuelve true para respuesta vacía; el prompt muestra `[Y/n]`.
+- `markCorpusSession()` escribe `@@SESSION <UTC>` al iniciar cada crawl; `corpusDocuments()` lo omite
+  y guarda la sesión en cada documento. `filterCorpusScope()` implementa `all`, `last` y `today`.
+- POST `/api/corpus/save` acepta `scope`; la GUI añade el selector `c-scope` y el nombre de fichero
+  incluye el ámbito. Los documentos antiguos sin marca solo aparecen en `all`.

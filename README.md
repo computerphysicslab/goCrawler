@@ -370,16 +370,18 @@ This is roadmap item 14; it is **not implemented**. Use `go test -race` when imp
 
 Only one Workbench can run per user: a lock file and an instance registry in the user cache directory
 (`~/.cache/goCrawler/` on Linux) record the running PIDs and ports. In an interactive terminal a
-second launch lists the previous instances and asks whether to terminate them (`y`/`yes`/`s`/`si`);
-without a TTY it fails with an explicit message. Stale locks left by crashes are recovered, and
+second launch lists the previous instances and asks whether to terminate them `[Y/n]` (empty or
+`y` confirms; only `n`/`no` declines); without a TTY it fails with an explicit message. Stale locks left by crashes are recovered, and
 Ctrl+C or SIGTERM shuts the server down gracefully and removes the lock.
 
 The **URL Seeds** tab extracts URLs from anywhere in the text area — one per line, or mixed with
 prose, tabs and Markdown links — and deduplicates them before saving.
 
-The **Corpus** tab combines FTS5 search with a profile selector: choosing a profile and clicking
-**Save corpus** writes `output/corpus-<profile>.txt` with all accepted documents whose URL and text
-match that profile, then offers a download link. The Workbench ends with an **About** tab showing
+The **Corpus** tab combines FTS5 search with a profile selector: choosing a profile, a scope
+(**all accumulated**, **last crawl only** or **today only**) and clicking **Save corpus** writes
+`output/corpus-<profile>-<scope>.txt` with the matching accepted documents, then offers a download
+link. Crawls mark session boundaries in `logs/corpusCuratedText.log` so the scoped exports work; older
+documents without a marker appear only in the "all" scope. The Workbench ends with an **About** tab showing
 version, copyright, MIT license, author, links, platform, bundled components and a QR code pointing
 to the repository.
 

@@ -79,6 +79,7 @@ type corpusExportInfo struct {
 	Documents  int    `json:"documents"`
 	Characters int    `json:"characters"`
 	Profile    string `json:"profile"`
+	Scope      string `json:"scope"`
 }
 
 type Crawler struct {
@@ -2448,7 +2449,7 @@ const (
 	linkStaleTimeout  = 60 * time.Second
 )
 
-const appVersion = "1.8.18"
+const appVersion = "1.8.19"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
@@ -2644,7 +2645,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><select id="w-workers"><option value="1">1 worker</option><option value="2">2 workers</option><option value="4" selected>4 workers</option><option value="8">8 workers</option></select><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><h3>Search the curated corpus</h3><p class="muted">Full-text search over the accepted documents (SQLite FTS5).</p><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div>
-<div class="card"><h3>Save corpus for a profile</h3><p class="muted">Select a profile and export every curated document whose URL and text match it to a TXT file.</p><select id="c-profile"></select><button class="act" onclick="saveCorpus()">Save corpus</button> <a id="c-download" hidden>Download TXT</a><pre id="c-out"></pre></div></section>
+<div class="card"><h3>Save corpus for a profile</h3><p class="muted">Select a profile and a scope, then export the curated documents whose URL and text match it to a TXT file.</p><select id="c-profile"></select><select id="c-scope"><option value="all">All accumulated</option><option value="last">Last crawl only</option><option value="today">Today only</option></select><button class="act" onclick="saveCorpus()">Save corpus</button> <a id="c-download" hidden>Download TXT</a><pre id="c-out"></pre></div></section>
 <section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><select id="pr-profile"></select><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
 <section id="about" hidden><div class="about-row"><div class="card about-info"><h3 id="a-name">goCrawler Workbench</h3><p class="muted" id="a-desc"></p><p>Version <b id="a-version"></b> — <span id="a-date"></span></p><p id="a-copyright"></p><p>License: <b id="a-license"></b> · Go: <span id="a-go"></span> · Platform: <span id="a-platform"></span></p><p>Contact: <a id="a-author" href="#"></a> · <a id="a-linkedin" href="#" target="_blank" rel="noopener">LinkedIn</a></p><p><a id="a-repo" href="#" target="_blank" rel="noopener">Repository</a> · <a id="a-issues" href="#" target="_blank" rel="noopener">Issues</a> · <a id="a-changelog" href="#" target="_blank" rel="noopener">Changelog</a> · <a id="a-roadmap" href="#" target="_blank" rel="noopener">Roadmap</a></p><p>Components: <span id="a-components" class="muted"></span></p></div><div class="card about-qr"><h3>Scan to open the repository</h3><img id="a-qr" alt="QR code of the repository" style="max-width:180px"></div></div></section>
 <section id="urls" hidden><div class="card"><h3>URL Seeds</h3><p class="muted">Seeds in profile: <b id="u-count">0</b> URLs. Paste one URL per line or URLs mixed with text, tabs and line breaks; duplicates are ignored. Changes are written to the profile YAML.</p><select id="u-profile"></select><textarea id="u-text" rows="12" placeholder="https://example.org/page"></textarea><div><button class="act" onclick="addURLs()">Add URLs</button> <button class="act" onclick="replaceURLs()">Replace all</button> <button class="act" onclick="removeURLs()">Remove selected</button></div><div id="u-list"></div></div></section>
@@ -2672,7 +2673,7 @@ async function profiles(){const p=await json('/api/profiles');const last=await j
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n;if($('u-profile')){$('u-profile').value=n;loadURLs()}}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
 async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
-async function saveCorpus(){const n=$('c-profile').value;if(!n){$('c-out').textContent='Select a profile first';return}try{const r=await fetch('/api/corpus/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n})});const d=await r.json();if(!r.ok)throw new Error(d.error||JSON.stringify(d));$('c-out').textContent=d.documents+' documents, '+d.characters+' characters\n'+d.file;$('c-download').href=d.download;$('c-download').textContent='Download '+d.file;$('c-download').hidden=false}catch(e){$('c-out').textContent='Error: '+e.message}}
+async function saveCorpus(){const n=$('c-profile').value;if(!n){$('c-out').textContent='Select a profile first';return}const scope=$('c-scope').value;try{const r=await fetch('/api/corpus/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,scope:scope})});const d=await r.json();if(!r.ok)throw new Error(d.error||JSON.stringify(d));$('c-out').textContent=scope+' · '+d.documents+' documents, '+d.characters+' characters\n'+d.file;$('c-download').href=d.download;$('c-download').textContent='Download '+d.file;$('c-download').hidden=false}catch(e){$('c-out').textContent='Error: '+e.message}}
 let extracted=[];let removed=[];async function extract(){removed=[];const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+' <button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td></tr>').join('')+'</table>'}function removeKeyword(w){removed.push(w);extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
 async function applyKeywords(){const n=$('k-profile').value;const kws=extracted;const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws,removed:removed})});const res=await r.json();$('status').textContent=res.status+' ('+res.keywords+' keywords)';document.querySelector('[data-tab=prof]').click();profiles()}
 function parseURLs(){const text=$('u-text').value;const found=text.match(/https?:\/\/[^\s<>"']+/gi)||[];const seen=new Set(),out=[];for(let raw of found){const u=raw.replace(/^[<(\["']+/,'').replace(/[>"')\]},.;:!?]+$/,'');if(/^https?:\/\//i.test(u)&&!seen.has(u)){seen.add(u);out.push(u)}}return out}
@@ -3082,12 +3083,13 @@ func guiHandler() http.Handler {
 		}
 		var body struct {
 			Profile string `json:"profile"`
+			Scope   string `json:"scope"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		info, err := saveProfileCorpus(body.Profile)
+		info, err := saveProfileCorpus(body.Profile, body.Scope)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -3100,13 +3102,18 @@ func guiHandler() http.Handler {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		path := filepath.Join("output", "corpus-"+safeProfileFilename(resolved)+".txt")
+		scope := r.URL.Query().Get("scope")
+		if scope == "" {
+			scope = "all"
+		}
+		safe := safeProfileFilename(resolved) + "-" + scope
+		path := filepath.Join("output", "corpus-"+safe+".txt")
 		content, err := os.ReadFile(path)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		name := "corpus-" + safeProfileFilename(resolved) + ".txt"
+		name := "corpus-" + safe + ".txt"
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, name))
 		w.Header().Set("Content-Length", strconv.Itoa(len(content)))
@@ -3655,13 +3662,18 @@ func confirmTerminateInstances(instances []guiInstance) bool {
 	for _, inst := range instances {
 		fmt.Printf("  PID %d (port %s)\n", inst.PID, inst.Port)
 	}
-	fmt.Print("Terminate these instances and start a new one? [y/N] ")
+	fmt.Print("Terminate these instances and start a new one? [Y/n] ")
 	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	if err != nil {
+	if err != nil && answer == "" {
 		return false
 	}
+	return confirmAnswer(answer)
+}
+
+// confirmAnswer treats an empty answer as yes; only n/no decline.
+func confirmAnswer(answer string) bool {
 	switch strings.ToLower(strings.TrimSpace(answer)) {
-	case "y", "yes", "s", "si":
+	case "", "y", "yes", "s", "si":
 		return true
 	default:
 		return false
@@ -3880,7 +3892,7 @@ func profileCorpusMatchers(profile string) (string, *regexp.Regexp, *regexp.Rege
 }
 
 // saveProfileCorpus exports curated documents matching a profile to a TXT file.
-func saveProfileCorpus(profile string) (corpusExportInfo, error) {
+func saveProfileCorpus(profile, requestedScope string) (corpusExportInfo, error) {
 	resolved, linkRe, keywordRe, err := profileCorpusMatchers(profile)
 	if err != nil {
 		return corpusExportInfo{}, err
@@ -3888,15 +3900,19 @@ func saveProfileCorpus(profile string) (corpusExportInfo, error) {
 	if err := os.MkdirAll("output", 0755); err != nil {
 		return corpusExportInfo{}, err
 	}
+	scope := requestedScope
+	if scope == "" {
+		scope = "all"
+	}
 
-	safe := safeProfileFilename(resolved)
+	safe := safeProfileFilename(resolved) + "-" + scope
 	relPath := filepath.Join("output", "corpus-"+safe+".txt")
 	var b strings.Builder
-	fmt.Fprintf(&b, "goCrawler corpus export\nProfile: %s\nGenerated: %s\n\n",
-		resolved, time.Now().UTC().Format(time.RFC3339))
+	fmt.Fprintf(&b, "goCrawler corpus export\nProfile: %s\nScope: %s\nGenerated: %s\n\n",
+		resolved, scope, time.Now().UTC().Format(time.RFC3339))
 
 	documents := 0
-	for _, doc := range corpusDocuments(1 << 30) {
+	for _, doc := range filterCorpusScope(corpusDocuments(1<<30), scope) {
 		docURL, text := doc["url"], doc["text"]
 		if !linkRe.MatchString(docURL) {
 			continue
@@ -3913,11 +3929,23 @@ func saveProfileCorpus(profile string) (corpusExportInfo, error) {
 	}
 	return corpusExportInfo{
 		File:       relPath,
-		Download:   "/api/corpus/download?profile=" + url.QueryEscape(resolved),
+		Download:   "/api/corpus/download?profile=" + url.QueryEscape(resolved) + "&scope=" + url.QueryEscape(scope),
 		Documents:  documents,
 		Characters: len(content),
 		Profile:    resolved,
+		Scope:      scope,
 	}, nil
+}
+
+// markCorpusSession writes a session boundary into the curated corpus log.
+func markCorpusSession() {
+	path := "./logs/corpusCuratedText.log"
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	fmt.Fprintf(file, "@@SESSION %s\n", time.Now().UTC().Format(time.RFC3339))
 }
 
 // corpusDocuments reads accepted documents from the curated corpus.
@@ -3927,14 +3955,20 @@ func corpusDocuments(limit int) []map[string]string {
 	if !iolib.FileExists(path) {
 		return result
 	}
-	var url, text string
+	var url, text, session string
 	flush := func() {
 		if url != "" && len(result) < limit {
-			result = append(result, map[string]string{"url": url, "text": strings.TrimSpace(text)})
+			result = append(result, map[string]string{
+				"url": url, "text": strings.TrimSpace(text), "session": session,
+			})
 		}
 	}
 	for _, line := range strings.Split(iolib.File2string(path), "\n") {
-		if strings.HasPrefix(line, "http") {
+		if strings.HasPrefix(line, "@@SESSION ") {
+			flush()
+			url, text = "", ""
+			session = strings.TrimSpace(strings.TrimPrefix(line, "@@SESSION "))
+		} else if strings.HasPrefix(line, "http") {
 			flush()
 			url, text = strings.TrimSpace(line), ""
 		} else if line != "----" {
@@ -3943,6 +3977,45 @@ func corpusDocuments(limit int) []map[string]string {
 	}
 	flush()
 	return result
+}
+
+// filterCorpusScope keeps documents from all runs, the last run or today.
+func filterCorpusScope(docs []map[string]string, scope string) []map[string]string {
+	if scope == "" {
+		scope = "all"
+	}
+	if scope == "all" {
+		return docs
+	}
+
+	filtered := []map[string]string{}
+	if scope == "last" {
+		last := ""
+		for _, doc := range docs {
+			if value := doc["session"]; value != "" {
+				last = value
+			}
+		}
+		if last == "" {
+			return filtered
+		}
+		for _, doc := range docs {
+			if doc["session"] == last {
+				filtered = append(filtered, doc)
+			}
+		}
+		return filtered
+	}
+
+	if scope == "today" {
+		today := time.Now().UTC().Format("2006-01-02")
+		for _, doc := range docs {
+			if strings.HasPrefix(doc["session"], today) {
+				filtered = append(filtered, doc)
+			}
+		}
+	}
+	return filtered
 }
 
 // usage prints the command-line usage message.
@@ -4090,6 +4163,7 @@ func setupRuntime(profile string) (int, func(), error) {
 	if err := os.MkdirAll("./output", os.ModePerm); err != nil {
 		return 0, noop, err
 	}
+	markCorpusSession()
 
 	stopSession := startSessionOutput(profile)
 	cleanup := func() {

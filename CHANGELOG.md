@@ -1,3 +1,10 @@
+## [v1.8.19] - 2026-11-18
+
+### Changed
+- The previous-instance confirmation now defaults to **yes** (`[Y/n]`); only `n`/`no` declines.
+- Corpus exports support three scopes: all accumulated documents, last crawl only, and today only.
+  Crawls write `@@SESSION <UTC timestamp>` markers into `logs/corpusCuratedText.log` to delimit runs.
+
 ## [v1.8.18] - 2026-11-18
 
 ### Added

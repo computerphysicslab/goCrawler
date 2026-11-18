@@ -1217,6 +1217,9 @@ func TestGUICorpusTabAndExportControls(t *testing.T) {
 			`onclick="saveCorpus()"`,
 			`/api/corpus/save`,
 			`id="c-download"`,
+			`id="c-scope"`,
+			`Last crawl only`,
+			`Today only`,
 		} {
 			if !strings.Contains(body, fragment) {
 				t.Errorf("GUI HTML missing %q", fragment)
@@ -1394,4 +1397,48 @@ func TestGUIInlineURLParsing(t *testing.T) {
 			t.Errorf("guiHTML missing inline URL parsing token %q", token)
 		}
 	}
+}
+
+func TestConfirmAnswerDefaultsToYes(t *testing.T) {
+	for _, answer := range []string{"", "y", "Y", "yes", "s", "si"} {
+		if !confirmAnswer(answer) {
+			t.Errorf("confirmAnswer(%q) should be true", answer)
+		}
+	}
+	for _, answer := range []string{"n", "N", "no", "maybe"} {
+		if confirmAnswer(answer) {
+			t.Errorf("confirmAnswer(%q) should be false", answer)
+		}
+	}
+}
+
+func TestCorpusSessionsAndScopeFiltering(t *testing.T) {
+	withTempWorkDir(t, func() {
+		today := time.Now().UTC().Format(time.RFC3339)
+		log := "https://a.org/old\nold text\n----\n\n\n\n" +
+			"@@SESSION 2020-01-01T00:00:00Z\nhttps://a.org/old2\nold2 text\n----\n\n\n\n" +
+			"@@SESSION " + today + "\nhttps://a.org/today\ntoday text\n----\n\n\n\n"
+		if err := os.WriteFile("logs/corpusCuratedText.log", []byte(log), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		docs := corpusDocuments(100)
+		if len(docs) != 3 {
+			t.Fatalf("documents = %d, want 3", len(docs))
+		}
+		if docs[0]["session"] != "" || docs[2]["session"] != today {
+			t.Fatalf("unexpected session metadata: %+v", docs)
+		}
+		if got := filterCorpusScope(docs, "all"); len(got) != 3 {
+			t.Fatalf("all = %d, want 3", len(got))
+		}
+		last := filterCorpusScope(docs, "last")
+		if len(last) != 1 || last[0]["url"] != "https://a.org/today" {
+			t.Fatalf("last = %+v", last)
+		}
+		todayDocs := filterCorpusScope(docs, "today")
+		if len(todayDocs) != 1 || todayDocs[0]["url"] != "https://a.org/today" {
+			t.Fatalf("today = %+v", todayDocs)
+		}
+	})
 }
