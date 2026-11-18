@@ -1069,3 +1069,73 @@ func TestGUICrawlEndpointAcceptsWorkerCount(t *testing.T) {
 		}
 	})
 }
+
+func TestGUICrawlStopSetsState(t *testing.T) {
+	withGUIApp(t, func() {
+		app.StopRequested.Store(false)
+		app.StateDirty = false
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "POST", "/api/crawl/stop", "")
+		if code != 200 || !strings.Contains(body, "stopping") {
+			t.Fatalf("stop = %d %q", code, body)
+		}
+		if !app.StopRequested.Load() || !app.StateDirty {
+			t.Fatal("stop did not set cancellation and dirty state")
+		}
+		_, body = guiRequest(t, server, "GET", "/api/stats", "")
+		var stats map[string]interface{}
+		if err := json.Unmarshal([]byte(body), &stats); err != nil {
+			t.Fatal(err)
+		}
+		if stats["stopping"] != true {
+			t.Fatalf("stats does not reflect stopping: %v", stats)
+		}
+	})
+}
+
+func TestGUIPromptFallsBackToLastProfile(t *testing.T) {
+	withGUIApp(t, func() {
+		oldCwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+		}
+		dir := t.TempDir()
+		if err := os.MkdirAll(filepath.Join(dir, "profiles"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(filepath.Join(dir, "logs"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		profile := "linkOk: |\n  stack|image\nregexRankingKeywords: |\n  (?i)\\W(stack|image)\\W\nbootstrapingLinks:\n- https://example.org/stack\n"
+		if err := os.WriteFile(filepath.Join(dir, "profiles", "last_run.yaml"), []byte(profile), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "logs", "LastRun-2026-11-18-Z12-00-00.txt"), []byte("session"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chdir(dir); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Chdir(oldCwd)
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/api/prompt", "")
+		if code != 200 {
+			t.Fatalf("prompt without profile = %d %q", code, body)
+		}
+		var payload struct{ Prompt string }
+		if err := json.Unmarshal([]byte(body), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(strings.ToLower(payload.Prompt), "profile: lastrun") {
+			t.Fatalf("prompt did not use the last profile: %q", payload.Prompt)
+		}
+
+		_, html := guiRequest(t, server, "GET", "/", "")
+		if !strings.Contains(html, "throw new Error") || !strings.Contains(html, "prompt error") {
+			t.Fatal("GUI JavaScript lacks visible error handling for prompt generation")
+		}
+	})
+}

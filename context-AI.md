@@ -978,3 +978,12 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - KPIs: grid CSS `repeat(auto-fit,minmax(118px,1fr))` con tarjetas etiqueta+valor, evitando el
   espacio vacío del flex-wrap anterior.
 - Verificado en vivo: 4 workers, visits=22, cola 0 con transiciones requested→retrieved.
+
+## 50. Stop y prompt generator robustos (v1.8.12, 2026-11-18)
+
+- `/api/crawl/stop` llama a `cancelCrawl()`, marca `StopRequested` y `StateDirty`; `stats` expone
+  `stopping` y el JS muestra "stopping..." hasta que el worker termina.
+- `json()` del GUI lanza error visible; `generatePrompt()` captura errores y los muestra en el
+  textarea. `/api/prompt` usa como fallback el último perfil ejecutado y luego cualquier perfil.
+- `resolveProfileName` normaliza mayúsculas, espacios, guiones y guiones bajos.
+- Tests de Stop, fallback de prompt y manejo de errores JS; `go test -race ./...` ✅.

@@ -1,3 +1,12 @@
+## [v1.8.12] - 2026-11-18
+
+### Fixed
+- Stop now cancels the crawl context and marks state dirty; the dashboard shows "stopping..." and
+  running drops to 0 promptly.
+- Prompt generator falls back to the last executed profile (and then to any profile) and shows API
+  errors in the textarea instead of failing silently.
+- Profile resolution ignores case, spaces, hyphens and underscores.
+
 ## [v1.8.11] - 2026-11-18
 
 ### Changed

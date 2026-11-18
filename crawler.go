@@ -2324,8 +2324,8 @@ if(localStorage.getItem('gc-theme')==='light')document.body.classList.add('light
 function toggleTheme(){document.body.classList.toggle('light');localStorage.setItem('gc-theme',document.body.classList.contains('light')?'light':'dark')}
 
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus','prompt','urls','about'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
-async function json(u,o){const r=await fetch(u,o);return r.json()}
-async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
+async function json(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
+async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?(s.stopping?'stopping...':('running ('+s.running_count+')')):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
 async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;$('u-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;$('u-profile').value=match;}loadProfile()}
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n;if($('u-profile')){$('u-profile').value=n;loadURLs()}}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
@@ -2340,10 +2340,10 @@ async function replaceURLs(){await saveURLs('replace',[])}
 async function removeURLs(){const n=$('u-profile').value||$('p-list').value;const d=await json('/api/urls?profile='+encodeURIComponent(n));const picked=[...$('u-list').querySelectorAll('input:checked')].map(x=>d.urls[parseInt(x.value)]);await saveURLs('append',picked)}
 async function applyAndRun(){if(!confirm('Apply extracted keywords and start a new crawl?'))return;await applyKeywords();$('run-profile').value=$('k-profile').value;startCrawl()}
 async function loadAbout(){const a=await json('/api/about');for(const [id,key] of [['a-name','name'],['a-version','version'],['a-date','release_date'],['a-copyright','copyright'],['a-license','license'],['a-go','go_version'],['a-platform','platform'],['a-desc','description']]){if($(id))$(id).textContent=a[key]}if($('a-components'))$('a-components').textContent=(a.components||[]).join(', ');if($('a-author')){$('a-author').href='mailto:'+a.email;$('a-author').textContent=a.author}if($('a-linkedin'))$('a-linkedin').href=a.linkedin;for(const [id,key] of [['a-repo','repo'],['a-issues','issues'],['a-changelog','changelog'],['a-roadmap','roadmap']]){if($(id)){$(id).href=a[key];$(id).textContent=key}}if($('a-qr'))$('a-qr').src=a.qr}
-async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value;const d=await json('/api/prompt?profile='+encodeURIComponent(n));$('pr-out').value=d.prompt}
+async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value||$('run-profile').value;try{const d=await json('/api/prompt?profile='+encodeURIComponent(n));$('pr-out').value=d.prompt;$('status').textContent='prompt ready ('+d.prompt.length+' chars)'}catch(e){$('pr-out').value='Error: '+e.message;$('status').textContent='prompt error'}}
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value,workers:parseInt($('w-workers').value)})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
-async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping';stats()}
+async function stopCrawl(){const r=await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent=(await r.json()).status;stats()}
 async function loadQueue(){const q=await json('/api/queue');$('q-total').textContent=q.total;const rows=q.recent.slice(-12).reverse().map(e=>'<div><span class=muted>'+new Date(e.time).toLocaleTimeString()+'</span> <b>'+e.state+'</b> '+e.url+'</div>');const pend=q.pending.slice(0,20).map(p=>'<div><span class=muted>pending</span> '+p.url+'</div>');$('queue-list').innerHTML=rows.join('')+pend.join('')||'<span class=muted>Queue empty</span>'}
 async function showReason(reason){const d=await json('/api/rejections?reason='+encodeURIComponent(reason));if(!d.events||!d.events.length){$('reason-detail').innerHTML='<p class=muted>No cases recorded for '+reason+'</p>';return}$('reason-detail').innerHTML='<h4>Last '+d.events.length+' cases: '+reason+'</h4>'+d.events.slice().reverse().map(e=>'<div class=card><b><a href="'+e.url+'" target="_blank" rel="noopener">'+e.url+'</a></b><div>'+(e.detail||'')+'</div>'+(e.text?'<pre>'+e.text.slice(0,600)+'</pre>':'')+'<span class=muted>'+new Date(e.time).toLocaleString()+'</span></div>').join('')}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
@@ -2422,6 +2422,14 @@ func guiHandler() http.Handler {
 	mux.HandleFunc("/api/prompt", func(w http.ResponseWriter, r *http.Request) {
 		name := filepath.Base(r.URL.Query().Get("profile"))
 		if name == "" || name == "." {
+			name = lastExecutedProfile()
+		}
+		if name == "" {
+			if files, _ := filepath.Glob("profiles/*.yaml"); len(files) > 0 {
+				name = strings.TrimSuffix(filepath.Base(files[0]), ".yaml")
+			}
+		}
+		if name == "" {
 			http.Error(w, "profile required", 400)
 			return
 		}
@@ -2664,6 +2672,7 @@ func guiHandler() http.Handler {
 			"cache_io":      storelib.Operations(),
 			"running":       running,
 			"running_count": runningCount,
+			"stopping":      app.StopRequested.Load(),
 			"rejections":    reasons,
 			"error":         app.GUILastError,
 		})
@@ -2890,6 +2899,10 @@ func guiHandler() http.Handler {
 	})
 	mux.HandleFunc("/api/crawl/stop", func(w http.ResponseWriter, r *http.Request) {
 		app.StopRequested.Store(true)
+		app.StateDirty = true
+		if cancelCrawl != nil {
+			cancelCrawl()
+		}
 		writeJSON(w, map[string]string{"status": "stopping"})
 	})
 
@@ -2899,11 +2912,13 @@ func guiHandler() http.Handler {
 // resolveProfileName finds an existing profile ignoring case and spaces.
 func resolveProfileName(name string) (string, error) {
 	files, _ := filepath.Glob("profiles/*.yaml")
-	target := strings.ToLower(strings.ReplaceAll(filepath.Base(name), " ", "-"))
+	normalize := func(value string) string {
+		return strings.NewReplacer("-", "", "_", "", " ", "").Replace(strings.ToLower(value))
+	}
+	target := normalize(filepath.Base(name))
 	for _, file := range files {
 		base := strings.TrimSuffix(filepath.Base(file), ".yaml")
-		candidate := strings.ToLower(base)
-		if candidate == target || strings.ReplaceAll(candidate, "-", " ") == strings.ReplaceAll(target, "-", " ") {
+		if normalize(base) == target {
 			return base, nil
 		}
 	}
