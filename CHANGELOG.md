@@ -3,7 +3,17 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.6] - 2026-11-18
+## [v1.7.7] - 2026-11-18
+
+### Fixed
+- Restored the missing closing brace in the Workbench `loadProfile()` JavaScript, which prevented
+  tabs and dropdowns from working.
+
+### Added
+- Regression tests validating GUI JavaScript delimiter balance, all handler functions, and that
+  profile selectors are dropdowns with case-insensitive last-profile selection.
+
+ - 2026-11-18
 
 ### Fixed
 - GUI crawl of `skystacker-research` crashed in `scoreWithRegex` when the profile regex has no capturing group.

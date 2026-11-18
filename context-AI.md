@@ -824,3 +824,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - `launchGUICrawl` ya no sustituye el puntero global `app`; usa `ResetForProfile` para evitar
   carreras con los handlers HTTP. Verificado: start → visits=50, accepted=16, sin error.
 - Prompt generator: `<select id="pr-profile">` rellenado con los perfiles y el último ejecutado por defecto.
+
+## 35. Fix JS del Workbench (v1.7.7, 2026-11-18)
+
+- `loadProfile()` había perdido su `}` de cierre al editar el HTML incrustado → SyntaxError en todo
+  el `<script>`, por lo que no funcionaban ni las pestañas ni los desplegables. Corregido y validado
+  con `node --check`.
+- Añadido `jsDelimitersBalanced` en `gui_test.go` (ignora strings y comprueba `{}`, `()`, `[]`) para
+  detectar este tipo de rotura en CI, más tests de que `p-list` y `pr-profile` son `<select>` y de que
+  todos los handlers JS están presentes.
+- Verificado en checkout limpio: `go test ./...` ✅.
