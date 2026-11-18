@@ -30,7 +30,10 @@ func TestLoadCorpus(t *testing.T) {
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
-	got := loadCorpus(path)
+	got, err := loadCorpus(path)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(got) != 3 {
 		t.Fatalf("loadCorpus returned %d entries, want 3", len(got))
 	}
@@ -49,7 +52,9 @@ func TestInitAndFreq(t *testing.T) {
 	}
 	defer os.Chdir(old)
 
-	Init()
+	if err := Init(); err != nil {
+		t.Fatal(err)
+	}
 	if Freq("the") <= 0 {
 		t.Fatal("Freq(the) should be positive after Init")
 	}

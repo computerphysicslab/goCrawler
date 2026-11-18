@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"reflect"
@@ -94,7 +93,6 @@ type Crawler struct {
 	ShowVersion           bool
 	ShowLicense           bool
 	GUIPort               int
-	GUIProcess            *exec.Cmd
 	GUILastError          string
 	ResumeEnabled         bool
 
@@ -2007,7 +2005,7 @@ func runSearch(query string) error {
 	return nil
 }
 
-const appVersion = "1.7.0"
+const appVersion = "1.7.1"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
@@ -2189,6 +2187,9 @@ var guiCrawling atomic.Bool
 
 // launchGUICrawl runs a crawl inside the GUI process so its metrics are live.
 func launchGUICrawl(profile string) error {
+	if !iolib.FileExists("./profiles/" + filepath.Base(profile) + ".yaml") {
+		return fmt.Errorf("profile not found: %s", profile)
+	}
 	if !guiCrawling.CompareAndSwap(false, true) {
 		return fmt.Errorf("a crawl is already running")
 	}
@@ -2209,8 +2210,8 @@ func launchGUICrawl(profile string) error {
 	return nil
 }
 
-// runGUI starts the embedded local web interface on loopback only.
-func runGUI() error {
+// guiHandler builds the HTTP handler for the workbench; exported for tests.
+func guiHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -2225,14 +2226,14 @@ func runGUI() error {
 		writeJSON(w, names)
 	})
 	mux.HandleFunc("/api/profile", func(w http.ResponseWriter, r *http.Request) {
-		name := filepath.Base(r.URL.Query().Get("name"))
-		if name == "" || name == "." {
-			http.Error(w, "profile required", 400)
-			return
-		}
-		path := "profiles/" + name + ".yaml"
 		switch r.Method {
 		case http.MethodGet:
+			name := filepath.Base(r.URL.Query().Get("name"))
+			if name == "" || name == "." {
+				http.Error(w, "profile required", 400)
+				return
+			}
+			path := "profiles/" + name + ".yaml"
 			b, err := os.ReadFile(path)
 			if err != nil {
 				http.Error(w, err.Error(), 404)
@@ -2246,6 +2247,11 @@ func runGUI() error {
 				return
 			}
 			body.Name = filepath.Base(body.Name)
+			path := "profiles/" + body.Name + ".yaml"
+			if body.Name == "" || body.Name == "." {
+				http.Error(w, "profile required", 400)
+				return
+			}
 			tmp := path + ".tmp"
 			if err := os.WriteFile(tmp, []byte(body.Content), 0644); err != nil {
 				http.Error(w, err.Error(), 500)
@@ -2259,12 +2265,14 @@ func runGUI() error {
 		}
 	})
 	mux.HandleFunc("/api/stats", func(w http.ResponseWriter, r *http.Request) {
-		running := app.GUIProcess != nil && app.GUIProcess.ProcessState == nil
 		writeJSON(w, map[string]interface{}{
-			"visits": app.CacheHits + app.OnlineDownloads,
-			"cache":  app.CacheHits, "online": app.OnlineDownloads,
-			"download_ms": app.DownloadMS, "accepted": app.AcceptedDocs,
-			"running": running,
+			"visits":      app.CacheHits + app.OnlineDownloads,
+			"cache":       app.CacheHits,
+			"online":      app.OnlineDownloads,
+			"download_ms": app.DownloadMS,
+			"accepted":    app.AcceptedDocs,
+			"running":     guiCrawling.Load(),
+			"error":       app.GUILastError,
 		})
 	})
 	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) {
@@ -2349,11 +2357,16 @@ func runGUI() error {
 		text := string(b)
 		for _, key := range []string{"linkOk:", "regexRankingKeywords:"} {
 			if i := strings.Index(text, key); i >= 0 {
-				lineEnd := strings.Index(text[i:], "\n")
-				if lineEnd < 0 {
-					lineEnd = len(text)
+				headerEnd := strings.Index(text[i:], "\n")
+				if headerEnd < 0 {
+					continue
 				}
-				text = text[:i+lineEnd] + "|" + strings.Join(body.Keywords, "|") + text[i+lineEnd:]
+				contentStart := i + headerEnd + 1
+				contentEnd := strings.Index(text[contentStart:], "\n")
+				if contentEnd < 0 {
+					contentEnd = len(text) - contentStart
+				}
+				text = text[:contentStart] + "  " + strings.Join(body.Keywords, "|") + text[contentStart+contentEnd:]
 			}
 		}
 		if err := os.WriteFile(path, []byte(text), 0644); err != nil {
@@ -2387,6 +2400,11 @@ func runGUI() error {
 		writeJSON(w, map[string]string{"status": "stopping"})
 	})
 
+	return mux
+}
+
+// runGUI starts the embedded local web interface on loopback only.
+func runGUI() error {
 	if app.GUIPort <= 0 || app.GUIPort > 65535 {
 		app.GUIPort = 8765
 	}
@@ -2396,7 +2414,7 @@ func runGUI() error {
 	if err != nil {
 		return err
 	}
-	return http.Serve(listener, mux)
+	return http.Serve(listener, guiHandler())
 }
 
 // writeJSON writes a JSON response.
@@ -2633,7 +2651,9 @@ func setupRuntime(profile string) (int, func(), error) {
 	if app.RespectRobots {
 		app.RobotsPolicy = robotspolicy.New(app.UserAgent, app.DownloadTimeout)
 	}
-	corpusfreqlib.Init()
+	if err := corpusfreqlib.Init(); err != nil {
+		return 0, cleanup, fmt.Errorf("English corpus: %w", err)
+	}
 
 	if !app.ResumeEnabled {
 		linkBootstraping()
@@ -2777,8 +2797,11 @@ func runSelfTests() bool {
 		rankingByKeywords("nothing relevant here") == 0, &allOK)
 	check("n-gram extraction", len(ngramsOf("stack image noise", 2)) > 0, &allOK)
 
-	corpusfreqlib.Init()
-	check("English corpus", corpusfreqlib.Freq("the") > 0, &allOK)
+	if err := corpusfreqlib.Init(); err != nil {
+		check("English corpus", false, &allOK)
+	} else {
+		check("English corpus", corpusfreqlib.Freq("the") > 0, &allOK)
+	}
 	check("robots policy", robotspolicy.New("goCrawler-selftest", 0) != nil, &allOK)
 
 	freqTest := make(freq)

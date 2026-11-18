@@ -768,3 +768,16 @@ Solución aplicada en este equipo: symlink usuario `~/.local/bin/go -> ~/sdk/go1
   editor de perfiles, visor del corpus con texto curado y copia, búsqueda FTS5, laboratorio de
   keywords con realimentación al perfil y arranque/parada de crawls. Verificado con curl.
 - Roadmap: **sin puntos pendientes**. Changelog v1.7.0 añadido.
+
+## 29. Hardening con tests (v1.7.1, 2026-11-18)
+
+- 65 tests en total: 9 tests HTTP del GUI (`gui_test.go`, con `guiHandler()` + `httptest`), 10 tests
+  unitarios/integración nuevos (`crawler_extra_test.go`), 30 del núcleo, 3 corpusfreqlib, 4 iolib,
+  2 robotspolicy, 3 storelib, 2 stringlib, 2 redislib.
+- `corpusfreqlib.Init()` devuelve `error` en vez de `os.Exit(1)` (necesario para testear en directorios
+  temporales). `loadCorpus` también devuelve error.
+- Test end-to-end: servidor HTTP local + perfil temporal + 2 workers → verifica corpus, frecuencias y
+  contadores de caché/descarga.
+- Bug detectado y corregido durante los tests: el POST de `/api/profile` exigía el nombre en la query
+  y `/api/keywords/apply` duplicaba el separador `|`.
+- Cobertura: main 68 %, iolib 74 %, robotspolicy 82 %, storelib 67 %. `go test -race ./...` ✅.

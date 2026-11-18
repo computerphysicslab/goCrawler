@@ -550,6 +550,22 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ---
 
+## Testing
+
+The suite has 65 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
+state persistence, download errors, link filtering, stores and robots policy; HTTP handler tests for
+every Workbench endpoint via `httptest`; and an end-to-end crawl against a local HTTP server with two
+workers.
+
+```shell
+go test ./...                       # all packages
+go test -race ./...                 # concurrency checks
+go test -cover ./...                # coverage report
+go run crawler.go --selftest        # built-in binary self-test
+```
+
+Coverage: main package ~68 %, iolib ~74 %, robotspolicy ~82 %, storelib ~67 %, corpusfreqlib ~50 %.
+
 ## Versioning and CI
 
 Releases, version tags and details of every milestone are in [`CHANGELOG.md`](CHANGELOG.md).

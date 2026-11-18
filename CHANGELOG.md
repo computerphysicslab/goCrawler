@@ -3,6 +3,18 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
+## [v1.7.1] - 2026-11-18
+
+### Added
+- 65 tests including HTTP tests for every GUI endpoint and an end-to-end crawl with a local server.
+- `corpusfreqlib.Init` now returns an error instead of calling `os.Exit(1)`; embeddable and testable.
+- `guiHandler()` exposed for `httptest`; GUI crawls run in-process; profile POST and keyword apply fixed.
+- Regression tests for configuration keys and the default GUI port.
+
+### Changed
+- `log/slog` grouped in a single import block; dead `GUIProcess`/`os/exec` removed.
+- `go test -race ./...` passes across all packages.
+
 ## [v1.7.0] - 2026-11-17
 
 ### Added

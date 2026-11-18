@@ -50,17 +50,13 @@ func fileExists(filename string) bool {
 }
 
 // loadCorpus reads a BNC-style frequency file into a map.
-func loadCorpus(filename string) map[string]WordInfo {
+func loadCorpus(filename string) (map[string]WordInfo, error) {
 	if !fileExists(filename) {
-		fmt.Printf("\nError: Corpus data not found on %s", filename)
-		if filename == "./corpusfreqlib/all.num" {
-			fmt.Printf("\nDownload all.num file like this:" + "\n\nmkdir corpusfreqlib\ncd corpusfreqlib\nwget \"http://www.kilgarriff.co.uk/BNClists/all.num.gz\"\ngunzip all.num.gz\ncd..\n\n")
-		}
-		os.Exit(1)
+		return nil, fmt.Errorf("corpus data not found: %s", filename)
 	}
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer file.Close()
 
@@ -81,7 +77,7 @@ func loadCorpus(filename string) map[string]WordInfo {
 
 		_, err := fmt.Sscanf(l, "%d %s %s %d", &numTotal, &word, &POStagging, &numDocs)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 
 		if corpusFreqs[word].numTotal == 0 {
@@ -90,7 +86,7 @@ func loadCorpus(filename string) map[string]WordInfo {
 	}
 	fmt.Printf("\n\nlen(corpusFreqs) = %d\n", len(corpusFreqs))
 
-	return corpusFreqs
+	return corpusFreqs, nil
 }
 
 const freqIndexFile = "./corpusfreqlib/freq-index.json"
@@ -148,12 +144,19 @@ func saveFreqIndex() {
 }
 
 // Init loads and normalizes the English reference corpora.
-func Init() {
+func Init() error {
 	if loadFreqIndex() {
-		return
+		return nil
 	}
-	corpusFreqsEng = loadCorpus("./corpusfreqlib/all.num")
-	corpusFreqsCont = loadCorpus("./corpusfreqlib/contemporaryEnglish.txt")
+	var err error
+	corpusFreqsEng, err = loadCorpus("./corpusfreqlib/all.num")
+	if err != nil {
+		return err
+	}
+	corpusFreqsCont, err = loadCorpus("./corpusfreqlib/contemporaryEnglish.txt")
+	if err != nil {
+		return err
+	}
 
 	// both copora have in common the word "the" as a metric to perform a normalization
 	ContFactor := float64(corpusFreqsEng["the"].numTotal) / float64(corpusFreqsCont["the"].numTotal) // normalization factor for contemporary english corpus
@@ -169,6 +172,7 @@ func Init() {
 
 	Test()
 	saveFreqIndex()
+	return nil
 }
 
 // Freq returns the standard English frequency of a token.

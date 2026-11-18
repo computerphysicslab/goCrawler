@@ -8,11 +8,15 @@
 package main
 
 import (
+	"fmt"
 	goCorpusFreqLib "goCrawler/corpusfreqlib"
 )
 
 // main prints sample frequencies from the English reference corpus.
 func main() {
-	goCorpusFreqLib.Init()
+	if err := goCorpusFreqLib.Init(); err != nil {
+		fmt.Println("corpus init error:", err)
+		return
+	}
 	goCorpusFreqLib.Test()
 }
