@@ -127,6 +127,7 @@ type Crawler struct {
 	LogDownload     *log.Logger
 	LogCGI          *log.Logger
 	LogDomainFailed *log.Logger
+	LogFiles        []*os.File
 
 	// synchronization
 	PoolMu        sync.Mutex
@@ -1474,27 +1475,31 @@ func initFileLoggers() error {
 		return fmt.Errorf("download log: %w", err)
 	}
 	app.LogDownload = log.New(f1, "", 0)
+	app.LogFiles = append(app.LogFiles, f1)
 	f2, err := os.Create("./logs/cgi.log")
 	if err != nil {
 		return fmt.Errorf("cgi log: %w", err)
 	}
 	app.LogCGI = log.New(f2, "", 0)
+	app.LogFiles = append(app.LogFiles, f2)
 	f3, err := os.Create("./logs/domainFailed.log")
 	if err != nil {
 		return fmt.Errorf("domainFailed log: %w", err)
 	}
 	app.LogDomainFailed = log.New(f3, "", 0)
+	app.LogFiles = append(app.LogFiles, f3)
 	initFailedDomains()
 	return nil
 }
 
 // closeFileLoggers flushes and closes the log files.
 func closeFileLoggers() {
-	for _, f := range []*os.File{nil, nil, nil} {
+	for _, f := range app.LogFiles {
 		if f != nil {
 			f.Close()
 		}
 	}
+	app.LogFiles = nil
 }
 
 // addLinksOf adds the links found in a page to the pool.

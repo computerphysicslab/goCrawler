@@ -76,7 +76,15 @@ func TestGUIProfileGetAndSave(t *testing.T) {
 		server := httptest.NewServer(guiHandler())
 		defer server.Close()
 
-		code, body := guiRequest(t, server, "GET", "/api/profile?name=astrophotography", "")
+		profilePath := filepath.Join("profiles", "gui_get_test.yaml")
+		if err := os.MkdirAll("profiles", 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(profilePath, []byte("scoreThreshold: 7\nlinkOk: |\n  stack\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(profilePath)
+		code, body := guiRequest(t, server, "GET", "/api/profile?name=gui_get_test", "")
 		if code != 200 {
 			t.Fatalf("profile GET = %d %q", code, body)
 		}
@@ -168,6 +176,9 @@ func TestGUISearchEndpoint(t *testing.T) {
 func TestGUIKeywordsExtractAndApply(t *testing.T) {
 	withGUIApp(t, func() {
 		name := "gui_keyword_test"
+		if err := os.MkdirAll("profiles", 0755); err != nil {
+			t.Fatal(err)
+		}
 		path := filepath.Join("profiles", name+".yaml")
 		original := "linkOk: |\n  old\nregexRankingKeywords: |\n  (?i)\\W(old)\\W\n"
 		if err := os.WriteFile(path, []byte(original), 0644); err != nil {

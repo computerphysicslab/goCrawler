@@ -489,8 +489,31 @@ func TestSemanticRanking(t *testing.T) {
 func TestConfigKeysLoad(t *testing.T) {
 	old := app
 	defer func() { app = old }()
+	if err := os.MkdirAll("profiles", 0755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join("profiles", "config_key_test.yaml")
+	content := `curatedDomains: |
+  example\.org
+linkOk: |
+  stack
+regexRankingKeywords: |
+  (?i)\W(stack)\W
+minDocLen: 50
+maxDocLen: 100000
+scoreThreshold: 10
+rankingStrategy: hybrid
+maxLinksPerPage: 100
+bootstrapingLinks:
+- https://example.org/stack
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(path)
+
 	app = newCrawler()
-	app.ProfileName = "astrophotography"
+	app.ProfileName = "config_key_test"
 	if err := yamlInitGeneral(); err != nil {
 		t.Fatal(err)
 	}
