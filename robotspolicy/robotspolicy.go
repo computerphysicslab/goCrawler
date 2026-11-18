@@ -161,9 +161,15 @@ func (p *Policy) rulesFor(hostKey string) *hostRules {
 		}
 	}
 
+	failed := func() *hostRules {
+		r := &hostRules{fetchedAt: time.Now()}
+		p.rules[hostKey] = r
+		return r
+	}
+
 	req, err := http.NewRequest("GET", hostKey+"/robots.txt", nil)
 	if err != nil {
-		return &hostRules{}
+		return failed()
 	}
 	req.Header.Set("User-Agent", p.userAgent)
 
@@ -171,20 +177,20 @@ func (p *Policy) rulesFor(hostKey string) *hostRules {
 	resp, err := p.client.Do(req)
 	if err != nil {
 		fmt.Printf(" [ROBOTS fetch error: %v]", err)
-		return &hostRules{}
+		return failed()
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return &hostRules{}
+		return failed()
 	}
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
-		return &hostRules{}
+		return failed()
 	}
 	data, err := robotstxt.FromBytes(body)
 	if err != nil {
-		return &hostRules{}
+		return failed()
 	}
 
 	r := &hostRules{body: string(body), fetchedAt: time.Now()}
@@ -199,7 +205,11 @@ func (p *Policy) rulesFor(hostKey string) *hostRules {
 
 // rulesFresh reports whether an in-memory entry is still within the TTL.
 func (p *Policy) rulesFresh(r *hostRules) bool {
-	return r.body != "" && time.Since(r.fetchedAt) < robotsCacheTTL
+	if r.body == "" {
+		// Cache fetch failures for an hour to avoid retrying on every URL.
+		return time.Since(r.fetchedAt) < time.Hour
+	}
+	return time.Since(r.fetchedAt) < robotsCacheTTL
 }
 
 // Allowed reports whether robots.txt permits fetching rawURL.

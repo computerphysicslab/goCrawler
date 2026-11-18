@@ -139,3 +139,27 @@ func TestDiskCacheExpiresAfterSevenDays(t *testing.T) {
 		t.Fatalf("fresh cache was not reused: %d robots requests", requests)
 	}
 }
+
+func TestRobotsFailureIsCachedBriefly(t *testing.T) {
+	var requests int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/robots.txt" {
+			requests++
+			http.Error(w, "internal error", 500)
+			return
+		}
+		fmt.Fprintln(w, "ok")
+	}))
+	defer server.Close()
+
+	p := NewWithCache("goCrawler-test", time.Second, "")
+	if !p.Allowed(server.URL + "/public") {
+		t.Fatal("failed robots fetch should fail open")
+	}
+	if !p.Allowed(server.URL + "/other") {
+		t.Fatal("failed robots fetch should fail open")
+	}
+	if requests != 1 {
+		t.Fatalf("robots.txt fetched %d times, want 1 (negative cache)", requests)
+	}
+}

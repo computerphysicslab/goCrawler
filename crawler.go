@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"container/heap"
+	"context"
 	"database/sql"
 	"encoding/base64"
 	"encoding/csv"
@@ -54,6 +55,12 @@ import (
 // Crawler owns the configuration, runtime state and stores of one crawl.
 // Keeping them together removes package-level mutable globals and makes the
 // crawler embeddable and independently testable.
+type queueEvent struct {
+	URL   string    `json:"url"`
+	State string    `json:"state"`
+	Time  time.Time `json:"time"`
+}
+
 type rejectionEvent struct {
 	URL    string    `json:"url"`
 	Detail string    `json:"detail"`
@@ -119,6 +126,8 @@ type Crawler struct {
 	RejectionCounts   map[string]int
 	RejectionEvents   map[string][]rejectionEvent
 	RejectionMu       sync.Mutex
+	QueueEvents       []queueEvent
+	QueueMu           sync.Mutex
 	AcceptedDocs      int
 	LastProcessedLink int
 	StateDirty        bool
@@ -166,6 +175,7 @@ func newCrawler() *Crawler {
 		CorpusDocFreq:    make(map[string]int),
 		RejectionCounts:  make(map[string]int),
 		RejectionEvents:  make(map[string][]rejectionEvent),
+		QueueEvents:      []queueEvent{},
 		RejectedLinkSets: map[string]map[string]struct{}{
 			"linksNotOk.log":                 {},
 			"linksNotOk.additional.log":      {},
@@ -473,6 +483,16 @@ func respectCrawlDelay(rawURL string) {
 	}
 }
 
+// recordQueueEvent keeps the latest link-state transitions for the live view.
+func recordQueueEvent(state, url string) {
+	app.QueueMu.Lock()
+	defer app.QueueMu.Unlock()
+	app.QueueEvents = append(app.QueueEvents, queueEvent{URL: url, State: state, Time: time.Now()})
+	if len(app.QueueEvents) > 30 {
+		app.QueueEvents = app.QueueEvents[len(app.QueueEvents)-30:]
+	}
+}
+
 // countRejection increments the app.Counter for one rejection reason.
 func countRejection(reason string) {
 	recordRejection(reason, "", "", "")
@@ -563,7 +583,12 @@ var commonSecondLevelSuffixes = map[string]bool{
 
 // proxyGet performs an HTTP GET with the shared client and optional proxy.
 func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
-	req, err := http.NewRequest("GET", urlLink, nil)
+	var req *http.Request
+	if crawlCtx != nil {
+		req, err = http.NewRequestWithContext(crawlCtx, "GET", urlLink, nil)
+	} else {
+		req, err = http.NewRequest("GET", urlLink, nil)
+	}
 	if err != nil {
 		return
 	}
@@ -857,6 +882,7 @@ func getNextLink() (int, string) {
 		return maxi, ""
 	}
 	app.LPool[maxi].Status = 1
+	recordQueueEvent("requested", maxURL)
 	app.DomainCounter[app.LPool[maxi].Domain]++
 	app.StateDirty = true
 
@@ -1825,10 +1851,12 @@ func doNextLink(numLinksProcessed int) bool {
 
 	content, links, err := downloadCached(nextLink)
 	if err != nil {
+		recordQueueEvent("failed", nextLink)
 		app.LPool[maxi].Status = 3
 		fmt.Println("\nDownload error: ", strings.Trim(err.Error(), "\n"))
 	} else {
 		app.LPool[maxi].Status = 2
+		recordQueueEvent("retrieved", nextLink)
 	}
 
 	if prevState == 4 && app.LPool[maxi].Status == 2 {
@@ -1917,6 +1945,9 @@ func yamlInitGeneral() error {
 	app.EngLowRelevancyWords = `|` + stringlib.RmNewLines(viper.GetString("engLowRelevancyWords"))
 	app.RegexStopwords = `(?i)\W([0-9]+|.|..|` + app.EngStopWordsWOthe + app.EngLowRelevancyWords + `|` + stringlib.RmNewLines(viper.GetString("specialStopwords")) + `)\W`
 	app.DownloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
+	if app.DownloadTimeout <= 0 || app.DownloadTimeout > maxRequestTimeout {
+		app.DownloadTimeout = maxRequestTimeout
+	}
 	if maxDownloadMB := viper.GetInt("maxDownloadMB"); maxDownloadMB > 0 {
 		app.MaxDownloadBytes = int64(maxDownloadMB) << 20
 	}
@@ -2094,6 +2125,8 @@ func runSearch(query string) error {
 	return nil
 }
 
+const maxRequestTimeout = 30 * time.Second
+
 const appVersion = "1.8.8"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
@@ -2180,6 +2213,8 @@ func parseCLI() error {
 
 // errStop signals that a informational flag was handled and the program should exit cleanly.
 var appGUI bool
+var crawlCtx context.Context
+var cancelCrawl context.CancelFunc
 var networkRequests atomic.Int64
 
 // networkRequestsTotal includes page downloads and robots.txt fetches.
@@ -2269,6 +2304,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 <nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main>
 <section id="dash" hidden><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div><div>Net reqs<div id="s-net">0</div></div><div>Cache I/O<div id="s-io">0</div></div><div>URLs/s<div id="s-rate" class="kpi">0</div></div><div>Avg ms<div id="s-lat" class="kpi">0</div></div><div>Queue<div id="s-queue" class="kpi">0</div></div><div>Go routines<div id="s-goroutines" class="kpi">0</div></div></div></div>
 <div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
+<div class="card"><h3>URL queue</h3><p class="muted">Pending: <b id="q-total">0</b>. States: requested → retrieved/failed → removed.</p><div id="queue-list"></div></div>
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
@@ -2302,9 +2338,10 @@ async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
 async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping';stats()}
+async function loadQueue(){const q=await json('/api/queue');$('q-total').textContent=q.total;const rows=q.recent.slice(-12).reverse().map(e=>'<div><span class=muted>'+new Date(e.time).toLocaleTimeString()+'</span> <b>'+e.state+'</b> '+e.url+'</div>');const pend=q.pending.slice(0,20).map(p=>'<div><span class=muted>pending</span> '+p.url+'</div>');$('queue-list').innerHTML=rows.join('')+pend.join('')||'<span class=muted>Queue empty</span>'}
 async function showReason(reason){const d=await json('/api/rejections?reason='+encodeURIComponent(reason));if(!d.events||!d.events.length){$('reason-detail').innerHTML='<p class=muted>No cases recorded for '+reason+'</p>';return}$('reason-detail').innerHTML='<h4>Last '+d.events.length+' cases: '+reason+'</h4>'+d.events.slice().reverse().map(e=>'<div class=card><b><a href="'+e.url+'" target="_blank" rel="noopener">'+e.url+'</a></b><div>'+(e.detail||'')+'</div>'+(e.text?'<pre>'+e.text.slice(0,600)+'</pre>':'')+'<span class=muted>'+new Date(e.time).toLocaleString()+'</span></div>').join('')}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
-setInterval(stats,1500);stats();profiles();loadAbout()
+setInterval(()=>{stats();loadQueue()},1500);stats();loadQueue();profiles();loadAbout()
 </script></body></html>`
 
 var guiStopwords = map[string]bool{}
@@ -2489,6 +2526,24 @@ func guiHandler() http.Handler {
 		events := append([]rejectionEvent{}, app.RejectionEvents[reason]...)
 		app.RejectionMu.Unlock()
 		writeJSON(w, map[string]interface{}{"reason": reason, "events": events})
+	})
+	mux.HandleFunc("/api/queue", func(w http.ResponseWriter, r *http.Request) {
+		app.PoolMu.Lock()
+		pending := make([]map[string]string, 0, len(app.LPool))
+		for _, link := range app.LPool {
+			state := "pending"
+			if link.Status == 1 {
+				state = "requested"
+			} else if link.Status == 4 {
+				state = "bootstrap"
+			}
+			pending = append(pending, map[string]string{"url": link.URL, "state": state})
+		}
+		app.PoolMu.Unlock()
+		app.QueueMu.Lock()
+		recent := append([]queueEvent{}, app.QueueEvents...)
+		app.QueueMu.Unlock()
+		writeJSON(w, map[string]interface{}{"total": len(pending), "pending": pending, "recent": recent})
 	})
 	mux.HandleFunc("/api/about", func(w http.ResponseWriter, r *http.Request) {
 		repoURL := "https://github.com/computerphysicslab/goCrawler"
@@ -3333,16 +3388,6 @@ func setupRuntime(profile string) (int, func(), error) {
 
 // crawlLoop runs the worker pool and returns the final processed index.
 func crawlLoop(startIndex int) int {
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt)
-	defer signal.Stop(sigCh)
-	go func() {
-		<-sigCh
-		fmt.Println("\nInterrupt received, saving state...")
-		app.StopRequested.Store(true)
-		app.StateDirty = true
-	}()
-
 	var nextIndex atomic.Int64
 	nextIndex.Store(int64(startIndex))
 	var wg sync.WaitGroup
@@ -3361,6 +3406,7 @@ func crawlLoop(startIndex int) int {
 				if !doNextLink(index) {
 					return
 				}
+				pruneTerminalLinks()
 			}
 		}()
 	}
@@ -3381,6 +3427,21 @@ func reportResults(finalIndex int) {
 // run initializes the crawler, executes the crawl and reports results.
 func run() error {
 	app = newCrawler()
+	crawlCtx, cancelCrawl = context.WithCancel(context.Background())
+	defer cancelCrawl()
+	sigCh := make(chan os.Signal, 2)
+	signal.Notify(sigCh, os.Interrupt)
+	defer signal.Stop(sigCh)
+	go func() {
+		<-sigCh
+		fmt.Println("\nInterrupt received, saving state...")
+		app.StopRequested.Store(true)
+		app.StateDirty = true
+		cancelCrawl()
+		<-sigCh
+		fmt.Println("\nSecond interrupt: forced exit")
+		os.Exit(130)
+	}()
 	handled, err := prepareCLI()
 	if err != nil {
 		return err

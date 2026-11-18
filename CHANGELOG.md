@@ -1,3 +1,12 @@
+## [v1.8.9] - 2026-11-18
+
+### Fixed
+- Ctrl+C now cancels a crawl cooperatively (context cancellation plus graceful state save); a second
+  Ctrl+C forces exit. Per-request timeout is capped at 30 s.
+- Failed robots.txt fetches are cached for one hour instead of being retried for every URL.
+- URL queue view now records `requested`, `retrieved` and `failed` transitions and prunes finished
+  links after each processed URL.
+
 ## [v1.8.8] - 2026-11-18
 
 ### Added

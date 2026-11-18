@@ -949,3 +949,14 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - Última pestaña "About" con `/api/about`: versión sincronizada (`appVersion`), copyright, MIT,
   autor/email, enlaces repo/issues/changelog/roadmap, versión de Go, plataforma, componentes y
   **QR local** del repositorio generado con `github.com/skip2/go-qrcode` (puro Go, sin servicio).
+
+## 47. Cancelación, timeout y cola viva (v1.8.9, 2026-11-18)
+
+- Señales globales en `run()`: primer Ctrl+C → `StopRequested` + `cancelCrawl()` + guardado de
+  estado; segundo Ctrl+C → `os.Exit(130)`. `proxyGet` usa `http.NewRequestWithContext(crawlCtx,...)`.
+- `maxRequestTimeout = 30s`: `downloadTimeout` se limita a ese valor al cargar `crawler.yaml`.
+- `robotspolicy` cachea fallos (body vacío) durante 1 hora → no repite la petición para cada URL.
+- Eventos de cola `requested/retrieved/failed` en un buffer de 30; `/api/queue` expone pendientes +
+  recientes y el launcher los muestra con estados. Podado de enlaces terminados tras cada URL.
+- Verificado: Ctrl+C termina limpiamente ("Interrupt received, saving state..." + "Done"), y la cola
+  pasa de 15 pendientes a 0 mostrando transiciones requested→retrieved.

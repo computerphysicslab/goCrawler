@@ -272,6 +272,13 @@ func TestEndToEndLocalServer(t *testing.T) {
 	if !iolibFileExists("output/corpusFrequencies.txt") {
 		t.Fatal("frequency output was not written")
 	}
+	states := make(map[string]bool)
+	for _, event := range app.QueueEvents {
+		states[event.State] = true
+	}
+	if !states["requested"] || !states["retrieved"] {
+		t.Fatalf("queue events missing requested/retrieved: %v", states)
+	}
 }
 
 func TestScoreWithRegexNoCapturingGroup(t *testing.T) {
