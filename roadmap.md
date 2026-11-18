@@ -18,7 +18,7 @@ rejected for native dependencies / commercial licensing.
 
 | ID | Effort | Item |
 |---|---|---|
-| P48 | S | PDF support: opt-in profile flags (`process_pdf`, `pdf_max_bytes`, `pdf_pages_limit`) and PDF URL/content-type gating |
+| P48 | S | PDF support: opt-in profile flags (`process_pdf`, `pdf_max_bytes`, `pdf_pages_limit`) loaded in `yamlInitSpecific`; skip `reBannedTokens` for PDFs when enabled (profiles cannot override it today) |
 | P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
 | P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
@@ -31,7 +31,7 @@ rejected for native dependencies / commercial licensing.
 | P43 | M | Domain heatmap (accepted pages per domain) |
 | P45 | M | Command palette (Cmd/Ctrl+K) for quick actions |
 | P46 | M | Report export to Markdown and print-to-PDF |
-| P49 | M | Raw PDF downloader with size cap, magic-byte validation and timeout |
+| P49 | M | Split raw `fetchBody()` from `download()` so the body is read before the HTML-only Content-Type check; size cap, `%PDF-` validation and timeout |
 | P50 | M | `pdftextlib` wrapper around `ledongthuc/pdf` for text extraction with page limit and graceful failures |
 | P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) in SQLite |
 | P29 | L | Audit table with instant search and filters by HTTP status and Content-Type |

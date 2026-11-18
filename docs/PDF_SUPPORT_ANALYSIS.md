@@ -10,12 +10,27 @@ Download PDF documents found while crawling and feed their **text content** into
 filters and corpus pipeline (language, stopwords, relevance, minimum length, deduplication,
 FTS5 indexing). No PDF generation, signing, redaction or OCR is in scope for v1.
 
-Today goCrawler refuses PDFs in two places:
+### Current blocking points (reviewed in code)
 
-- `crawler.yaml` includes `pdf` in `regexLinkBannedTokens`, so `.pdf` links never enter the pool.
-- `doNextLink` rejects responses whose `Content-Type` is `application/pdf`.
+1. **URL token ban, before enqueue.** `isBanned()` (`crawler.go`) applies `reBannedTokens`, built
+   from the global `regexLinkBannedTokens` in `crawler.yaml`, which contains both `pdf` and
+   `\.(pdf|...)`. `addLinkLocked()` drops matching links, so they never reach the pool. Bootstrap
+   URLs use `addLink(..., true)` and bypass this filter, but still fail later.
+2. **Profile cannot override the ban.** `yamlInitSpecific()` reads only topic/ranking settings;
+   it never loads `regexLinkBannedTokens`, `regexBannedDomains` or similar global gates. So simply
+   removing `pdf` from a profile YAML has no effect today.
+3. **Content-Type gate, before reading the body.** `download()` checks `Content-Type` immediately
+   after the HTTP response headers and accepts only `html`, `text` or `xml`; anything else
+   (including `application/pdf`) closes the body and returns an error **before** any bytes are
+   read. A PDF-only implementation cannot piggyback on `download()`; the raw response must be
+   fetched first and classification done afterwards.
+4. **HTML assumptions after download.** `collectlinks.All()` and `html2text.FromString()` run
+   unconditionally on the response bytes, so a PDF path must return early before them.
+5. **Whitelist gate.** `linkSeemsOk()` requires a match against the profile `linkOk` tokens or
+   `curatedDomains`, otherwise the URL is rejected as `off_topic_url`. PDF URLs therefore also
+   need the host/path to pass the existing whitelist.
 
-Both gates must become opt-out and controlled by the profile instead of global.
+The design below makes gates 1–2 profile-driven and moves PDF detection ahead of gate 3.
 
 ## 2. Open-source Go candidates
 
@@ -57,21 +72,34 @@ These live in the profile struct and are parsed in `loadProfile`. Defaults keep 
 
 ### 3.2 URL gate
 
-- Remove `pdf` from the *global* `regexLinkBannedTokens`; apply the ban only when
-  `!process_pdf` (and/or when the URL does not match `include`/`exclude`).
-- Keep the `isOffTopicURL` checks; a `.pdf` URL is not off-topic by itself.
+- Keep `pdf` in the global `regexLinkBannedTokens` as the safe default for profiles that do not opt
+  in; removing it globally would silently change every existing profile.
+- Load `process_pdf`, `pdf_max_bytes`, `pdf_pages_limit` in `yamlInitSpecific()` (profiles do not
+  override `regexLinkBannedTokens` today, so a config-only solution is impossible).
+- In `addLinkLocked()`, when `process_pdf` is enabled and the URL looks like a PDF, skip only the
+  `reBannedTokens` check; domain bans and the `linkSeemsOk()` whitelist still apply.
+- Detect PDFs by URL extension/path **and** by content type/magic bytes after download; never rely
+  on the extension alone.
 
 ### 3.3 Download
 
-Add a raw downloader used only for PDFs:
+Split `download()` into:
 
-```
-downloadRaw(url) -> (body []byte, contentType string, statusCode int, err error)
-```
+1. `fetchBody(url)` — performs `proxyGet`, checks status, reads up to the limit and returns
+   `(body []byte, contentType string, err error)`. This must happen **before** the HTML-only
+   content-type rejection.
+2. `download()` — wraps `fetchBody` and keeps the current HTML/text/XML + `collectlinks` +
+   `html2text` behaviour for HTML.
+3. `downloadPDF()` — wraps `fetchBody`, accepts `application/pdf` or `%PDF-` magic bytes and hands
+   the raw bytes to `pdftextlib`.
 
-- Enforce `pdf_max_bytes` while reading (`io.LimitReader` + final size check).
-- Validate `Content-Type` contains `application/pdf` or the body starts with `%PDF-`.
-- Do not pass the body through `html2text` or `getLanguageFromHTML`.
+- Enforce `pdf_max_bytes` while reading (`io.LimitReader` + final size check); reuse
+  `app.MaxDownloadBytes` as the hard ceiling.
+- Validate `Content-Type` contains `application/pdf` **or** the body starts with `%PDF-`.
+- Do not pass the body through `collectlinks`/`html2text`, and record rejected PDFs with new
+  reasons such as `too_large`, `invalid_pdf`, `pdf_no_text`.
+- Use a distinct cache prefix (e.g. `pdf_`) or add a source-type field to `CachedData`; reusing
+  `cache_` could later serve extracted PDF text through the HTML path if the profile is disabled.
 
 ### 3.4 Extraction
 

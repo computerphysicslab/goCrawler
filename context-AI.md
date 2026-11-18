@@ -1015,3 +1015,14 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   P50 (M) wrapper `pdftextlib` (límite de páginas, fallos graceful);
   P51 (L) integración completa en pipeline/corpus + tests.
 - OCR de PDFs escaneados queda fuera de alcance; se tratan como documentos demasiado cortos.
+
+
+## 30. Revisión de bloqueos PDF en el código actual (v1.8.8, 2026-11-18)
+
+- Tres puertas reales: (1) `isBanned()` aplica `regexLinkBannedTokens` global (`pdf`, `\.pdf`) antes
+  de encolar; (2) `yamlInitSpecific()` no carga ese regex, por lo que el perfil no puede desactivarlo;
+  (3) `download()` rechaza Content-Type no HTML **antes de leer el body**, así que no basta con quitar
+  la extensión: hay que obtener bytes crudos y clasificar después. `collectlinks`/`html2text` también
+  asumen HTML.
+- Ajustado `docs/PDF_SUPPORT_ANALYSIS.md` (fetchBody previo al gate, flags en profile, prefijo de
+  caché `pdf_`, razones `too_large`/`invalid_pdf`) y roadmap P48/P49.
