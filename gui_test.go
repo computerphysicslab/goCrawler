@@ -1190,6 +1190,10 @@ func TestGUIAccessibilityControls(t *testing.T) {
 		`document.addEventListener('keydown'`,
 		`body.reduce-motion *`,
 		`:focus-visible`,
+		`button.act[aria-pressed=true]`,
+		`Contrast: on`,
+		`Motion: reduced`,
+		`Theme: light`,
 	} {
 		if !strings.Contains(guiHTML, token) {
 			t.Errorf("guiHTML missing accessibility token %q", token)
