@@ -50,6 +50,13 @@ import (
 // Crawler owns the configuration, runtime state and stores of one crawl.
 // Keeping them together removes package-level mutable globals and makes the
 // crawler embeddable and independently testable.
+type rejectionEvent struct {
+	URL    string    `json:"url"`
+	Detail string    `json:"detail"`
+	Text   string    `json:"text,omitempty"`
+	Time   time.Time `json:"time"`
+}
+
 type Crawler struct {
 	// configuration
 	RegexBannedDomains    string
@@ -106,6 +113,8 @@ type Crawler struct {
 	CorpusDocFreq     map[string]int
 	CorpusDocCount    int
 	RejectionCounts   map[string]int
+	RejectionEvents   map[string][]rejectionEvent
+	RejectionMu       sync.Mutex
 	AcceptedDocs      int
 	LastProcessedLink int
 	StateDirty        bool
@@ -151,6 +160,7 @@ func newCrawler() *Crawler {
 		CorpusFreqs:      make(freq),
 		CorpusDocFreq:    make(map[string]int),
 		RejectionCounts:  make(map[string]int),
+		RejectionEvents:  make(map[string][]rejectionEvent),
 		RejectedLinkSets: map[string]map[string]struct{}{
 			"linksNotOk.log":                 {},
 			"linksNotOk.additional.log":      {},
@@ -183,6 +193,7 @@ func (c *Crawler) ResetForProfile(profile string) {
 	c.CorpusDocFreq = make(map[string]int)
 	c.CorpusDocCount = 0
 	c.RejectionCounts = make(map[string]int)
+	c.RejectionEvents = make(map[string][]rejectionEvent)
 	c.AcceptedDocs = 0
 	c.LastProcessedLink = 0
 	c.StateDirty = false
@@ -455,9 +466,23 @@ func respectCrawlDelay(rawURL string) {
 
 // countRejection increments the app.Counter for one rejection reason.
 func countRejection(reason string) {
+	recordRejection(reason, "", "", "")
+}
+
+// recordRejection increments a counter and keeps the latest cases for the GUI.
+func recordRejection(reason, url, detail, text string) {
 	app.CrawlMu.Lock()
 	app.RejectionCounts[reason]++
 	app.CrawlMu.Unlock()
+
+	app.RejectionMu.Lock()
+	defer app.RejectionMu.Unlock()
+	events := app.RejectionEvents[reason]
+	events = append(events, rejectionEvent{URL: url, Detail: detail, Text: text, Time: time.Now()})
+	if len(events) > 10 {
+		events = events[len(events)-10:]
+	}
+	app.RejectionEvents[reason] = events
 }
 
 // rejectionSummary returns the rejection counters as log attributes.
@@ -618,7 +643,7 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 
 	if app.RobotsPolicy != nil {
 		if !app.RobotsPolicy.Allowed(urlLink) {
-			countRejection("robots_blocked")
+			recordRejection("robots_blocked", urlLink, "disallowed by robots.txt", "")
 			logRejectedLink("robotsBlocked.log", urlLink)
 			fmt.Printf(" [ROBOTS-BLOCKED]")
 			return "", nil, errors.New("download: blocked by robots.txt")
@@ -751,7 +776,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 
 	_, err := url.ParseRequestURI(l)
 	if err != nil {
-		countRejection("invalid_url")
+		recordRejection("invalid_url", l, "url.ParseRequestURI failed", "")
 		logRejectedLink("linksNotOk.ParseRequestURI.log", l)
 		return false
 	}
@@ -760,7 +785,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	// http://(http://health.org/2010/04/17/
 	matches := reURLStrict.FindAllStringSubmatch(l, -1)
 	if len(matches) < 1 {
-		countRejection("invalid_url")
+		recordRejection("invalid_url", l, "strict URL regex failed", "")
 		logRejectedLink("linksNotOk.additional.log", l)
 		return false
 	}
@@ -772,7 +797,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 			app.Logger.Debug("link matched profile whitelist", "token", match[1], "url", l)
 			return true
 		} else {
-			countRejection("off_topic_url")
+			recordRejection("off_topic_url", l, "URL does not match linkOk/curatedDomains", "")
 			logRejectedLink("linksNotOk.log", l)
 			return false
 		}
@@ -1572,22 +1597,26 @@ func addLinksOf(nextLink string, links []string) {
 }
 
 // filterParagraphs drops non-English, markup-heavy and low-stopword paragraphs.
-func filterParagraphs(paragraphs []string) []string {
-	documentLanguage := ""
+func filterParagraphs(paragraphs []string, url string) []string {
+	documentLanguage, detectedText, confidence := "", "", 0.0
 	for _, p := range paragraphs {
 		if len(p) > 80 {
-			documentLanguage = whatlanggo.Detect(p).Lang.String()
+			info := whatlanggo.Detect(p)
+			documentLanguage, detectedText, confidence = info.Lang.String(), p, info.Confidence
 			break
 		}
 	}
 	if documentLanguage == "" && len(paragraphs) > 0 {
-		documentLanguage = whatlanggo.Detect(paragraphs[0]).Lang.String()
+		info := whatlanggo.Detect(paragraphs[0])
+		documentLanguage, detectedText, confidence = info.Lang.String(), paragraphs[0], info.Confidence
 	}
 	if documentLanguage != "" && documentLanguage != app.TargetLanguage {
 		for i := range paragraphs {
 			paragraphs[i] = ""
 		}
-		countRejection("non_english")
+		recordRejection("non_english", url,
+			fmt.Sprintf("detected %s (confidence %.2f), expected %s", documentLanguage, confidence, app.TargetLanguage),
+			detectedText)
 		return paragraphs
 	}
 	for i, p := range paragraphs {
@@ -1600,7 +1629,8 @@ func filterParagraphs(paragraphs []string) []string {
 		}
 		ratio := float64(stopWordsCount(p4)) / float64(len(tokenize(p4))+1)
 		if ratio < 0.1 {
-			countRejection("stopword_ratio")
+			recordRejection("stopword_ratio", url,
+				fmt.Sprintf("stopword ratio %.3f below 0.1", ratio), p4)
 			paragraphs[i] = ""
 		} else {
 			paragraphs[i] = p4
@@ -1646,7 +1676,7 @@ func isUniqueDocument(signature, url string) bool {
 		app.StateDirty = true
 		return true
 	}
-	countRejection("duplicate")
+	recordRejection("duplicate", url, "signature matches "+app.UniqueSignature[signature], "")
 	app.Logger.Debug("document rejected", "reason", "duplicate", "url", url, "duplicate_of", app.UniqueSignature[signature])
 	return false
 }
@@ -1795,18 +1825,18 @@ func doNextLink(numLinksProcessed int) bool {
 		addLinksOf(nextLink, links)
 	}
 
-	paragraphs := filterParagraphs(splitParagraphs(content))
+	paragraphs := filterParagraphs(splitParagraphs(content), nextLink)
 	best := bestParagraph(paragraphs)
 	curated := buildCuratedContent(paragraphs)
 	docLen := len(tokenize(curated))
 
 	if docLen > app.MaxDocLen {
-		countRejection("too_long")
+		recordRejection("too_long", nextLink, fmt.Sprintf("%d tokens > max %d", docLen, app.MaxDocLen), curated)
 		app.Logger.Debug("document rejected", "reason", "too_long", "url", nextLink, "tokens", docLen)
 		return true
 	}
 	if docLen < app.MinDocLen {
-		countRejection("too_short")
+		recordRejection("too_short", nextLink, fmt.Sprintf("%d tokens < min %d", docLen, app.MinDocLen), curated)
 		app.Logger.Debug("document rejected", "reason", "too_short", "url", nextLink, "tokens", docLen)
 		return true
 	}
@@ -1818,7 +1848,7 @@ func doNextLink(numLinksProcessed int) bool {
 
 	score := rankingScore(curated)
 	if score < app.ScoreThreshold {
-		countRejection("low_relevancy")
+		recordRejection("low_relevancy", nextLink, fmt.Sprintf("score %.2f < threshold %.2f", score, app.ScoreThreshold), curated)
 		app.Logger.Debug("document rejected", "reason", "low_relevancy", "url", nextLink, "score", score)
 		return true
 	}
@@ -1826,14 +1856,14 @@ func doNextLink(numLinksProcessed int) bool {
 	if len(sortedFreqs) > 0 {
 		ratio := float64(sortedFreqs[0].Value) / float64(1+docLen)
 		if ratio > 0.1 || ratio < 0.002 {
-			countRejection("token_distribution")
+			recordRejection("token_distribution", nextLink, fmt.Sprintf("maxFreq ratio %.4f outside 0.002..0.1", ratio), curated)
 			app.Logger.Debug("document rejected", "reason", "token_distribution", "url", nextLink)
 			return true
 		}
 	}
 
 	if err := writeDocument(nextLink, curated, signature, best, score); err != nil {
-		countRejection("output_error")
+		recordRejection("output_error", nextLink, err.Error(), "")
 		app.Logger.Error("cannot write document", "url", nextLink, "error", err)
 		return true
 	}
@@ -2202,7 +2232,7 @@ const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawl
 <header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span></header>
 <nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button></nav><main>
 <section id="dash" hidden><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div></div></div>
-<div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
+<div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
@@ -2223,6 +2253,7 @@ async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
 async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping';stats()}
+async function showReason(reason){const d=await json('/api/rejections?reason='+encodeURIComponent(reason));if(!d.events||!d.events.length){$('reason-detail').innerHTML='<p class=muted>No cases recorded for '+reason+'</p>';return}$('reason-detail').innerHTML='<h4>Last '+d.events.length+' cases: '+reason+'</h4>'+d.events.slice().reverse().map(e=>'<div class=card><b><a href="'+e.url+'" target="_blank" rel="noopener">'+e.url+'</a></b><div>'+(e.detail||'')+'</div>'+(e.text?'<pre>'+e.text.slice(0,600)+'</pre>':'')+'<span class=muted>'+new Date(e.time).toLocaleString()+'</span></div>').join('')}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
 setInterval(stats,1500);stats();profiles()
 </script></body></html>`
@@ -2296,16 +2327,20 @@ func guiHandler() http.Handler {
 		for _, seed := range vp.GetStringSlice("bootstrapingLinks") {
 			b.WriteString("- " + seed + "\n")
 		}
-		b.WriteString("\nCURATED CONTENT EXCERPTS (English):\n")
-		for i, doc := range corpusDocuments(5) {
+		b.WriteString("\nCURATED CONTENT (complete documents):\n")
+		for i, doc := range corpusDocuments(1000) {
 			text := strings.TrimSpace(doc["text"])
-			if len(text) > 700 {
-				text = text[:700] + " [...]"
-			}
 			b.WriteString(fmt.Sprintf("[%d] %s\n%s\n\n", i+1, doc["url"], text))
 		}
-		b.WriteString("\nTASK: Identify further high-value pages, articles, documentation and datasets that match these keywords and extend the curated content. Explain briefly why each source is relevant.\n")
+		b.WriteString("\nTASK: Identify further high-value pages, articles, documentation and datasets that match these keywords and extend the curated content. Explain briefly why each source is relevant. All results, all pages you provide and the entire report must always be written in English.\n")
 		writeJSON(w, map[string]string{"prompt": b.String()})
+	})
+	mux.HandleFunc("/api/rejections", func(w http.ResponseWriter, r *http.Request) {
+		reason := r.URL.Query().Get("reason")
+		app.RejectionMu.Lock()
+		events := append([]rejectionEvent{}, app.RejectionEvents[reason]...)
+		app.RejectionMu.Unlock()
+		writeJSON(w, map[string]interface{}{"reason": reason, "events": events})
 	})
 	mux.HandleFunc("/api/last-profile", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]string{"profile": lastExecutedProfile()})

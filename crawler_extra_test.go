@@ -321,3 +321,21 @@ func TestResetForProfile(t *testing.T) {
 		}
 	})
 }
+
+func TestNonEnglishRejectionRecordsDetails(t *testing.T) {
+	withApp(t, func() {
+		app.TargetLanguage = "English"
+		text := "Ceci est un texte ecrit en francais avec beaucoup de mots pour que la detection puisse fonctionner correctement et identifier la langue utilisee ici."
+		paragraphs := filterParagraphs([]string{text}, "https://example.org/fr")
+		if paragraphs[0] != "" {
+			t.Fatal("non-English paragraph should be dropped")
+		}
+		events := app.RejectionEvents["non_english"]
+		if len(events) != 1 {
+			t.Fatalf("expected 1 rejection event, got %d", len(events))
+		}
+		if !strings.Contains(events[0].Detail, "detected") || events[0].Text == "" || events[0].URL == "" {
+			t.Fatalf("incomplete rejection event: %+v", events[0])
+		}
+	})
+}

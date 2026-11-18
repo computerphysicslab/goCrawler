@@ -3,7 +3,15 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.8] - 2026-11-18
+## [v1.7.9] - 2026-11-18
+
+### Changed
+- Prompt generator includes complete curated documents (no truncation) and explicitly requires that
+  the entire report and all provided pages be written in English.
+- Rejection counters now record the last 10 cases per reason (URL, reason detail, text excerpt).
+  Dashboard rows are clickable and expand to show those cases with links opening in a new tab.
+
+ - 2026-11-18
 
 ### Changed
 - Keyword Lab: removing a keyword now marks it for deletion and `/api/keywords/apply` removes it

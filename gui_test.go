@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -472,6 +473,82 @@ func TestGUIProfilesAndPromptAreSelects(t *testing.T) {
 		}
 		if !strings.Contains(body, `const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase())`) {
 			t.Fatal("last profile should be selected case-insensitively")
+		}
+	})
+}
+
+func TestGUIPromptUsesFullCuratedTextAndEnglish(t *testing.T) {
+	withGUIApp(t, func() {
+		oldCwd, err := os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+		}
+		dir := t.TempDir()
+		if err := os.MkdirAll(filepath.Join(dir, "profiles"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(filepath.Join(dir, "logs"), 0755); err != nil {
+			t.Fatal(err)
+		}
+		longText := strings.Repeat("Astronomical image stacking requires careful calibration and registration of every frame. ", 20)
+		profile := "linkOk: |\n  stack|image\nregexRankingKeywords: |\n  (?i)\\W(stack|image)\\W\nbootstrapingLinks:\n- https://example.org/stack\n"
+		if err := os.WriteFile(filepath.Join(dir, "profiles", "prompt_full_test.yaml"), []byte(profile), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "logs", "corpusCuratedText.log"),
+			[]byte("https://example.org/stack\n"+longText+"\n----\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chdir(dir); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Chdir(oldCwd)
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/api/prompt?profile=prompt_full_test", "")
+		if code != 200 {
+			t.Fatalf("prompt = %d %q", code, body)
+		}
+		var payload struct{ Prompt string }
+		if err := json.Unmarshal([]byte(body), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(payload.Prompt, "[...]") {
+			t.Fatal("prompt must not truncate curated text")
+		}
+		if !strings.Contains(payload.Prompt, strings.TrimSpace(longText)) {
+			t.Fatalf("prompt does not contain the complete curated text; prompt tail=%q", payload.Prompt[len(payload.Prompt)-300:])
+		}
+		if !strings.Contains(payload.Prompt, "must always be written in English") {
+			t.Fatal("prompt is missing the English-only requirement")
+		}
+	})
+}
+
+func TestGUIRejectionEventsEndpoint(t *testing.T) {
+	withGUIApp(t, func() {
+		for i := 0; i < 12; i++ {
+			recordRejection("too_short", fmt.Sprintf("https://example.org/%d", i),
+				fmt.Sprintf("%d tokens < min 50", i), "short text")
+		}
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/api/rejections?reason=too_short", "")
+		if code != 200 {
+			t.Fatalf("rejections = %d %q", code, body)
+		}
+		var payload struct {
+			Events []rejectionEvent `json:"events"`
+		}
+		if err := json.Unmarshal([]byte(body), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if len(payload.Events) != 10 {
+			t.Fatalf("got %d events, want 10", len(payload.Events))
+		}
+		if payload.Events[9].URL != "https://example.org/11" || payload.Events[9].Detail == "" {
+			t.Fatalf("latest event wrong: %+v", payload.Events[9])
 		}
 	})
 }

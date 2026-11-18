@@ -843,3 +843,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   término con singular/plural/verbos (`image/imaged/images/imaging`, `stack/stacked/stacking/stacks`).
 - Evita generar formas absurdas (`stackinger`, `drizzleion`). Verificado con curl y tests: perfil
   resultante solo contiene las variantes correctas.
+
+## 37. Prompt completo y detalle de rechazos (v1.7.9, 2026-11-18)
+
+- `/api/prompt` incluye los documentos curados completos (sin ` [...]`) y exige que todo el informe
+  y todas las páginas aportadas estén en inglés.
+- Nueva estructura `rejectionEvent` con URL, detalle, texto y timestamp; `recordRejection` guarda los
+  10 últimos casos por razón (mutex propio). `/api/rejections?reason=X` los devuelve al GUI.
+- El dashboard muestra las filas de razones como clicables; al pulsarlas se despliegan los últimos
+  casos con enlaces `target="_blank"` y el motivo concreto (p. ej. "detected French ... expected
+  English", "7 tokens < min 50", "score 4.2 < threshold 10").
