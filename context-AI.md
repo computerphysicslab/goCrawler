@@ -357,6 +357,12 @@ lo registro aquí y ajusto las secciones anteriores si hace falta.)_
   Regla reforzada: **ningún turno puede terminar sin una llamada a `todowrite`**, aunque la respuesta
   sea corta o el trabajo parezca trivial. Si el turno solo documenta, la lista también debe crearse
   y marcarse completada.
+- **Permisos de OpenCode (regla permanente, 2026-11-18)**: OpenCode tiene **permiso de lectura y
+  escritura** tanto en el directorio en el que está trabajando como en `/tmp`; no debe pedir
+  confirmación para leer/editar ficheros en esas rutas. Configurado también en
+  `~/.config/opencode/opencode.jsonc` (sección `permission`: `read`, `edit` y `external_directory`
+  con `/home/jips/datos/datos-juan/proyectos/**` y `/tmp/**` en `allow`). Si el usuario trabaja en
+  otra carpeta, añadirla a esa lista. Los cambios de configuración requieren reiniciar OpenCode.
 - Todo el **código y la documentación del repo en inglés** (este `context-ai.md` es el diario
   histórico en español; se mantiene en ambas copias).
 - Mantener el entorno limpio tras las pruebas (Redis parado, perfiles copiados a la raíz borrados).

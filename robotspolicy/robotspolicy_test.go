@@ -163,3 +163,18 @@ func TestRobotsFailureIsCachedBriefly(t *testing.T) {
 		t.Fatalf("robots.txt fetched %d times, want 1 (negative cache)", requests)
 	}
 }
+
+func TestRobotsCrawlDelayIsCapped(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "User-agent: *")
+		fmt.Fprintln(w, "Crawl-delay: 3600")
+		fmt.Fprintln(w, "Disallow: /private")
+	}))
+	defer server.Close()
+	p := NewWithCache("goCrawler-test", time.Second, "")
+	key, _, _ := hostKeyOf(server.URL)
+	r := p.rulesFor(key)
+	if r.delay > maxRobotsDelay || r.delay <= 0 {
+		t.Fatalf("crawl delay = %v, want <= %v", r.delay, maxRobotsDelay)
+	}
+}

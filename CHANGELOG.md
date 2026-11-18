@@ -1,3 +1,10 @@
+## [v1.8.13] - 2026-11-18
+
+### Changed
+- Fresh cancellable context per GUI crawl with a 10-minute watchdog; per-request timeout capped at 30 s.
+- Per-domain delay (robots.txt and profile) capped at 5 s to avoid long stalls.
+- Workbench responses send `Cache-Control: no-store`.
+
 ## [v1.8.12] - 2026-11-18
 
 ### Fixed

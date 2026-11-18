@@ -1139,3 +1139,43 @@ func TestGUIPromptFallsBackToLastProfile(t *testing.T) {
 		}
 	})
 }
+
+func TestFreshCrawlContextAndDelayCaps(t *testing.T) {
+	withGUIApp(t, func() {
+		freshCrawlContext()
+		first := guiCrawlContext()
+		if first == nil || first.Err() != nil {
+			t.Fatal("fresh context should be active")
+		}
+		crawlCtxMu.Lock()
+		cancelCrawl()
+		crawlCtxMu.Unlock()
+		if first.Err() == nil {
+			t.Fatal("context should be cancelled")
+		}
+		freshCrawlContext()
+		second := guiCrawlContext()
+		if second == nil || second.Err() != nil {
+			t.Fatal("new crawl must get a fresh context")
+		}
+
+		app.CrawlDelay = time.Hour
+		respectCrawlDelay("https://example.org/a")
+		app.CrawlDelay = 0
+	})
+}
+
+func TestGUISendsNoStoreHeaders(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		resp, err := http.Get(server.URL + "/api/stats")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		if got := resp.Header.Get("Cache-Control"); got != "no-store" {
+			t.Fatalf("Cache-Control = %q", got)
+		}
+	})
+}

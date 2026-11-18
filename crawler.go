@@ -584,8 +584,8 @@ var commonSecondLevelSuffixes = map[string]bool{
 // proxyGet performs an HTTP GET with the shared client and optional proxy.
 func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	var req *http.Request
-	if crawlCtx != nil {
-		req, err = http.NewRequestWithContext(crawlCtx, "GET", urlLink, nil)
+	if ctx := guiCrawlContext(); ctx != nil {
+		req, err = http.NewRequestWithContext(ctx, "GET", urlLink, nil)
 	} else {
 		req, err = http.NewRequest("GET", urlLink, nil)
 	}
@@ -2038,6 +2038,9 @@ func yamlInitSpecific() error {
 	app.MaxLinksPerPage = vp.GetInt("maxLinksPerPage")
 	if ms := vp.GetInt("crawlDelayMs"); ms > 0 {
 		app.CrawlDelay = time.Duration(ms) * time.Millisecond
+		if app.CrawlDelay > maxCrawlDelay {
+			app.CrawlDelay = maxCrawlDelay
+		}
 	}
 	language := strings.TrimSpace(vp.GetString("language"))
 	if language != "" {
@@ -2128,7 +2131,11 @@ func runSearch(query string) error {
 	return nil
 }
 
-const maxRequestTimeout = 30 * time.Second
+const (
+	maxRequestTimeout = 30 * time.Second
+	maxCrawlDuration  = 10 * time.Minute
+	maxCrawlDelay     = 5 * time.Second
+)
 
 const appVersion = "1.8.8"
 
@@ -2218,6 +2225,7 @@ func parseCLI() error {
 var appGUI bool
 var crawlCtx context.Context
 var cancelCrawl context.CancelFunc
+var crawlCtxMu sync.Mutex
 var networkRequests atomic.Int64
 
 // networkRequestsTotal includes page downloads and robots.txt fetches.
@@ -2361,6 +2369,23 @@ func init() {
 
 var guiCrawling atomic.Bool
 
+// freshCrawlContext creates a cancellable context for a single crawl.
+func freshCrawlContext() {
+	crawlCtxMu.Lock()
+	defer crawlCtxMu.Unlock()
+	if cancelCrawl != nil {
+		cancelCrawl()
+	}
+	crawlCtx, cancelCrawl = context.WithTimeout(context.Background(), maxCrawlDuration)
+}
+
+// guiCrawlContext returns the active crawl context.
+func guiCrawlContext() context.Context {
+	crawlCtxMu.Lock()
+	defer crawlCtxMu.Unlock()
+	return crawlCtx
+}
+
 // launchGUICrawl runs a crawl inside the GUI process so its metrics are live.
 func launchGUICrawl(profile string) error {
 	resolved, err := resolveProfileName(profile)
@@ -2370,6 +2395,7 @@ func launchGUICrawl(profile string) error {
 	if !guiCrawling.CompareAndSwap(false, true) {
 		return fmt.Errorf("a crawl is already running")
 	}
+	freshCrawlContext()
 	go func() {
 		defer guiCrawling.Store(false)
 		app.ResetForProfile(resolved)
@@ -2416,6 +2442,7 @@ func queueDepth() int {
 func guiHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, guiHTML)
 	})
@@ -2900,13 +2927,18 @@ func guiHandler() http.Handler {
 	mux.HandleFunc("/api/crawl/stop", func(w http.ResponseWriter, r *http.Request) {
 		app.StopRequested.Store(true)
 		app.StateDirty = true
+		crawlCtxMu.Lock()
 		if cancelCrawl != nil {
 			cancelCrawl()
 		}
+		crawlCtxMu.Unlock()
 		writeJSON(w, map[string]string{"status": "stopping"})
 	})
 
-	return mux
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		mux.ServeHTTP(w, r)
+	})
 }
 
 // resolveProfileName finds an existing profile ignoring case and spaces.
@@ -3422,7 +3454,12 @@ func crawlLoop(startIndex int) int {
 		go func() {
 			defer wg.Done()
 			for {
-				if app.StopRequested.Load() {
+				ctx := guiCrawlContext()
+				if app.StopRequested.Load() || (ctx != nil && ctx.Err() != nil) {
+					return
+				}
+				if !app.CrawlStartedAt.IsZero() && time.Since(app.CrawlStartedAt) >= maxCrawlDuration {
+					app.StopRequested.Store(true)
 					return
 				}
 				index := int(nextIndex.Add(1) - 1)

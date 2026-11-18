@@ -28,6 +28,7 @@ func ResetStats() { requests.Store(0) }
 const (
 	robotsCacheVersion = 1
 	robotsCacheTTL     = 7 * 24 * time.Hour
+	maxRobotsDelay     = 5 * time.Second
 	defaultRobotsCache = "./cache/robots-cache.json"
 )
 
@@ -116,6 +117,9 @@ func (p *Policy) loadCache() {
 		r.group = data.FindGroup(p.userAgent)
 		if r.group != nil && r.group.CrawlDelay > 0 {
 			r.delay = r.group.CrawlDelay
+			if r.delay > maxRobotsDelay {
+				r.delay = maxRobotsDelay
+			}
 		}
 		p.rules[host] = r
 	}
@@ -197,6 +201,9 @@ func (p *Policy) rulesFor(hostKey string) *hostRules {
 	r.group = data.FindGroup(p.userAgent)
 	if r.group != nil && r.group.CrawlDelay > 0 {
 		r.delay = r.group.CrawlDelay
+		if r.delay > maxRobotsDelay {
+			r.delay = maxRobotsDelay
+		}
 	}
 	p.rules[hostKey] = r
 	p.saveCacheLocked()
