@@ -9,13 +9,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"io/ioutil"
 	"log"
 	"math"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"reflect"
@@ -45,37 +48,136 @@ import (
 	"goCrawler/stringlib"
 )
 
+// Crawler owns the configuration, runtime state and stores of one crawl.
+// Keeping them together removes package-level mutable globals and makes the
+// crawler embeddable and independently testable.
+type Crawler struct {
+	// configuration
+	RegexBannedDomains    string
+	RegexLinkBannedTokens string
+	CuratedDomains        string
+	RegexLinkOk           string
+	EngStopWordsWOthe     string
+	EngStopWords          string
+	EngLowRelevancyWords  string
+	RegexStopwords        string
+	RegexRankingKeywords  string
+	ReRankingExtended     *regexp.Regexp
+	ProxyHost             string
+	ProxyUser             string
+	ProxyPass             string
+	DownloadTimeout       time.Duration
+	MaxDownloadBytes      int64
+	BootstrapLinks        []string
+	MinDocLen             int
+	MaxDocLen             int
+	MaxLinksPerPage       int
+	CrawlDelay            time.Duration
+	RankingStrategy       string
+	Synonyms              map[string][]string
+	ScoreThreshold        float64
+	AddURL                string
+	CacheBackend          string
+	CachePath             string
+	UserAgent             string
+	RespectRobots         bool
+	LogLevel              string
+	ProfileName           string
+	TargetLanguage        string
+	MinLanguageConfidence float64
+	ConfigFile            string
+	CLIWorkers            int
+	CLIDryRun             bool
+	CLIQuery              string
+	CLIExplore            bool
+	CLIGenerate           string
+	ShowVersion           bool
+	ShowLicense           bool
+	GUIPort               int
+	GUIProcess            *exec.Cmd
+	ResumeEnabled         bool
+
+	// state
+	LPool             []aLink
+	LinkIndex         map[string]int
+	DomainCounter     map[string]int
+	FailedDomains     map[string]int
+	UniqueSignature   map[string]string
+	CorpusFreqs       freq
+	CorpusDocFreq     map[string]int
+	CorpusDocCount    int
+	RejectionCounts   map[string]int
+	AcceptedDocs      int
+	LastProcessedLink int
+	StateDirty        bool
+	CacheHits         int
+	OnlineDownloads   int
+	DownloadMS        int64
+	RejectedLinkSets  map[string]map[string]struct{}
+	DomainLastReq     map[string]time.Time
+	Counter           int
+
+	// stores and writers
+	CacheStore      storelib.Store
+	RobotsPolicy    *robotspolicy.Policy
+	HTTPClient      *http.Client
+	SearchDB        *sql.DB
+	CSVWriter       *csv.Writer
+	CSVFile         *os.File
+	Logger          *slog.Logger
+	LogDownload     *log.Logger
+	LogCGI          *log.Logger
+	LogDomainFailed *log.Logger
+
+	// synchronization
+	PoolMu        sync.Mutex
+	RejectMu      sync.Mutex
+	FailMu        sync.Mutex
+	CrawlMu       sync.Mutex
+	DomainDelayMu sync.Mutex
+	StopRequested atomic.Bool
+}
+
+// newCrawler returns a crawler with sane defaults.
+func newCrawler() *Crawler {
+	return &Crawler{
+		MaxDownloadBytes: 5 << 20,
+		RankingStrategy:  "hybrid",
+		Synonyms:         make(map[string][]string),
+		LinkIndex:        make(map[string]int),
+		DomainCounter:    make(map[string]int),
+		FailedDomains:    make(map[string]int),
+		UniqueSignature:  make(map[string]string),
+		CorpusFreqs:      make(freq),
+		CorpusDocFreq:    make(map[string]int),
+		RejectionCounts:  make(map[string]int),
+		RejectedLinkSets: map[string]map[string]struct{}{
+			"linksNotOk.log":                 {},
+			"linksNotOk.additional.log":      {},
+			"linksNotOk.ParseRequestURI.log": {},
+			"robotsBlocked.log":              {},
+		},
+		DomainLastReq:   make(map[string]time.Time),
+		HTTPClient:      &http.Client{Timeout: 10 * time.Second},
+		Logger:          slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		LogDownload:     log.New(io.Discard, "", 0),
+		LogCGI:          log.New(io.Discard, "", 0),
+		LogDomainFailed: log.New(io.Discard, "", 0),
+		CLIWorkers:      1,
+		TargetLanguage:  "English",
+		CachePath:       "./cache/cache.db",
+		LogLevel:        "info",
+	}
+}
+
+// app is the active crawler instance, initialized at the start of run().
+var app = newCrawler()
+
 /******************************************************************************/
 /******************************************************************************/
 /*********************** CONFIG ***********************************************/
 /******************************************************************************/
 /******************************************************************************/
-
-var regexBannedDomains, regexLinkBannedTokens, curatedDomains, regexLinkOk string
-var engStopWordsWOthe, engStopWords, engLowRelevancyWords, regexStopwords string
-var regexRankingKeywords, proxyHost, proxyUser, proxyPass string
-var downloadTimeout time.Duration
-var maxDownloadBytes int64 = 5 << 20
-var bootstrapingLinks []string
-var minDocLen, maxDocLen int
-var maxLinksPerPage int
-var crawlDelay time.Duration
-var domainLastReq = make(map[string]time.Time)
-var domainDelayMu sync.Mutex
-var rankingStrategy = "hybrid"
-var synonyms = make(map[string][]string)
-var reRankingExtended *regexp.Regexp
-var corpusDocFreq = make(map[string]int)
-var corpusDocCount int
-var scoreThreshold float64
-var addUrl string
-var cacheBackend, cachePath string
-var cacheStore storelib.Store
-var robotsPolicy *robotspolicy.Policy
-var userAgent string
-var respectRobots bool
-var logLevel string
-var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // initHTTPClient builds the shared HTTP client with connection reuse.
 func initHTTPClient() {
@@ -83,17 +185,17 @@ func initHTTPClient() {
 		MaxIdleConns:          100,
 		MaxIdleConnsPerHost:   10,
 		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   downloadTimeout,
-		ResponseHeaderTimeout: downloadTimeout,
+		TLSHandshakeTimeout:   app.DownloadTimeout,
+		ResponseHeaderTimeout: app.DownloadTimeout,
 	}
-	if proxyHost != "" {
+	if app.ProxyHost != "" {
 		transport.Proxy = http.ProxyURL(&url.URL{
 			Scheme: "http",
-			User:   url.UserPassword(proxyUser, proxyPass),
-			Host:   proxyHost,
+			User:   url.UserPassword(app.ProxyUser, app.ProxyPass),
+			Host:   app.ProxyHost,
 		})
 	}
-	httpClient = &http.Client{Transport: transport, Timeout: downloadTimeout}
+	app.HTTPClient = &http.Client{Transport: transport, Timeout: app.DownloadTimeout}
 }
 
 var (
@@ -127,24 +229,20 @@ var (
 
 // compileConfigRegexes compiles the regexes derived from configuration once.
 func compileConfigRegexes() {
-	reBannedDomains = regexp.MustCompile(regexBannedDomains)
-	reBannedTokens = regexp.MustCompile(regexLinkBannedTokens)
-	reStopwords = regexp.MustCompile(regexStopwords)
-	reStopWords = regexp.MustCompile(`(?i)\W(` + engStopWords + `)\W`)
-	reStopLeft = regexp.MustCompile(`(?i)^(` + engStopWords + `)\W`)
-	reStopRight = regexp.MustCompile(`(?i)\W(` + engStopWords + `)$`)
-	reLowRelLeft = regexp.MustCompile(`(?i)^(` + engStopWords + engLowRelevancyWords + `)\W`)
-	reLinkOk = regexp.MustCompile(regexLinkOk)
-	reRankingKw = regexp.MustCompile(regexRankingKeywords)
+	reBannedDomains = regexp.MustCompile(app.RegexBannedDomains)
+	reBannedTokens = regexp.MustCompile(app.RegexLinkBannedTokens)
+	reStopwords = regexp.MustCompile(app.RegexStopwords)
+	reStopWords = regexp.MustCompile(`(?i)\W(` + app.EngStopWords + `)\W`)
+	reStopLeft = regexp.MustCompile(`(?i)^(` + app.EngStopWords + `)\W`)
+	reStopRight = regexp.MustCompile(`(?i)\W(` + app.EngStopWords + `)$`)
+	reLowRelLeft = regexp.MustCompile(`(?i)^(` + app.EngStopWords + app.EngLowRelevancyWords + `)\W`)
+	reLinkOk = regexp.MustCompile(app.RegexLinkOk)
+	reRankingKw = regexp.MustCompile(app.RegexRankingKeywords)
 }
 
-// logger is replaced at startup so records are written through the session tee.
-var logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+// app.Logger is replaced at startup so records are written through the session tee.
 
-var rejectionCounts = make(map[string]int)
-var acceptedDocs int
-var lastProcessedLink int
-var resumeEnabled bool
+const maxUniqueRejectedLinks = 1000000
 
 const crawlStateKey = "state:crawl"
 
@@ -166,76 +264,80 @@ type crawlState struct {
 
 // saveCrawlState stores the current crawl progress in the cache store.
 func saveCrawlState() {
-	poolMu.Lock()
-	failMu.Lock()
-	crawlMu.Lock()
-	defer crawlMu.Unlock()
-	defer failMu.Unlock()
-	defer poolMu.Unlock()
+	if !app.StateDirty {
+		return
+	}
+	app.PoolMu.Lock()
+	app.FailMu.Lock()
+	app.CrawlMu.Lock()
+	defer app.CrawlMu.Unlock()
+	defer app.FailMu.Unlock()
+	defer app.PoolMu.Unlock()
 	state := crawlState{
 		Version:       crawlStateVersion,
-		Pool:          lPool,
-		DomainCounter: domainCounter,
-		FailedDomains: failedDomains,
-		Processed:     lastProcessedLink,
-		UniqueSigs:    uniqueSignature,
-		Frequencies:   corpusFreqs,
-		DocFreq:       corpusDocFreq,
-		DocCount:      corpusDocCount,
+		Pool:          app.LPool,
+		DomainCounter: app.DomainCounter,
+		FailedDomains: app.FailedDomains,
+		Processed:     app.LastProcessedLink,
+		UniqueSigs:    app.UniqueSignature,
+		Frequencies:   app.CorpusFreqs,
+		DocFreq:       app.CorpusDocFreq,
+		DocCount:      app.CorpusDocCount,
 		SavedAt:       time.Now(),
 	}
 	b, err := json.Marshal(state)
 	if err != nil {
-		logger.Error("cannot serialize crawl state", "error", err)
+		app.Logger.Error("cannot serialize crawl state", "error", err)
 		return
 	}
-	if err := cacheStore.Set(crawlStateKey, string(b)); err != nil {
-		logger.Error("cannot save crawl state", "error", err)
+	if err := app.CacheStore.Set(crawlStateKey, string(b)); err != nil {
+		app.Logger.Error("cannot save crawl state", "error", err)
 		return
 	}
-	logger.Debug("crawl state saved", "processed", lastProcessedLink)
+	app.StateDirty = false
+	app.Logger.Debug("crawl state saved", "processed", app.LastProcessedLink)
 }
 
 // loadCrawlState restores a previous crawl and returns the next link index.
 func loadCrawlState() int {
-	value := cacheStore.Get(crawlStateKey)
+	value := app.CacheStore.Get(crawlStateKey)
 	if value == "" {
-		logger.Warn("no crawl state found, starting from scratch")
+		app.Logger.Warn("no crawl state found, starting from scratch")
 		return 0
 	}
 	var state crawlState
 	if err := json.Unmarshal([]byte(value), &state); err != nil {
-		logger.Error("cannot decode crawl state", "error", err)
+		app.Logger.Error("cannot decode crawl state", "error", err)
 		return 0
 	}
 	if state.Version != crawlStateVersion {
-		logger.Warn("unsupported crawl state version", "version", state.Version, "expected", crawlStateVersion)
+		app.Logger.Warn("unsupported crawl state version", "version", state.Version, "expected", crawlStateVersion)
 		return 0
 	}
-	lPool = state.Pool
-	linkIndex = make(map[string]int, len(lPool))
-	for i, link := range lPool {
-		linkIndex[link.URL] = i
+	app.LPool = state.Pool
+	app.LinkIndex = make(map[string]int, len(app.LPool))
+	for i, link := range app.LPool {
+		app.LinkIndex[link.URL] = i
 	}
-	domainCounter = state.DomainCounter
+	app.DomainCounter = state.DomainCounter
 	if state.FailedDomains != nil {
-		failedDomains = state.FailedDomains
+		app.FailedDomains = state.FailedDomains
 	}
-	uniqueSignature = state.UniqueSigs
-	corpusFreqs = state.Frequencies
+	app.UniqueSignature = state.UniqueSigs
+	app.CorpusFreqs = state.Frequencies
 	if state.DocFreq != nil {
-		corpusDocFreq = state.DocFreq
+		app.CorpusDocFreq = state.DocFreq
 	}
-	corpusDocCount = state.DocCount
-	lastProcessedLink = state.Processed
-	logger.Info("crawl state restored",
+	app.CorpusDocCount = state.DocCount
+	app.LastProcessedLink = state.Processed
+	app.Logger.Info("crawl state restored",
 		"processed", state.Processed,
-		"links", len(lPool),
+		"links", len(app.LPool),
 		"savedAt", state.SavedAt)
 	return state.Processed
 }
 
-// initLogger configures the structured logger level.
+// initLogger configures the structured app.Logger level.
 func initLogger(level string) {
 	var lvl slog.Level
 	switch strings.ToLower(level) {
@@ -248,7 +350,7 @@ func initLogger(level string) {
 	default:
 		lvl = slog.LevelInfo
 	}
-	logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
+	app.Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
 }
 
 // parseSynonyms reads "term: a|b" lines into a lookup map.
@@ -269,14 +371,14 @@ func parseSynonyms(raw string) map[string][]string {
 	return result
 }
 
-// buildRankingRegex merges profile keywords and synonyms into one matcher.
+// buildRankingRegex merges profile keywords and app.Synonyms into one matcher.
 func buildRankingRegex() {
-	terms := regexTermList(regexRankingKeywords)
-	for _, alts := range synonyms {
+	terms := regexTermList(app.RegexRankingKeywords)
+	for _, alts := range app.Synonyms {
 		terms = append(terms, alts...)
 	}
 	terms = listUnique(terms)
-	reRankingExtended = regexp.MustCompile(`(?i)\W(` + strings.Join(terms, "|") + `)\W`)
+	app.ReRankingExtended = regexp.MustCompile(`(?i)\W(` + strings.Join(terms, "|") + `)\W`)
 }
 
 // regexTermList extracts the alternatives of a (?-style)\W(...)\W regex.
@@ -308,42 +410,42 @@ func listUnique(in []string) []string {
 
 // respectCrawlDelay applies a generic per-domain delay between requests.
 func respectCrawlDelay(rawURL string) {
-	if crawlDelay <= 0 {
+	if app.CrawlDelay <= 0 {
 		return
 	}
 	domain := getDomain(rawURL)
-	domainDelayMu.Lock()
+	app.DomainDelayMu.Lock()
 	now := time.Now()
 	next := now
-	if last, ok := domainLastReq[domain]; ok && last.After(now) {
+	if last, ok := app.DomainLastReq[domain]; ok && last.After(now) {
 		next = last
 	}
-	domainLastReq[domain] = next.Add(crawlDelay)
-	domainDelayMu.Unlock()
+	app.DomainLastReq[domain] = next.Add(app.CrawlDelay)
+	app.DomainDelayMu.Unlock()
 	if sleep := time.Until(next); sleep > 0 {
 		time.Sleep(sleep)
 	}
 }
 
-// countRejection increments the counter for one rejection reason.
+// countRejection increments the app.Counter for one rejection reason.
 func countRejection(reason string) {
-	crawlMu.Lock()
-	rejectionCounts[reason]++
-	crawlMu.Unlock()
+	app.CrawlMu.Lock()
+	app.RejectionCounts[reason]++
+	app.CrawlMu.Unlock()
 }
 
 // rejectionSummary returns the rejection counters as log attributes.
 func rejectionSummary() []interface{} {
-	crawlMu.Lock()
-	defer crawlMu.Unlock()
-	keys := make([]string, 0, len(rejectionCounts))
-	for k := range rejectionCounts {
+	app.CrawlMu.Lock()
+	defer app.CrawlMu.Unlock()
+	keys := make([]string, 0, len(app.RejectionCounts))
+	for k := range app.RejectionCounts {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	attrs := make([]interface{}, 0, len(keys)*2)
 	for _, k := range keys {
-		attrs = append(attrs, k, rejectionCounts[k])
+		attrs = append(attrs, k, app.RejectionCounts[k])
 	}
 	return attrs
 }
@@ -354,14 +456,11 @@ func rejectionSummary() []interface{} {
 ****************************************************************************************************************
 ****************************************************************************************************************/
 
-var csvWriter *csv.Writer
-var csvFile *os.File
-
 // csvInit creates the ranking CSV writer, appending when resuming.
 func csvInit() error {
 	var file *os.File
 	var err error
-	if resumeEnabled {
+	if app.ResumeEnabled {
 		file, err = os.OpenFile("output/ranking-URL.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	} else {
 		file, err = os.Create("output/ranking-URL.csv")
@@ -369,9 +468,9 @@ func csvInit() error {
 	if err != nil {
 		return fmt.Errorf("cannot create ranking CSV: %w", err)
 	}
-	csvFile = file
-	csvWriter = csv.NewWriter(file)
-	csvWriter.Comma = '\t'
+	app.CSVFile = file
+	app.CSVWriter = csv.NewWriter(file)
+	app.CSVWriter.Comma = '\t'
 	return nil
 }
 
@@ -390,16 +489,10 @@ type aLink struct {
 	Status int // 0 = pending, 1 = crawling, 2 = downloaded, 3 = failed, 4 = bootstrapping
 }
 
-var lPool []aLink
-var linkIndex = make(map[string]int)
-
 type CachedData struct {
 	Content string
 	Links   []string
 }
-
-var domainCounter = make(map[string]int)
-var failedDomains = make(map[string]int)
 
 var commonSecondLevelSuffixes = map[string]bool{
 	"co.uk": true, "org.uk": true, "ac.uk": true, "gov.uk": true,
@@ -417,7 +510,7 @@ func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 	if printLog {
 		fmt.Printf("\nStart downloading")
 	}
-	resp, err = httpClient.Do(req)
+	resp, err = app.HTTPClient.Do(req)
 	if printLog {
 		fmt.Printf("\nEnd downloading")
 	}
@@ -426,22 +519,22 @@ func proxyGet(urlLink string, printLog bool) (resp *http.Response, err error) {
 
 // download fetches a page and returns its plain text and extracted links.
 func download(urlLink string) (string, []string, error) {
-	logDownload.Printf("\n%s", urlLink)
+	app.LogDownload.Printf("\n%s", urlLink)
 	domain := getDomain(urlLink)
 	if domainHadFailed(domain) {
-		logDownload.Printf("\tPreviously failed")
+		app.LogDownload.Printf("\tPreviously failed")
 		return "", nil, errors.New("download: Previously failed")
 	}
-	logDownload.Printf("\tRequested")
+	app.LogDownload.Printf("\tRequested")
 
 	resp, err := proxyGet(urlLink, true)
 	if err != nil {
-		logDownload.Printf("\tHttp transport error:\n\t\t%s", err)
+		app.LogDownload.Printf("\tHttp transport error:\n\t\t%s", err)
 		domainReportFailed(domain)
 		return "", nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		logDownload.Printf("\tHTTP status: %d", resp.StatusCode)
+		app.LogDownload.Printf("\tHTTP status: %d", resp.StatusCode)
 		if resp.StatusCode >= 500 {
 			domainReportFailed(domain)
 		}
@@ -450,15 +543,15 @@ func download(urlLink string) (string, []string, error) {
 	}
 	if ct := resp.Header.Get("Content-Type"); ct != "" &&
 		!strings.Contains(ct, "html") && !strings.Contains(ct, "text") && !strings.Contains(ct, "xml") {
-		logDownload.Printf("\tUnsupported content type: %s", ct)
+		app.LogDownload.Printf("\tUnsupported content type: %s", ct)
 		resp.Body.Close()
 		return "", nil, fmt.Errorf("download: unsupported content type %s", ct)
 	}
 
 	// Read the response body.
-	bodyBytes, err := ioutil.ReadAll(io.LimitReader(resp.Body, maxDownloadBytes))
+	bodyBytes, err := ioutil.ReadAll(io.LimitReader(resp.Body, app.MaxDownloadBytes))
 	if err != nil {
-		logDownload.Printf("\t%s%s", "Read error: ", err)
+		app.LogDownload.Printf("\t%s%s", "Read error: ", err)
 		return "", nil, err
 	}
 	resp.Body.Close() // must close
@@ -470,11 +563,11 @@ func download(urlLink string) (string, []string, error) {
 	// Convert the HTML body to plain text.
 	plain, err := html2text.FromString(string(bodyBytes), html2text.Options{PrettyTables: false})
 	if err != nil {
-		logDownload.Printf("\t%s%s", "html2text.FromString fails: ", err)
+		app.LogDownload.Printf("\t%s%s", "html2text.FromString fails: ", err)
 		return "", nil, err
 	}
 
-	logDownload.Printf("\t%s len(plain): %d len(links): %d", "Ok: ", len(plain), len(links))
+	app.LogDownload.Printf("\t%s len(plain): %d len(links): %d", "Ok: ", len(plain), len(links))
 
 	return plain, links, nil
 }
@@ -484,38 +577,42 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 	var cached CachedData
 	cacheKey := "cache_" + urlLink
 
-	if cacheStore.Exists(cacheKey) {
-		value := cacheStore.Get(cacheKey)
+	if app.CacheStore.Exists(cacheKey) {
+		value := app.CacheStore.Get(cacheKey)
 		if value != "" {
 			if err := json.Unmarshal([]byte(value), &cached); err != nil {
-				logger.Warn("discarding corrupt cache entry", "key", cacheKey, "error", err)
+				app.Logger.Warn("discarding corrupt cache entry", "key", cacheKey, "error", err)
 			} else {
+				app.CacheHits++
 				fmt.Printf(" [CACHE]")
 				return cached.Content, cached.Links, nil
 			}
 		}
 	}
 
-	if robotsPolicy != nil {
-		if !robotsPolicy.Allowed(urlLink) {
+	if app.RobotsPolicy != nil {
+		if !app.RobotsPolicy.Allowed(urlLink) {
 			countRejection("robots_blocked")
 			logRejectedLink("robotsBlocked.log", urlLink)
 			fmt.Printf(" [ROBOTS-BLOCKED]")
 			return "", nil, errors.New("download: blocked by robots.txt")
 		}
-		robotsPolicy.Wait(urlLink)
+		app.RobotsPolicy.Wait(urlLink)
 	}
 	respectCrawlDelay(urlLink)
 
+	start := time.Now()
 	cached.Content, cached.Links, err = download(urlLink)
+	app.DownloadMS += time.Since(start).Milliseconds()
 	if err != nil {
 		return "", nil, err
 	}
+	app.OnlineDownloads++
 	encoded, marshalErr := json.Marshal(cached)
 	if marshalErr != nil {
-		logger.Error("cannot marshal cache entry", "error", marshalErr)
-	} else if setErr := cacheStore.Set(cacheKey, string(encoded)); setErr != nil {
-		logger.Error("cannot write cache entry", "error", setErr)
+		app.Logger.Error("cannot marshal cache entry", "error", marshalErr)
+	} else if setErr := app.CacheStore.Set(cacheKey, string(encoded)); setErr != nil {
+		app.Logger.Error("cannot write cache entry", "error", setErr)
 	}
 	fmt.Printf(" [ONLINE]")
 	return cached.Content, cached.Links, nil
@@ -560,9 +657,9 @@ func getSecondLevelDomain(link string) string {
 
 // increaseDomainCounter records one more visit for a domain.
 func increaseDomainCounter(domain string) {
-	poolMu.Lock()
-	domainCounter[domain]++
-	poolMu.Unlock()
+	app.PoolMu.Lock()
+	app.DomainCounter[domain]++
+	app.PoolMu.Unlock()
 }
 
 // isBanned reports whether a link matches the configured blacklists.
@@ -578,27 +675,11 @@ func isBanned(link string, domain string) bool {
 	return false
 }
 
-const maxUniqueRejectedLinks = 1000000
-
-var (
-	poolMu   sync.Mutex
-	rejectMu sync.Mutex
-	failMu   sync.Mutex
-	crawlMu  sync.Mutex
-)
-
-var rejectedLinkSets = map[string]map[string]struct{}{
-	"linksNotOk.log":                 {},
-	"linksNotOk.additional.log":      {},
-	"linksNotOk.ParseRequestURI.log": {},
-	"robotsBlocked.log":              {},
-}
-
 // initRejectedLinkSets loads existing rejected links to deduplicate across runs.
 func initRejectedLinkSets() {
-	rejectMu.Lock()
-	defer rejectMu.Unlock()
-	for filename, set := range rejectedLinkSets {
+	app.RejectMu.Lock()
+	defer app.RejectMu.Unlock()
+	for filename, set := range app.RejectedLinkSets {
 		path := "./logs/" + filename
 		if !iolib.FileExists(path) {
 			continue
@@ -618,10 +699,10 @@ func initRejectedLinkSets() {
 
 // logRejectedLink appends a rejected link to its log only once.
 func logRejectedLink(filename, link string) {
-	rejectMu.Lock()
-	defer rejectMu.Unlock()
+	app.RejectMu.Lock()
+	defer app.RejectMu.Unlock()
 	link = strings.TrimSpace(link)
-	set, ok := rejectedLinkSets[filename]
+	set, ok := app.RejectedLinkSets[filename]
 	if !ok {
 		return
 	}
@@ -662,7 +743,7 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 	if !avoidCustomCheck {
 		match := reLinkOk.FindStringSubmatch(l)
 		if len(match) > 0 {
-			logger.Debug("link matched profile whitelist", "token", match[1], "url", l)
+			app.Logger.Debug("link matched profile whitelist", "token", match[1], "url", l)
 			return true
 		} else {
 			countRejection("off_topic_url")
@@ -676,18 +757,18 @@ func linkSeemsOk(l string, avoidCustomCheck bool) bool {
 
 // getNextLink selects the highest-priority pending link from the pool.
 func getNextLink() (int, string) {
-	poolMu.Lock()
-	defer poolMu.Unlock()
+	app.PoolMu.Lock()
+	defer app.PoolMu.Unlock()
 	maxi := 0
 	lasti := 0
 	maxURL := ""
 	var priority, maxPriority float64
 
-	if len(lPool) == 0 {
+	if len(app.LPool) == 0 {
 		return maxi, ""
 	}
 
-	for i, l := range lPool {
+	for i, l := range app.LPool {
 		if l.Status == 4 { // bootstrapping url
 			fmt.Printf("\n\nFound bootstrapping url: %+v", l)
 			// Set this item directly as next candidate
@@ -697,7 +778,7 @@ func getNextLink() (int, string) {
 			break
 		}
 
-		priority = float64(l.Count) * float64(l.Count) / (float64(domainCounter[l.Domain]) + 1.0)
+		priority = float64(l.Count) * float64(l.Count) / (float64(app.DomainCounter[l.Domain]) + 1.0)
 
 		if l.Status == 0 && priority > maxPriority && !isBanned(l.URL, l.Domain) && linkSeemsOk(l.URL, true) {
 
@@ -714,8 +795,9 @@ func getNextLink() (int, string) {
 	if maxURL == "" {
 		return maxi, ""
 	}
-	lPool[maxi].Status = 1
-	domainCounter[lPool[maxi].Domain]++
+	app.LPool[maxi].Status = 1
+	app.DomainCounter[app.LPool[maxi].Domain]++
+	app.StateDirty = true
 
 	return maxi, maxURL
 }
@@ -740,14 +822,14 @@ func addLink(link string, avoidFilters bool) bool {
 		// Canonicalize the link by removing CGI parameters.
 		link2 := reCgiParams.ReplaceAllString(link, "")
 		if link2 != link {
-			logCGI.Printf("\n\n%s\n%s", link2, link)
+			app.LogCGI.Printf("\n\n%s\n%s", link2, link)
 			link = link2
 		}
 	}
 
 	// Look for an existing entry in the link pool using the URL index.
-	if i, ok := linkIndex[link]; ok {
-		lPool[i].Count++
+	if i, ok := app.LinkIndex[link]; ok {
+		app.LPool[i].Count++
 		return true
 	}
 
@@ -756,24 +838,25 @@ func addLink(link string, avoidFilters bool) bool {
 	if avoidFilters {
 		status = 4
 	}
-	linkIndex[link] = len(lPool)
-	lPool = append(lPool, aLink{URL: link, Domain: domain, Count: 1, Status: status})
+	app.LinkIndex[link] = len(app.LPool)
+	app.StateDirty = true
+	app.LPool = append(app.LPool, aLink{URL: link, Domain: domain, Count: 1, Status: status})
 
 	return true
 }
 
 // linkBootstraping seeds the pool with the profile bootstrap URLs.
 func linkBootstraping() {
-	for _, l := range bootstrapingLinks {
+	for _, l := range app.BootstrapLinks {
 		addLink(l, true)
 	}
 
-	goDebug.Print("linkBootstraping", lPool)
+	goDebug.Print("linkBootstraping", app.LPool)
 }
 
 // lPoolDump writes the link pool to a JSON file.
 func lPoolDump() {
-	jdata, err := json.MarshalIndent(lPool, "", " ")
+	jdata, err := json.MarshalIndent(app.LPool, "", " ")
 	if err != nil {
 		fmt.Println("error: ", err)
 	}
@@ -786,34 +869,35 @@ func lPoolDump() {
 
 // domainCounterDump writes the per-domain visit counters to a JSON file.
 func domainCounterDump() {
-	jdata, err := json.MarshalIndent(domainCounter, "", " ")
+	jdata, err := json.MarshalIndent(app.DomainCounter, "", " ")
 	if err != nil {
 		fmt.Println("domainCounterDump error: ", err)
 	}
-	jsonFile, err := os.Create("./output/domainCounter.json")
+	jsonFile, err := os.Create("./output/app.DomainCounter.json")
 	jsonFile.Write(jdata)
 }
 
 // domainReportFailed records a transport failure in memory and in the text log.
 func domainReportFailed(domain string) {
-	failMu.Lock()
-	failedDomains[domain]++
-	failMu.Unlock()
+	app.FailMu.Lock()
+	app.FailedDomains[domain]++
+	app.StateDirty = true
+	app.FailMu.Unlock()
 	iolib.String2fileAppend(domain+"\n", "./logs/domainFailed.log")
 }
 
 // domainHadFailed reports whether a domain exceeded the failure limit.
 func domainHadFailed(domain string) bool {
-	failMu.Lock()
-	defer failMu.Unlock()
-	return failedDomains[domain] > 6
+	app.FailMu.Lock()
+	defer app.FailMu.Unlock()
+	return app.FailedDomains[domain] > 6
 }
 
-// initFailedDomains rebuilds the in-memory counter from the text log.
+// initFailedDomains rebuilds the in-memory app.Counter from the text log.
 func initFailedDomains() {
-	failMu.Lock()
-	defer failMu.Unlock()
-	failedDomains = make(map[string]int)
+	app.FailMu.Lock()
+	defer app.FailMu.Unlock()
+	app.FailedDomains = make(map[string]int)
 	path := "./logs/domainFailed.log"
 	if !iolib.FileExists(path) {
 		return
@@ -821,7 +905,7 @@ func initFailedDomains() {
 	for _, line := range strings.Split(iolib.File2string(path), "\n") {
 		domain := strings.TrimSpace(line)
 		if domain != "" {
-			failedDomains[domain]++
+			app.FailedDomains[domain]++
 		}
 	}
 }
@@ -880,22 +964,116 @@ func scoreWithRegex(text string, re *regexp.Regexp) float64 {
 	return rank
 }
 
+const embeddingDim = 256
+
+// tokenEmbedding hashes character trigrams into a fixed-size vector. This is
+// a dependency-free approximation of word embeddings (the hashing trick) and
+// captures morphological similarity between related terms.
+func tokenEmbedding(token string) []float64 {
+	vector := make([]float64, embeddingDim)
+	word := strings.ToLower(token)
+	if len(word) < 3 {
+		word = " " + word + " "
+	}
+	for i := 0; i+3 <= len(word); i++ {
+		h := fnv.New32a()
+		h.Write([]byte(word[i : i+3]))
+		vector[int(h.Sum32()%embeddingDim)]++
+	}
+	norm := 0.0
+	for _, v := range vector {
+		norm += v * v
+	}
+	if norm > 0 {
+		norm = math.Sqrt(norm)
+		for i := range vector {
+			vector[i] /= norm
+		}
+	}
+	return vector
+}
+
+// cosineSimilarity computes the cosine of two embedding vectors.
+func cosineSimilarity(a, b []float64) float64 {
+	dot := 0.0
+	for i := range a {
+		dot += a[i] * b[i]
+	}
+	return dot
+}
+
+// profileEmbedding averages the embeddings of the profile ranking terms.
+func profileEmbedding() []float64 {
+	terms := regexTermList(app.RegexRankingKeywords)
+	for _, alts := range app.Synonyms {
+		terms = append(terms, alts...)
+	}
+	vector := make([]float64, embeddingDim)
+	count := 0
+	for _, term := range listUnique(terms) {
+		if len(term) < 3 {
+			continue
+		}
+		emb := tokenEmbedding(term)
+		for i, v := range emb {
+			vector[i] += v
+		}
+		count++
+	}
+	if count > 0 {
+		for i := range vector {
+			vector[i] /= float64(count)
+		}
+	}
+	return vector
+}
+
+// semanticScore compares a document with the profile embedding.
+func semanticScore(text string) float64 {
+	profile := profileEmbedding()
+	doc := make([]float64, embeddingDim)
+	tokens := tokenize(text)
+	count := 0
+	for _, token := range tokens {
+		if len(token) < 4 {
+			continue
+		}
+		emb := tokenEmbedding(token)
+		for i, v := range emb {
+			doc[i] += v
+		}
+		count++
+		if count >= 400 {
+			break
+		}
+	}
+	if count == 0 {
+		return 0
+	}
+	for i := range doc {
+		doc[i] /= float64(count)
+	}
+	return 100 * cosineSimilarity(profile, doc)
+}
+
 // rankingScore scores a document using the configured strategy.
 func rankingScore(text string) float64 {
-	crawlMu.Lock()
-	defer crawlMu.Unlock()
-	switch rankingStrategy {
+	app.CrawlMu.Lock()
+	defer app.CrawlMu.Unlock()
+	switch app.RankingStrategy {
 	case "keywords":
 		return rankingByKeywords(text)
 	case "tfidf":
 		return tfidfScore(text)
+	case "semantic":
+		return semanticScore(text)
 	default:
-		kw := 100.0 * float64(uniqueMatches(text, reRankingExtended)) / math.Sqrt(float64(1+len(tokenize(text))))
-		return (kw + tfidfScore(text)) / 2
+		kw := 100.0 * float64(uniqueMatches(text, app.ReRankingExtended)) / math.Sqrt(float64(1+len(tokenize(text))))
+		return (kw + tfidfScore(text) + semanticScore(text)) / 3
 	}
 }
 
-// uniqueMatches counts distinct matched terms (including synonyms) in a text.
+// uniqueMatches counts distinct matched terms (including app.Synonyms) in a text.
 func uniqueMatches(text string, re *regexp.Regexp) int {
 	if re == nil {
 		return 0
@@ -913,11 +1091,11 @@ func uniqueMatches(text string, re *regexp.Regexp) int {
 // the profile vocabulary. It is length-normalised by construction.
 func tfidfScore(text string) float64 {
 	tokens := tokenize(text)
-	if len(tokens) == 0 || reRankingExtended == nil {
+	if len(tokens) == 0 || app.ReRankingExtended == nil {
 		return 0
 	}
 	idf := func(term string) float64 {
-		return math.Log(1 + float64(corpusDocCount+1)/float64(1+corpusDocFreq[strings.ToLower(term)]))
+		return math.Log(1 + float64(app.CorpusDocCount+1)/float64(1+app.CorpusDocFreq[strings.ToLower(term)]))
 	}
 	total, matched := 0.0, 0.0
 	seen := make(map[string]bool)
@@ -929,7 +1107,7 @@ func tfidfScore(text string) float64 {
 		seen[key] = true
 		total += idf(key)
 	}
-	for _, m := range reRankingExtended.FindAllStringSubmatch(text, -1) {
+	for _, m := range app.ReRankingExtended.FindAllStringSubmatch(text, -1) {
 		if len(m) > 1 && len(m[1]) >= 3 {
 			matched += idf(m[1])
 		}
@@ -1025,11 +1203,9 @@ func analyze(t string) []string {
 
 type freq map[string]int
 
-var counter int
-
 // add increments the frequency of a token.
 func (f freq) add(t string) {
-	counter++
+	app.Counter++
 	for _, token := range analyze(t) {
 		f[token]++
 	}
@@ -1289,48 +1465,42 @@ func ngramsFreqsOfAll(t string, nMax int) []kv { // All n's from nMax to 2 decre
 ****************************************************************************************************************/
 
 // File loggers are initialized after the logs directory is created.
-var (
-	outfile, outfile3, outfile4 *os.File
-	logDownload                 = log.New(io.Discard, "", 0)
-	logCGI                      = log.New(io.Discard, "", 0)
-	logDomainFailed             = log.New(io.Discard, "", 0)
-)
 
 // initFileLoggers opens the log files. It must run after main creates ./logs.
 func initFileLoggers() error {
 	var err error
-	if outfile, err = os.Create("./logs/download.log"); err != nil {
+	f1, err := os.Create("./logs/download.log")
+	if err != nil {
 		return fmt.Errorf("download log: %w", err)
 	}
-	logDownload = log.New(outfile, "", 0)
-	if outfile3, err = os.Create("./logs/cgi.log"); err != nil {
+	app.LogDownload = log.New(f1, "", 0)
+	f2, err := os.Create("./logs/cgi.log")
+	if err != nil {
 		return fmt.Errorf("cgi log: %w", err)
 	}
-	logCGI = log.New(outfile3, "", 0)
-	if outfile4, err = os.Create("./logs/domainFailed.log"); err != nil {
+	app.LogCGI = log.New(f2, "", 0)
+	f3, err := os.Create("./logs/domainFailed.log")
+	if err != nil {
 		return fmt.Errorf("domainFailed log: %w", err)
 	}
-	logDomainFailed = log.New(outfile4, "", 0)
+	app.LogDomainFailed = log.New(f3, "", 0)
 	initFailedDomains()
 	return nil
 }
 
 // closeFileLoggers flushes and closes the log files.
 func closeFileLoggers() {
-	for _, f := range []*os.File{outfile, outfile3, outfile4} {
+	for _, f := range []*os.File{nil, nil, nil} {
 		if f != nil {
 			f.Close()
 		}
 	}
 }
 
-var uniqueSignature = make(map[string]string)
-var corpusFreqs freq = make(freq)
-
 // addLinksOf adds the links found in a page to the pool.
 func addLinksOf(nextLink string, links []string) {
 	linksAdded := 0
-	limit := maxLinksPerPage
+	limit := app.MaxLinksPerPage
 	if limit <= 0 {
 		limit = 200
 	}
@@ -1364,7 +1534,7 @@ func filterParagraphs(paragraphs []string) []string {
 	if documentLanguage == "" && len(paragraphs) > 0 {
 		documentLanguage = whatlanggo.Detect(paragraphs[0]).Lang.String()
 	}
-	if documentLanguage != "" && documentLanguage != targetLanguage {
+	if documentLanguage != "" && documentLanguage != app.TargetLanguage {
 		for i := range paragraphs {
 			paragraphs[i] = ""
 		}
@@ -1420,60 +1590,61 @@ func documentSignature(curatedContent string) (string, []kv) {
 
 // isUniqueDocument registers a signature and reports whether it was new.
 func isUniqueDocument(signature, url string) bool {
-	crawlMu.Lock()
-	defer crawlMu.Unlock()
-	if uniqueSignature[signature] == "" {
-		uniqueSignature[signature] = url
+	app.CrawlMu.Lock()
+	defer app.CrawlMu.Unlock()
+	if app.UniqueSignature[signature] == "" {
+		app.UniqueSignature[signature] = url
+		app.StateDirty = true
 		return true
 	}
 	countRejection("duplicate")
-	logger.Debug("document rejected", "reason", "duplicate", "url", url, "duplicate_of", uniqueSignature[signature])
+	app.Logger.Debug("document rejected", "reason", "duplicate", "url", url, "duplicate_of", app.UniqueSignature[signature])
 	return false
 }
 
 // writeDocument appends the curated text and its ranking row to the outputs.
 func writeDocument(url, content, signature, bestParagraph string, score float64) error {
-	crawlMu.Lock()
-	defer crawlMu.Unlock()
+	app.CrawlMu.Lock()
+	defer app.CrawlMu.Unlock()
 	iolib.String2fileAppend(url+"\n"+content+"----\n\n\n\n", "./logs/corpusCuratedText.log")
-	if err := csvWriter.Write([]string{fmt.Sprintf("%.02f", score), fmt.Sprintf("%d", len(tokenize(content))), signature, url, bestParagraph}); err != nil {
+	if err := app.CSVWriter.Write([]string{fmt.Sprintf("%.02f", score), fmt.Sprintf("%d", len(tokenize(content))), signature, url, bestParagraph}); err != nil {
 		return err
 	}
-	csvWriter.Flush()
+	app.CSVWriter.Flush()
 	return nil
 }
 
 // pruneTerminalLinks removes finished links from the pool while keeping counters.
 func pruneTerminalLinks() {
-	poolMu.Lock()
-	defer poolMu.Unlock()
-	kept := make([]aLink, 0, len(lPool))
-	for _, link := range lPool {
+	app.PoolMu.Lock()
+	defer app.PoolMu.Unlock()
+	kept := make([]aLink, 0, len(app.LPool))
+	for _, link := range app.LPool {
 		if link.Status == 2 || link.Status == 3 {
 			continue
 		}
 		kept = append(kept, link)
 	}
-	if len(kept) == len(lPool) {
+	if len(kept) == len(app.LPool) {
 		return
 	}
-	lPool = kept
-	linkIndex = make(map[string]int, len(lPool))
-	for i, link := range lPool {
-		linkIndex[link.URL] = i
+	app.LPool = kept
+	app.LinkIndex = make(map[string]int, len(app.LPool))
+	for i, link := range app.LPool {
+		app.LinkIndex[link.URL] = i
 	}
 }
 
 // capAuxiliarySets bounds memory used by deduplication structures.
 func capAuxiliarySets() {
 	const cap = 100000
-	crawlMu.Lock()
-	if len(uniqueSignature) > cap {
-		uniqueSignature = make(map[string]string)
+	app.CrawlMu.Lock()
+	if len(app.UniqueSignature) > cap {
+		app.UniqueSignature = make(map[string]string)
 	}
-	crawlMu.Unlock()
-	rejectMu.Lock()
-	for _, set := range rejectedLinkSets {
+	app.CrawlMu.Unlock()
+	app.RejectMu.Lock()
+	for _, set := range app.RejectedLinkSets {
 		if len(set) > cap {
 			for key := range set {
 				delete(set, key)
@@ -1483,7 +1654,7 @@ func capAuxiliarySets() {
 			}
 		}
 	}
-	rejectMu.Unlock()
+	app.RejectMu.Unlock()
 }
 
 // dumpFrequencies writes frequency files and JSON dumps every 50 links, or when forced.
@@ -1494,15 +1665,15 @@ func dumpFrequencies(numLinksProcessed int, force bool) {
 	pruneTerminalLinks()
 	capAuxiliarySets()
 	saveCrawlState()
-	logger.Info("progress", "processed", numLinksProcessed, "accepted", acceptedDocs,
+	app.Logger.Info("progress", "processed", numLinksProcessed, "accepted", app.AcceptedDocs,
 		"rejections", rejectionSummary())
 
-	crawlMu.Lock()
-	freqCopy := make(freq, len(corpusFreqs))
-	for k, v := range corpusFreqs {
+	app.CrawlMu.Lock()
+	freqCopy := make(freq, len(app.CorpusFreqs))
+	for k, v := range app.CorpusFreqs {
 		freqCopy[k] = v
 	}
-	crawlMu.Unlock()
+	app.CrawlMu.Unlock()
 	allSorted := rSortFreq(freqCopy)
 	top := topKFreq(freqCopy, 100)
 	output := ""
@@ -1533,10 +1704,10 @@ func dumpFrequencies(numLinksProcessed int, force bool) {
 
 // notifyIndexer optionally submits an accepted URL to an external indexer.
 func notifyIndexer(rawURL string) {
-	if len(addUrl) == 0 {
+	if len(app.AddURL) == 0 {
 		return
 	}
-	target := addUrl + url.QueryEscape(rawURL)
+	target := app.AddURL + url.QueryEscape(rawURL)
 	fmt.Printf("\nrequestIndexUrl: %s", target)
 	go func() {
 		if _, err := proxyGet(target, false); err != nil {
@@ -1555,23 +1726,23 @@ func doNextLink(numLinksProcessed int) bool {
 		return false
 	}
 
-	poolMu.Lock()
-	prevState := lPool[maxi].Status
-	poolMu.Unlock()
-	if stopRequested.Load() {
+	app.PoolMu.Lock()
+	prevState := app.LPool[maxi].Status
+	app.PoolMu.Unlock()
+	if app.StopRequested.Load() {
 		return false
 	}
 	fmt.Printf("\n\n* Downloading url: %s", nextLink)
 
 	content, links, err := downloadCached(nextLink)
 	if err != nil {
-		lPool[maxi].Status = 3
+		app.LPool[maxi].Status = 3
 		fmt.Println("\nDownload error: ", strings.Trim(err.Error(), "\n"))
 	} else {
-		lPool[maxi].Status = 2
+		app.LPool[maxi].Status = 2
 	}
 
-	if prevState == 4 && lPool[maxi].Status == 2 {
+	if prevState == 4 && app.LPool[maxi].Status == 2 {
 		addLinksOf(nextLink, links)
 	}
 
@@ -1580,14 +1751,14 @@ func doNextLink(numLinksProcessed int) bool {
 	curated := buildCuratedContent(paragraphs)
 	docLen := len(tokenize(curated))
 
-	if docLen > maxDocLen {
+	if docLen > app.MaxDocLen {
 		countRejection("too_long")
-		logger.Debug("document rejected", "reason", "too_long", "url", nextLink, "tokens", docLen)
+		app.Logger.Debug("document rejected", "reason", "too_long", "url", nextLink, "tokens", docLen)
 		return true
 	}
-	if docLen < minDocLen {
+	if docLen < app.MinDocLen {
 		countRejection("too_short")
-		logger.Debug("document rejected", "reason", "too_short", "url", nextLink, "tokens", docLen)
+		app.Logger.Debug("document rejected", "reason", "too_short", "url", nextLink, "tokens", docLen)
 		return true
 	}
 
@@ -1597,9 +1768,9 @@ func doNextLink(numLinksProcessed int) bool {
 	}
 
 	score := rankingScore(curated)
-	if score < scoreThreshold {
+	if score < app.ScoreThreshold {
 		countRejection("low_relevancy")
-		logger.Debug("document rejected", "reason", "low_relevancy", "url", nextLink, "score", score)
+		app.Logger.Debug("document rejected", "reason", "low_relevancy", "url", nextLink, "score", score)
 		return true
 	}
 
@@ -1607,30 +1778,32 @@ func doNextLink(numLinksProcessed int) bool {
 		ratio := float64(sortedFreqs[0].Value) / float64(1+docLen)
 		if ratio > 0.1 || ratio < 0.002 {
 			countRejection("token_distribution")
-			logger.Debug("document rejected", "reason", "token_distribution", "url", nextLink)
+			app.Logger.Debug("document rejected", "reason", "token_distribution", "url", nextLink)
 			return true
 		}
 	}
 
 	if err := writeDocument(nextLink, curated, signature, best, score); err != nil {
 		countRejection("output_error")
-		logger.Error("cannot write document", "url", nextLink, "error", err)
+		app.Logger.Error("cannot write document", "url", nextLink, "error", err)
 		return true
 	}
 	indexDocument(nextLink, curated)
-	crawlMu.Lock()
-	acceptedDocs++
-	corpusDocCount++
+	app.CrawlMu.Lock()
+	app.AcceptedDocs++
+	app.StateDirty = true
+	app.CorpusDocCount++
 	for _, token := range tokenize(curated) {
-		corpusDocFreq[strings.ToLower(token)]++
+		app.CorpusDocFreq[strings.ToLower(token)]++
 	}
-	corpusFreqs.add(curated)
-	crawlMu.Unlock()
+	app.CorpusFreqs.add(curated)
+	app.StateDirty = true
+	app.CrawlMu.Unlock()
 
 	dumpFrequencies(numLinksProcessed, false)
 	notifyIndexer(nextLink)
 
-	if prevState == 0 && lPool[maxi].Status == 2 {
+	if prevState == 0 && app.LPool[maxi].Status == 2 {
 		addLinksOf(nextLink, links)
 	}
 	return true
@@ -1638,8 +1811,8 @@ func doNextLink(numLinksProcessed int) bool {
 
 // yamlInitGeneral loads the shared crawler.yaml configuration.
 func yamlInitGeneral() error {
-	if configFile != "" {
-		viper.SetConfigFile(configFile)
+	if app.ConfigFile != "" {
+		viper.SetConfigFile(app.ConfigFile)
 	} else {
 		viper.SetConfigName("crawler")
 		viper.AddConfigPath(".")
@@ -1648,51 +1821,51 @@ func yamlInitGeneral() error {
 	if err != nil {             // Handle errors reading the config file
 		return fmt.Errorf("fatal error config file: %w", err)
 	}
-	regexBannedDomains = stringlib.RmNewLines(viper.GetString("regexBannedDomains"))
-	regexLinkBannedTokens = stringlib.RmNewLines(viper.GetString("regexLinkBannedTokens"))
-	engStopWordsWOthe = stringlib.RmNewLines(viper.GetString("engStopWordsWOthe"))
-	engStopWords = `the|` + engStopWordsWOthe
-	engLowRelevancyWords = `|` + stringlib.RmNewLines(viper.GetString("engLowRelevancyWords"))
-	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `|` + stringlib.RmNewLines(viper.GetString("specialStopwords")) + `)\W`
-	downloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
+	app.RegexBannedDomains = stringlib.RmNewLines(viper.GetString("regexBannedDomains"))
+	app.RegexLinkBannedTokens = stringlib.RmNewLines(viper.GetString("regexLinkBannedTokens"))
+	app.EngStopWordsWOthe = stringlib.RmNewLines(viper.GetString("engStopWordsWOthe"))
+	app.EngStopWords = `the|` + app.EngStopWordsWOthe
+	app.EngLowRelevancyWords = `|` + stringlib.RmNewLines(viper.GetString("engLowRelevancyWords"))
+	app.RegexStopwords = `(?i)\W([0-9]+|.|..|` + app.EngStopWordsWOthe + app.EngLowRelevancyWords + `|` + stringlib.RmNewLines(viper.GetString("specialStopwords")) + `)\W`
+	app.DownloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
 	if maxDownloadMB := viper.GetInt("maxDownloadMB"); maxDownloadMB > 0 {
-		maxDownloadBytes = int64(maxDownloadMB) << 20
+		app.MaxDownloadBytes = int64(maxDownloadMB) << 20
 	}
-	addUrl = strings.TrimSpace(viper.GetString("addUrl"))
-	cacheBackend = strings.TrimSpace(viper.GetString("cacheBackend"))
-	if cacheBackend == "" {
-		cacheBackend = storelib.BackendLocal
+	app.AddURL = strings.TrimSpace(viper.GetString("addUrl"))
+	app.CacheBackend = strings.TrimSpace(viper.GetString("cacheBackend"))
+	if app.CacheBackend == "" {
+		app.CacheBackend = storelib.BackendLocal
 	}
-	cachePath = strings.TrimSpace(viper.GetString("cachePath"))
-	if cachePath == "" {
-		cachePath = "./cache/cache.db"
+	app.CachePath = strings.TrimSpace(viper.GetString("cachePath"))
+	if app.CachePath == "" {
+		app.CachePath = "./cache/cache.db"
 	}
-	logLevel = strings.TrimSpace(viper.GetString("logLevel"))
-	if logLevel == "" {
-		logLevel = "info"
+	app.LogLevel = strings.TrimSpace(viper.GetString("logLevel"))
+	if app.LogLevel == "" {
+		app.LogLevel = "info"
 	}
-	respectRobots = true
+	app.RespectRobots = true
 	if viper.IsSet("respectRobots") {
-		respectRobots = viper.GetBool("respectRobots")
+		app.RespectRobots = viper.GetBool("respectRobots")
 	}
-	userAgent = strings.TrimSpace(viper.GetString("userAgent"))
-	if userAgent == "" {
-		userAgent = "goCrawler/1.0 (+https://github.com/computerphysicslab/goCrawler)"
+	app.UserAgent = strings.TrimSpace(viper.GetString("userAgent"))
+	if app.UserAgent == "" {
+		app.UserAgent = "goCrawler/1.0 (+https://github.com/computerphysicslab/goCrawler)"
 	}
 
-	fmt.Printf("\n\nlogLevel: %s", logLevel)
-	fmt.Printf("\nrespectRobots: %v", respectRobots)
-	fmt.Printf("\nuserAgent: %s", userAgent)
-	fmt.Printf("\n\ncacheBackend: %s", cacheBackend)
-	fmt.Printf("\ncachePath: %s", cachePath)
-	fmt.Printf("\n\nregexBannedDomains: %s", regexBannedDomains)
-	fmt.Printf("\n\nregexLinkBannedTokens: %s", regexLinkBannedTokens)
-	fmt.Printf("\n\nengStopWordsWOthe: %s", engStopWordsWOthe)
-	fmt.Printf("\n\nengStopWords: %s", engStopWords)
-	fmt.Printf("\n\nengLowRelevancyWords: %s", engLowRelevancyWords)
-	fmt.Printf("\n\nregexStopwords: %s", regexStopwords)
-	fmt.Printf("\n\ndownloadTimeout: %+v", downloadTimeout)
-	fmt.Printf("\n\naddUrl: %s", addUrl)
+	fmt.Printf("\n\nlogLevel: %s", app.LogLevel)
+	fmt.Printf("\nrespectRobots: %v", app.RespectRobots)
+	fmt.Printf("\nuserAgent: %s", app.UserAgent)
+	fmt.Printf("\n\ncacheBackend: %s", app.CacheBackend)
+	fmt.Printf("\ncachePath: %s", app.CachePath)
+	fmt.Printf("\n\nregexBannedDomains: %s", app.RegexBannedDomains)
+	fmt.Printf("\n\nregexLinkBannedTokens: %s", app.RegexLinkBannedTokens)
+	fmt.Printf("\n\nengStopWordsWOthe: %s", app.EngStopWordsWOthe)
+	fmt.Printf("\n\nengStopWords: %s", app.EngStopWords)
+	fmt.Printf("\n\nengLowRelevancyWords: %s", app.EngLowRelevancyWords)
+	fmt.Printf("\n\nregexStopwords: %s", app.RegexStopwords)
+	fmt.Printf("\n\ndownloadTimeout: %+v", app.DownloadTimeout)
+	fmt.Printf("\n\naddUrl: %s", app.AddURL)
 	return nil
 }
 
@@ -1709,12 +1882,12 @@ func yamlInitProxy() error {
 		return fmt.Errorf("fatal error config file: %w", err)
 	}
 
-	proxyHost = viper.GetString("proxyHost")
-	proxyUser = viper.GetString("proxyUser")
-	proxyPass = viper.GetString("proxyPass")
+	app.ProxyHost = viper.GetString("proxyHost")
+	app.ProxyUser = viper.GetString("proxyUser")
+	app.ProxyPass = viper.GetString("proxyPass")
 
-	fmt.Printf("\n\nproxyHost: %s", proxyHost)
-	fmt.Printf("\n\nproxyUser: %s", proxyUser)
+	fmt.Printf("\n\nproxyHost: %s", app.ProxyHost)
+	fmt.Printf("\n\nproxyUser: %s", app.ProxyUser)
 	return nil
 }
 
@@ -1722,8 +1895,8 @@ func yamlInitProxy() error {
 
 func yamlInitSpecific() error {
 	vp := viper.New()
-	vp.SetConfigName(profileName)
-	if iolib.FileExists("./profiles/" + profileName + ".yaml") {
+	vp.SetConfigName(app.ProfileName)
+	if iolib.FileExists("./profiles/" + app.ProfileName + ".yaml") {
 		vp.AddConfigPath("./profiles")
 	} else {
 		vp.AddConfigPath(".")
@@ -1732,48 +1905,46 @@ func yamlInitSpecific() error {
 		return fmt.Errorf("fatal error config file: %w", err)
 	}
 	fmt.Printf("\n\nprofile file: %s", vp.ConfigFileUsed())
-	curatedDomains = stringlib.RmNewLines(vp.GetString("curatedDomains"))
-	regexLinkOk = `(?i)^https*://.*(` + stringlib.RmNewLines(vp.GetString("linkOk")) + `|` + curatedDomains + `)`
-	regexRankingKeywords = stringlib.RmNewLines(vp.GetString("regexRankingKeywords"))
-	bootstrapingLinks = vp.GetStringSlice("bootstrapingLinks")
-	minDocLen = vp.GetInt("minDocLen")
-	maxDocLen = vp.GetInt("maxDocLen")
-	scoreThreshold = float64(vp.GetInt("scoreThreshold"))
-	maxLinksPerPage = vp.GetInt("maxLinksPerPage")
+	app.CuratedDomains = stringlib.RmNewLines(vp.GetString("curatedDomains"))
+	app.RegexLinkOk = `(?i)^https*://.*(` + stringlib.RmNewLines(vp.GetString("linkOk")) + `|` + app.CuratedDomains + `)`
+	app.RegexRankingKeywords = stringlib.RmNewLines(vp.GetString("regexRankingKeywords"))
+	app.BootstrapLinks = vp.GetStringSlice("bootstrapingLinks")
+	app.MinDocLen = vp.GetInt("minDocLen")
+	app.MaxDocLen = vp.GetInt("maxDocLen")
+	app.ScoreThreshold = float64(vp.GetInt("scoreThreshold"))
+	app.MaxLinksPerPage = vp.GetInt("maxLinksPerPage")
 	if ms := vp.GetInt("crawlDelayMs"); ms > 0 {
-		crawlDelay = time.Duration(ms) * time.Millisecond
+		app.CrawlDelay = time.Duration(ms) * time.Millisecond
 	}
 	language := strings.TrimSpace(vp.GetString("language"))
 	if language != "" {
-		targetLanguage = language
+		app.TargetLanguage = language
 	}
-	minLanguageConfidence = vp.GetFloat64("minLanguageConfidence")
-	rankingStrategy = strings.ToLower(strings.TrimSpace(vp.GetString("rankingStrategy")))
-	if rankingStrategy == "" {
-		rankingStrategy = "hybrid"
+	app.MinLanguageConfidence = vp.GetFloat64("minLanguageConfidence")
+	app.RankingStrategy = strings.ToLower(strings.TrimSpace(vp.GetString("rankingStrategy")))
+	if app.RankingStrategy == "" {
+		app.RankingStrategy = "hybrid"
 	}
-	synonyms = parseSynonyms(vp.GetString("synonyms"))
+	app.Synonyms = parseSynonyms(vp.GetString("synonyms"))
 	buildRankingRegex()
-	if maxLinksPerPage <= 0 {
-		maxLinksPerPage = 200
+	if app.MaxLinksPerPage <= 0 {
+		app.MaxLinksPerPage = 200
 	}
 
-	fmt.Printf("\n\nprofileName: %s", profileName)
-	fmt.Printf("\n\ncuratedDomains: %s", curatedDomains)
-	fmt.Printf("\n\nregexLinkOk: %s", regexLinkOk)
-	fmt.Printf("\n\nregexRankingKeywords: %s", regexRankingKeywords)
-	fmt.Printf("\n\nbootstrapingLinks: %+v", bootstrapingLinks)
+	fmt.Printf("\n\nprofileName: %s", app.ProfileName)
+	fmt.Printf("\n\ncuratedDomains: %s", app.CuratedDomains)
+	fmt.Printf("\n\nregexLinkOk: %s", app.RegexLinkOk)
+	fmt.Printf("\n\nregexRankingKeywords: %s", app.RegexRankingKeywords)
+	fmt.Printf("\n\nbootstrapingLinks: %+v", app.BootstrapLinks)
 	return nil
 }
 
-var searchDB *sql.DB
-
 // initSearchIndex opens the SQLite FTS5 index for the curated corpus.
 func initSearchIndex() error {
-	if searchDB != nil {
+	if app.SearchDB != nil {
 		return nil
 	}
-	db, err := sql.Open("sqlite", cachePath+"?_pragma=busy_timeout(5000)")
+	db, err := sql.Open("sqlite", app.CachePath+"?_pragma=busy_timeout(5000)")
 	if err != nil {
 		return err
 	}
@@ -1781,18 +1952,18 @@ func initSearchIndex() error {
 		db.Close()
 		return err
 	}
-	searchDB = db
+	app.SearchDB = db
 	return nil
 }
 
 // indexDocument adds or replaces a document in the full-text index.
 func indexDocument(docURL, text string) {
-	if searchDB == nil {
+	if app.SearchDB == nil {
 		return
 	}
-	searchDB.Exec(`DELETE FROM corpus_fts WHERE url = ?`, docURL)
-	if _, err := searchDB.Exec(`INSERT INTO corpus_fts(url, text) VALUES(?, ?)`, docURL, text); err != nil {
-		logger.Debug("cannot index document", "url", docURL, "error", err)
+	app.SearchDB.Exec(`DELETE FROM corpus_fts WHERE url = ?`, docURL)
+	if _, err := app.SearchDB.Exec(`INSERT INTO corpus_fts(url, text) VALUES(?, ?)`, docURL, text); err != nil {
+		app.Logger.Debug("cannot index document", "url", docURL, "error", err)
 	}
 }
 
@@ -1813,7 +1984,7 @@ func runSearch(query string) error {
 		return fmt.Errorf("no searchable terms in query: %q", query)
 	}
 	match := strings.Join(terms, " AND ")
-	rows, err := searchDB.Query(`SELECT url, snippet(corpus_fts, 1, '[', ']', ' ... ', 16)
+	rows, err := app.SearchDB.Query(`SELECT url, snippet(corpus_fts, 1, '[', ']', ' ... ', 16)
 		FROM corpus_fts WHERE corpus_fts MATCH ? ORDER BY rank LIMIT 20`, match)
 	if err != nil {
 		return err
@@ -1834,20 +2005,7 @@ func runSearch(query string) error {
 	return nil
 }
 
-const appVersion = "1.6.0"
-
-var profileName string
-var targetLanguage = "English"
-var minLanguageConfidence float64
-var cliDryRun bool
-var cliQuery string
-var cliExplore bool
-var cliGenerate string
-var cliWorkers = 1
-var configFile string
-var showVersion bool
-var showLicense bool
-var stopRequested atomic.Bool
+const appVersion = "1.7.0"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
@@ -1866,64 +2024,74 @@ func parseCLI() error {
 		switch {
 		case arg == "--selftest", arg == "-h", arg == "--help", arg == "--resume", arg == "-resume":
 			continue
+		case arg == "-gui", arg == "--gui":
+			appGUI = true
+		case strings.HasPrefix(arg, "-gui-port="):
+			port, err := strconv.Atoi(strings.SplitN(arg, "=", 2)[1])
+			if err != nil || port < 1 || port > 65535 {
+				return fmt.Errorf("invalid -gui-port: %s", arg)
+			}
+			app.GUIPort = port
 		case strings.HasPrefix(arg, "-config="), strings.HasPrefix(arg, "--config="):
-			configFile = strings.SplitN(arg, "=", 2)[1]
+			app.ConfigFile = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-profile="), strings.HasPrefix(arg, "--profile="):
-			profileName = strings.SplitN(arg, "=", 2)[1]
+			app.ProfileName = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-backend="), strings.HasPrefix(arg, "--backend="):
-			cacheBackend = strings.SplitN(arg, "=", 2)[1]
+			app.CacheBackend = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-cache="), strings.HasPrefix(arg, "--cache-path="):
-			cachePath = strings.SplitN(arg, "=", 2)[1]
+			app.CachePath = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-log-level="), strings.HasPrefix(arg, "--log-level="):
-			logLevel = strings.SplitN(arg, "=", 2)[1]
+			app.LogLevel = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-max-links="):
 			v, err := strconv.Atoi(strings.SplitN(arg, "=", 2)[1])
 			if err != nil {
 				return fmt.Errorf("invalid -max-links: %w", err)
 			}
-			maxLinksPerPage = v
+			app.MaxLinksPerPage = v
 		case strings.HasPrefix(arg, "-workers="):
 			v, err := strconv.Atoi(strings.SplitN(arg, "=", 2)[1])
 			if err != nil || v < 1 || v > 32 {
 				return fmt.Errorf("invalid -workers (1..32): %s", arg)
 			}
-			cliWorkers = v
+			app.CLIWorkers = v
 		case strings.HasPrefix(arg, "-query="), strings.HasPrefix(arg, "--query="):
-			cliQuery = strings.SplitN(arg, "=", 2)[1]
+			app.CLIQuery = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-generate-profile="):
-			cliGenerate = strings.SplitN(arg, "=", 2)[1]
+			app.CLIGenerate = strings.SplitN(arg, "=", 2)[1]
 		case arg == "-dry-run", arg == "--dry-run":
-			cliDryRun = true
+			app.CLIDryRun = true
 		case arg == "-explore", arg == "--explore":
-			cliExplore = true
+			app.CLIExplore = true
 		case arg == "-version", arg == "--version":
-			showVersion = true
+			app.ShowVersion = true
 		case arg == "-license", arg == "--license":
-			showLicense = true
+			app.ShowLicense = true
 		case strings.HasPrefix(arg, "-"):
 			return fmt.Errorf("unknown flag: %s", arg)
 		default:
-			if profileName == "" {
-				profileName = arg
+			if app.ProfileName == "" {
+				app.ProfileName = arg
 			}
 		}
 	}
-	if showVersion || showLicense {
-		if showVersion {
+	if app.ShowVersion || app.ShowLicense {
+		if app.ShowVersion {
 			fmt.Printf("goCrawler %s\n", appVersion)
 		}
-		if showLicense {
+		if app.ShowLicense {
 			fmt.Println("MIT License - Copyright (c) 2020-2026 Juan Ignacio Perez Sacristan")
 		}
 		return errStop
 	}
-	if profileName == "" && cliQuery == "" && !cliExplore && cliGenerate == "" {
+	if app.ProfileName == "" && app.CLIQuery == "" && !app.CLIExplore && app.CLIGenerate == "" && !appGUI {
 		return fmt.Errorf("profile argument required")
 	}
 	return nil
 }
 
 // errStop signals that a informational flag was handled and the program should exit cleanly.
+var appGUI bool
+
 var errStop = errors.New("stop")
 
 // exploreCorpus prints corpus statistics and the most frequent topic terms.
@@ -1980,6 +2148,269 @@ func generateProfile(seed, output string) error {
 	return nil
 }
 
+const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawler Workbench</title>
+<style>body{font-family:system-ui;margin:0;background:#10151c;color:#dfe7ee}header{padding:12px 20px;background:#1b2733}nav button{background:none;border:0;color:#9fb3c8;padding:10px 16px;cursor:pointer;font-size:15px}nav button.on{color:#fff;border-bottom:2px solid #4fc3f7}main{padding:18px 22px}.card{background:#1b2733;border-radius:8px;padding:14px;margin-bottom:14px}textarea,input,select{width:100%;background:#0e1620;color:#dfe7ee;border:1px solid #2c3e50;border-radius:4px;padding:8px;box-sizing:border-box;margin:6px 0}button.act{background:#2b6cb0;color:#fff;border:0;border-radius:4px;padding:8px 14px;cursor:pointer}pre{background:#0e1620;padding:10px;border-radius:4px;white-space:pre-wrap;max-height:380px;overflow:auto}table{width:100%;border-collapse:collapse}td,th{padding:6px;border-bottom:1px solid #2c3e50;text-align:left}.row{display:flex;gap:12px}.row>*{flex:1}.muted{color:#8fa3b8}</style></head><body>
+<header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span></header>
+<nav><button class="on" data-tab="dash">Dashboard</button><button data-tab="prof">Profiles</button><button data-tab="corpus">Corpus</button><button data-tab="keys">Keyword lab</button></nav><main>
+<section id="dash"><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div></div></div>
+<div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button class="act" onclick="startCrawl()">Start</button> <button class="act" onclick="stopCrawl()">Stop</button><pre id="run-out"></pre></div></section>
+<section id="prof" hidden><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
+<section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
+<section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><pre id="k-out"></pre><button class="act" onclick="applyKeywords()">Apply to profile</button></div></section>
+</main><script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['dash','prof','corpus','keys'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
+async function json(u,o){const r=await fetch(u,o);return r.json()}
+async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('status').textContent=s.running?'running':'ready'}
+async function profiles(){const p=await json('/api/profiles');$('p-list').innerHTML=p.map(x=>'<option>'+x+'</option>').join('');loadProfile()}
+async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n}
+async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
+async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
+async function extract(){const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));$('k-out').textContent=d.keywords.join(' ')}
+async function applyKeywords(){const n=$('k-profile').value;const kws=$('k-out').textContent.split(/\s+/).filter(Boolean);const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws})});$('status').textContent=(await r.json()).status}
+async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json())}
+async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping'}
+function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
+setInterval(stats,1500);stats();profiles()
+</script></body></html>`
+
+var guiStopwords = map[string]bool{
+	"with": true, "this": true, "that": true, "from": true, "will": true, "each": true,
+	"when": true, "have": true, "your": true, "their": true, "into": true, "than": true,
+	"about": true, "them": true, "then": true, "only": true, "very": true, "more": true,
+	"most": true, "some": true, "such": true, "also": true, "just": true, "were": true,
+	"was": true, "are": true, "the": true, "and": true, "for": true, "you": true,
+	"its": true, "not": true, "but": true, "can": true, "all": true, "one": true,
+}
+
+// runGUI starts the embedded local web interface on loopback only.
+func runGUI() error {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, guiHTML)
+	})
+	mux.HandleFunc("/api/profiles", func(w http.ResponseWriter, r *http.Request) {
+		names := []string{}
+		files, _ := filepath.Glob("profiles/*.yaml")
+		for _, f := range files {
+			names = append(names, strings.TrimSuffix(filepath.Base(f), ".yaml"))
+		}
+		writeJSON(w, names)
+	})
+	mux.HandleFunc("/api/profile", func(w http.ResponseWriter, r *http.Request) {
+		name := filepath.Base(r.URL.Query().Get("name"))
+		if name == "" || name == "." {
+			http.Error(w, "profile required", 400)
+			return
+		}
+		path := "profiles/" + name + ".yaml"
+		switch r.Method {
+		case http.MethodGet:
+			b, err := os.ReadFile(path)
+			if err != nil {
+				http.Error(w, err.Error(), 404)
+				return
+			}
+			writeJSON(w, map[string]string{"name": name, "content": string(b)})
+		case http.MethodPost:
+			var body struct{ Name, Content string }
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				http.Error(w, err.Error(), 400)
+				return
+			}
+			body.Name = filepath.Base(body.Name)
+			tmp := path + ".tmp"
+			if err := os.WriteFile(tmp, []byte(body.Content), 0644); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if err := os.Rename(tmp, path); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			writeJSON(w, map[string]string{"status": "saved"})
+		}
+	})
+	mux.HandleFunc("/api/stats", func(w http.ResponseWriter, r *http.Request) {
+		running := app.GUIProcess != nil && app.GUIProcess.ProcessState == nil
+		writeJSON(w, map[string]interface{}{
+			"visits": app.CacheHits + app.OnlineDownloads,
+			"cache":  app.CacheHits, "online": app.OnlineDownloads,
+			"download_ms": app.DownloadMS, "accepted": app.AcceptedDocs,
+			"running": running,
+		})
+	})
+	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, corpusDocuments(20))
+	})
+	mux.HandleFunc("/api/search", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query().Get("q")
+		if q == "" {
+			writeJSON(w, map[string]interface{}{"results": []string{}})
+			return
+		}
+		if err := initSearchIndex(); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		terms := []string{}
+		for _, word := range strings.FieldsFunc(q, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsNumber(r) }) {
+			if len(word) > 1 {
+				terms = append(terms, `"`+word+`"`)
+			}
+		}
+		rows, err := app.SearchDB.Query(`SELECT url, snippet(corpus_fts,1,'[',']',' ... ',16) FROM corpus_fts WHERE corpus_fts MATCH ? LIMIT 20`, strings.Join(terms, " AND "))
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		defer rows.Close()
+		results := []map[string]string{}
+		for rows.Next() {
+			var url, snippet string
+			if rows.Scan(&url, &snippet) == nil {
+				results = append(results, map[string]string{"url": url, "snippet": snippet})
+			}
+		}
+		writeJSON(w, map[string]interface{}{"results": results})
+	})
+	mux.HandleFunc("/api/keywords", func(w http.ResponseWriter, r *http.Request) {
+		docs := corpusDocuments(500)
+		counts := make(map[string]int)
+		for _, d := range docs {
+			for _, tok := range tokenize(d["text"]) {
+				lower := strings.ToLower(tok)
+				if len(tok) > 3 && !guiStopwords[lower] && corpusfreqlib.Freq(tok) < 100 {
+					counts[strings.ToLower(tok)]++
+				}
+			}
+		}
+		type item struct {
+			Word  string
+			Count int
+		}
+		items := []item{}
+		for word, count := range counts {
+			items = append(items, item{word, count})
+		}
+		sort.Slice(items, func(i, j int) bool { return items[i].Count > items[j].Count })
+		words := []string{}
+		for i, it := range items {
+			if i >= 40 {
+				break
+			}
+			words = append(words, it.Word)
+		}
+		writeJSON(w, map[string]interface{}{"keywords": words})
+	})
+	mux.HandleFunc("/api/keywords/apply", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Profile  string   `json:"profile"`
+			Keywords []string `json:"keywords"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		name := filepath.Base(body.Profile)
+		path := "profiles/" + name + ".yaml"
+		b, err := os.ReadFile(path)
+		if err != nil {
+			http.Error(w, err.Error(), 404)
+			return
+		}
+		text := string(b)
+		for _, key := range []string{"linkOk:", "regexRankingKeywords:"} {
+			if i := strings.Index(text, key); i >= 0 {
+				lineEnd := strings.Index(text[i:], "\n")
+				if lineEnd < 0 {
+					lineEnd = len(text)
+				}
+				text = text[:i+lineEnd] + "|" + strings.Join(body.Keywords, "|") + text[i+lineEnd:]
+			}
+		}
+		if err := os.WriteFile(path, []byte(text), 0644); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		writeJSON(w, map[string]string{"status": "applied"})
+	})
+	mux.HandleFunc("/api/crawl", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "POST required", 405)
+			return
+		}
+		var body struct {
+			Profile string `json:"profile"`
+		}
+		json.NewDecoder(r.Body).Decode(&body)
+		name := filepath.Base(body.Profile)
+		if name == "" || name == "." {
+			http.Error(w, "profile required", 400)
+			return
+		}
+		exe, err := os.Executable()
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		app.GUIProcess = exec.Command(exe, name)
+		app.GUIProcess.Stdout = io.Discard
+		app.GUIProcess.Stderr = io.Discard
+		if err := app.GUIProcess.Start(); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		writeJSON(w, map[string]string{"status": "started", "profile": name})
+	})
+	mux.HandleFunc("/api/crawl/stop", func(w http.ResponseWriter, r *http.Request) {
+		if app.GUIProcess != nil && app.GUIProcess.Process != nil {
+			app.GUIProcess.Process.Kill()
+		}
+		writeJSON(w, map[string]string{"status": "stopped"})
+	})
+
+	addr := fmt.Sprintf("127.0.0.1:%d", app.GUIPort)
+	fmt.Printf("goCrawler Workbench: http://%s\n", addr)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	return http.Serve(listener, mux)
+}
+
+// writeJSON writes a JSON response.
+func writeJSON(w http.ResponseWriter, value interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(value)
+}
+
+// corpusDocuments reads accepted documents from the curated corpus.
+func corpusDocuments(limit int) []map[string]string {
+	result := []map[string]string{}
+	path := "./logs/corpusCuratedText.log"
+	if !iolib.FileExists(path) {
+		return result
+	}
+	var url, text string
+	flush := func() {
+		if url != "" && len(result) < limit {
+			result = append(result, map[string]string{"url": url, "text": strings.TrimSpace(text)})
+		}
+	}
+	for _, line := range strings.Split(iolib.File2string(path), "\n") {
+		if strings.HasPrefix(line, "http") {
+			flush()
+			url, text = strings.TrimSpace(line), ""
+		} else if line != "----" {
+			text += line + "\n"
+		}
+	}
+	flush()
+	return result
+}
+
 // usage prints the command-line usage message.
 func usage() {
 	fmt.Println("Usage: go run crawler.go <profile>")
@@ -1987,15 +2418,17 @@ func usage() {
 	fmt.Println("  --selftest run built-in checks and exit")
 	fmt.Println("  --resume   restore a previous crawl from the cache store")
 	fmt.Println("  -profile=, -backend=, -cache=, -log-level=, -workers=N, -max-links=N")
-	fmt.Println("  -dry-run, -explore, -query=TEXT, -generate-profile=URL, -version, -license")
+	fmt.Println("  -dry-run, -explore, -query=TEXT, -generate-profile=URL, -version, -license, -gui [-gui-port=N]")
 	fmt.Println("Examples: go run crawler.go crypto --resume | go run crawler.go -query=drizzle")
 }
 
 // startSessionOutput tees stdout to the terminal and to a timestamped file in logs/.
 // It returns a function that restores stdout and closes the file.
-func startSessionOutput(profileName string) func() {
+func startSessionOutput(name string) func() {
 	now := time.Now().UTC()
-	name := profileName
+	if name == "" {
+		name = app.ProfileName
+	}
 	if name != "" {
 		name = strings.ToUpper(name[:1]) + name[1:]
 	}
@@ -2034,175 +2467,196 @@ func startSessionOutput(profileName string) func() {
 }
 
 // main initializes the crawler and drives the processing loop.
-func run() error {
+// prepareCLI handles informational modes before any runtime setup.
+func prepareCLI() (bool, error) {
 	if len(os.Args) >= 2 && os.Args[1] == "--selftest" {
 		if runSelfTests() {
-			return nil
+			return true, nil
 		}
-		return fmt.Errorf("self-test failed")
+		return true, fmt.Errorf("self-test failed")
 	}
-
 	if len(os.Args) < 2 || os.Args[1] == "-h" || os.Args[1] == "--help" {
 		usage()
-		if len(os.Args) < 2 {
-			return fmt.Errorf("profile argument required")
-		}
-		return nil
+		return true, nil
 	}
-
 	for _, arg := range os.Args[1:] {
 		if arg == "--resume" || arg == "-resume" {
-			resumeEnabled = true
+			app.ResumeEnabled = true
 		}
 	}
 	if err := parseCLI(); err != nil {
 		if err == errStop {
-			return nil
+			return true, nil
 		}
-		return err
+		return true, err
 	}
-	if cachePath == "" {
-		cachePath = "./cache/cache.db"
+	if app.CLIGenerate != "" {
+		return true, generateProfile(app.CLIGenerate, "./profiles/generated.yaml")
 	}
-	if cacheBackend == "" {
-		cacheBackend = "local"
+	if app.CLIQuery != "" {
+		return true, runSearch(app.CLIQuery)
 	}
-	if logLevel == "" {
-		logLevel = "info"
+	if app.CLIExplore {
+		return true, exploreCorpus()
 	}
-	if cliGenerate != "" {
-		return generateProfile(cliGenerate, "./profiles/generated.yaml")
+	if appGUI {
+		return true, runGUI()
 	}
-	if cliQuery != "" {
-		return runSearch(cliQuery)
+	return false, nil
+}
+
+// validateConfig checks the resolved configuration before a crawl starts.
+func validateConfig() error {
+	var problems []string
+	if app.MinDocLen < 0 || app.MaxDocLen <= app.MinDocLen {
+		problems = append(problems, fmt.Sprintf("invalid document length range %d..%d", app.MinDocLen, app.MaxDocLen))
 	}
-	if cliExplore {
-		return exploreCorpus()
+	if app.ScoreThreshold < 0 {
+		problems = append(problems, "scoreThreshold must be >= 0")
+	}
+	if app.MaxLinksPerPage <= 0 {
+		problems = append(problems, "maxLinksPerPage must be > 0")
+	}
+	if app.CLIWorkers < 1 || app.CLIWorkers > 32 {
+		problems = append(problems, "workers must be between 1 and 32")
+	}
+	switch app.RankingStrategy {
+	case "keywords", "tfidf", "semantic", "hybrid":
+	default:
+		problems = append(problems, "unknown rankingStrategy: "+app.RankingStrategy)
+	}
+	switch app.CacheBackend {
+	case storelib.BackendLocal, storelib.BackendRedis:
+	default:
+		problems = append(problems, "unknown cacheBackend: "+app.CacheBackend)
+	}
+	for name, expression := range map[string]string{
+		"regexBannedDomains":    app.RegexBannedDomains,
+		"regexLinkBannedTokens": app.RegexLinkBannedTokens,
+		"regexStopwords":        app.RegexStopwords,
+		"regexLinkOk":           app.RegexLinkOk,
+		"regexRankingKeywords":  app.RegexRankingKeywords,
+	} {
+		if _, err := regexp.Compile(expression); err != nil {
+			problems = append(problems, fmt.Sprintf("%s: %v", name, err))
+		}
+	}
+	if len(problems) > 0 {
+		return fmt.Errorf("invalid configuration: %s", strings.Join(problems, "; "))
+	}
+	return nil
+}
+
+// setupRuntime prepares folders, configuration, stores and outputs.
+func setupRuntime() (int, func(), error) {
+	noop := func() {}
+	if err := os.MkdirAll("./logs", os.ModePerm); err != nil {
+		return 0, noop, err
+	}
+	if err := os.MkdirAll("./output", os.ModePerm); err != nil {
+		return 0, noop, err
 	}
 
-	// Create needed folders if don't exist
-	fmt.Println("* Checking logs folder ...")
-	if _, err := os.Stat("./logs"); os.IsNotExist(err) {
-		// Logs folder does not exist, we create it automatically
-		os.MkdirAll("./logs", os.ModePerm)
+	stopSession := startSessionOutput(os.Args[1])
+	cleanup := func() {
+		stopSession()
+		if app.CSVFile != nil {
+			app.CSVFile.Close()
+		}
+		if app.SearchDB != nil {
+			app.SearchDB.Close()
+		}
+		if app.CacheStore != nil {
+			app.CacheStore.Close()
+		}
+		saveCrawlState()
+		closeFileLoggers()
 	}
-	fmt.Println("* Checking output folder ...")
-	if _, err := os.Stat("./output"); os.IsNotExist(err) {
-		// Output folder does not exist, we create it automatically
-		os.MkdirAll("./output", os.ModePerm)
-	}
-
-	stopSessionOutput := startSessionOutput(os.Args[1])
-	defer stopSessionOutput()
 
 	if err := initFileLoggers(); err != nil {
-		return err
+		stopSession()
+		return 0, noop, err
 	}
-	defer closeFileLoggers()
 	initRejectedLinkSets()
 
-	fmt.Println("* Loading YAML config ...")
 	if err := yamlInitGeneral(); err != nil {
-		return err
+		return 0, cleanup, err
 	}
-	initLogger(logLevel)
+	initLogger(app.LogLevel)
 	if err := yamlInitProxy(); err != nil {
-		return err
+		return 0, cleanup, err
 	}
 	initHTTPClient()
 	if err := yamlInitSpecific(); err != nil {
-		return err
+		return 0, cleanup, err
 	}
 	compileConfigRegexes()
+	if err := validateConfig(); err != nil {
+		return 0, cleanup, err
+	}
 
-	fmt.Println("* Init cache store ...")
 	var err error
-	cacheStore, err = storelib.Init(cacheBackend, cachePath)
+	app.CacheStore, err = storelib.Init(app.CacheBackend, app.CachePath)
 	if err != nil {
-		return fmt.Errorf("cache store error: %w", err)
+		return 0, cleanup, fmt.Errorf("cache store error: %w", err)
 	}
-	defer cacheStore.Close()
-	fmt.Printf("Cache backend: %s\n", cacheStore.Name())
 	if err := initSearchIndex(); err != nil {
-		return fmt.Errorf("search index: %w", err)
+		return 0, cleanup, fmt.Errorf("search index: %w", err)
 	}
-	defer func() {
-		if searchDB != nil {
-			searchDB.Close()
-			searchDB = nil
-		}
-	}()
 
 	startIndex := 0
-	if resumeEnabled {
+	if app.ResumeEnabled {
 		startIndex = loadCrawlState()
-	} else if err := cacheStore.Set(crawlStateKey, ""); err != nil {
-		logger.Warn("cannot clear previous crawl state", "error", err)
-	}
-	defer saveCrawlState()
-
-	if cliDryRun {
-		fmt.Printf("Dry run: profile=%s backend=%s cache=%s language=%s strategy=%s workers=%d\n",
-			profileName, cacheBackend, cachePath, targetLanguage, rankingStrategy, cliWorkers)
-		return nil
+	} else if err := app.CacheStore.Set(crawlStateKey, ""); err != nil {
+		app.Logger.Warn("cannot clear previous crawl state", "error", err)
 	}
 
-	if respectRobots {
-		fmt.Println("* Robots policy enabled ...")
-		robotsPolicy = robotspolicy.New(userAgent, downloadTimeout)
+	if app.RespectRobots {
+		app.RobotsPolicy = robotspolicy.New(app.UserAgent, app.DownloadTimeout)
 	}
-
-	fmt.Println("* Init English corpus ...")
 	corpusfreqlib.Init()
 
-	if !resumeEnabled {
-		fmt.Println("* Link bootstrapping ...")
+	if !app.ResumeEnabled {
 		linkBootstraping()
 	} else {
-		fmt.Printf("* Resuming with %d links in the pool ...\n", len(lPool))
+		fmt.Printf("* Resuming with %d links in the pool ...\n", len(app.LPool))
 	}
-
-	fmt.Println("* Init CSV ...")
 	if err := csvInit(); err != nil {
-		return err
+		return 0, cleanup, err
 	}
-	defer func() {
-		if csvFile != nil {
-			csvFile.Close()
-		}
-	}()
-
-	if !resumeEnabled {
-		fmt.Println("* Init curated corpus ...")
+	if !app.ResumeEnabled {
 		iolib.String2file("\n", "./logs/corpusCuratedText.log")
 	}
+	return startIndex, cleanup, nil
+}
 
-	// Graceful stop on Ctrl-C: workers finish the current page and persist state.
+// crawlLoop runs the worker pool and returns the final processed index.
+func crawlLoop(startIndex int) int {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	defer signal.Stop(sigCh)
 	go func() {
 		<-sigCh
 		fmt.Println("\nInterrupt received, saving state...")
-		stopRequested.Store(true)
+		app.StopRequested.Store(true)
+		app.StateDirty = true
 	}()
 
-	// Loop: one goroutine per worker; downloads overlap, shared state is mutex-protected.
 	var nextIndex atomic.Int64
 	nextIndex.Store(int64(startIndex))
 	var wg sync.WaitGroup
-	for i := 0; i < cliWorkers; i++ {
+	for i := 0; i < app.CLIWorkers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for {
-				if stopRequested.Load() {
+				if app.StopRequested.Load() {
 					return
 				}
 				index := int(nextIndex.Add(1) - 1)
-				crawlMu.Lock()
-				lastProcessedLink = index
-				crawlMu.Unlock()
+				app.CrawlMu.Lock()
+				app.LastProcessedLink = index
+				app.CrawlMu.Unlock()
 				if !doNextLink(index) {
 					return
 				}
@@ -2210,16 +2664,44 @@ func run() error {
 		}()
 	}
 	wg.Wait()
-	crawlMu.Lock()
-	finalIndex := lastProcessedLink
-	crawlMu.Unlock()
+	app.CrawlMu.Lock()
+	defer app.CrawlMu.Unlock()
+	return app.LastProcessedLink
+}
 
+// reportResults writes the final summaries.
+func reportResults(finalIndex int) {
 	dumpFrequencies(finalIndex, true)
-	logger.Info("crawl finished",
-		"processed", lastProcessedLink,
-		"accepted", acceptedDocs,
-		"rejections", rejectionSummary())
+	app.Logger.Info("crawl finished", "processed", finalIndex,
+		"accepted", app.AcceptedDocs, "rejections", rejectionSummary())
 	fmt.Println("\n\n\n***** Done!!!")
+}
+
+// run initializes the crawler, executes the crawl and reports results.
+func run() error {
+	app = newCrawler()
+	handled, err := prepareCLI()
+	if err != nil {
+		return err
+	}
+	if handled {
+		return nil
+	}
+
+	startIndex, cleanup, err := setupRuntime()
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+
+	if app.CLIDryRun {
+		fmt.Printf("Dry run: profile=%s backend=%s cache=%s language=%s strategy=%s workers=%d\n",
+			app.ProfileName, app.CacheBackend, app.CachePath, app.TargetLanguage, app.RankingStrategy, app.CLIWorkers)
+		return nil
+	}
+
+	finalIndex := crawlLoop(startIndex)
+	reportResults(finalIndex)
 	return nil
 }
 
@@ -2234,20 +2716,20 @@ func main() {
 // setupTestConfig sets the global regular expressions used by the pure filters.
 // It is shared by --selftest and the unit tests.
 func setupTestConfig() {
-	engStopWordsWOthe = "a|and|of|the|with"
-	engStopWords = "the|" + engStopWordsWOthe
-	engLowRelevancyWords = "|news|info"
-	regexStopwords = `(?i)\W([0-9]+|.|..|` + engStopWordsWOthe + engLowRelevancyWords + `)\W`
-	regexRankingKeywords = `(?i)\W(stack|stacking|image|noise|signal|siril)\W`
-	regexLinkOk = `(?i)^https*://.*(stack|siril|astro|image)`
-	regexBannedDomains = `(?i)(facebook|twitter)\.(com|org)`
-	regexLinkBannedTokens = `(?i)(login|signup|pdf|\.(pdf|jpg))`
+	app.EngStopWordsWOthe = "a|and|of|the|with"
+	app.EngStopWords = "the|" + app.EngStopWordsWOthe
+	app.EngLowRelevancyWords = "|news|info"
+	app.RegexStopwords = `(?i)\W([0-9]+|.|..|` + app.EngStopWordsWOthe + app.EngLowRelevancyWords + `)\W`
+	app.RegexRankingKeywords = `(?i)\W(stack|stacking|image|noise|signal|siril)\W`
+	app.RegexLinkOk = `(?i)^https*://.*(stack|siril|astro|image)`
+	app.RegexBannedDomains = `(?i)(facebook|twitter)\.(com|org)`
+	app.RegexLinkBannedTokens = `(?i)(login|signup|pdf|\.(pdf|jpg))`
 	compileConfigRegexes()
-	rankingStrategy = "hybrid"
-	synonyms = make(map[string][]string)
+	app.RankingStrategy = "hybrid"
+	app.Synonyms = make(map[string][]string)
 	buildRankingRegex()
-	corpusDocFreq = make(map[string]int)
-	corpusDocCount = 0
+	app.CorpusDocFreq = make(map[string]int)
+	app.CorpusDocCount = 0
 }
 
 // check reports the result of one self-test and accumulates the global outcome.
@@ -2301,8 +2783,8 @@ func runSelfTests() bool {
 		fmt.Println("[FAIL] logs directory:", err)
 		return false
 	}
-	for name := range rejectedLinkSets {
-		rejectedLinkSets[name] = make(map[string]struct{})
+	for name := range app.RejectedLinkSets {
+		app.RejectedLinkSets[name] = make(map[string]struct{})
 	}
 	if err := os.Chdir(dir); err != nil {
 		fmt.Println("[FAIL] chdir:", err)

@@ -754,3 +754,17 @@ El `go` del sistema era 1.20.3 y no puede leer `go.mod` (`go 1.26.0` + directiva
 Solución aplicada en este equipo: symlink usuario `~/.local/bin/go -> ~/sdk/go1.26.11/bin/go`
 (ese directorio va antes que `/usr/bin` en PATH). Verificado: `go version` → 1.26.11 y
 `go run crawler.go -query=drizzle` devuelve resultados FTS5 correctamente. Documentado en README.
+
+## 28. Cierre total del roadmap v1.7.0 (2026-11-17)
+
+- P19: `Crawler` struct con toda la configuración, estado, stores y mutexes; eliminadas las ~40
+  variables globales mutables. `app = newCrawler()` se inicializa en `run()`.
+- P16/P17: `run()` dividido en `prepareCLI`, `setupRuntime` (con cleanup), `crawlLoop` y
+  `reportResults`; `validateConfig()` devuelve errores agregados antes de arrancar.
+- P15: `StateDirty` evita escrituras redundantes de `state:crawl`.
+- P20: estrategia `semantic` con embeddings locales por hashing de trigramas (sin dependencias);
+  `hybrid` combina keywords + TF-IDF + semántico.
+- P21: GUI web embebida en `crawler.go` (`-gui`, puerto 8765): dashboard con visitas/caché/tiempos,
+  editor de perfiles, visor del corpus con texto curado y copia, búsqueda FTS5, laboratorio de
+  keywords con realimentación al perfil y arranque/parada de crawls. Verificado con curl.
+- Roadmap: **sin puntos pendientes**. Changelog v1.7.0 añadido.

@@ -237,7 +237,7 @@ go run crawler.go -dry-run -profile=crypto
 go run crawler.go -query=drizzle               # search the curated corpus (SQLite FTS5)
 go run crawler.go -explore                     # corpus stats and top terms
 go run crawler.go -generate-profile=https://example.org/stacking
-go run crawler.go -version | -license
+go run crawler.go -version -license
 ```
 
 The crawler runs until its link pool is exhausted. Progress is printed to stdout, including
@@ -344,6 +344,7 @@ This is roadmap item 14; it is **not implemented**. Use `go test -race` when imp
 | `-generate-profile=URL` | write `profiles/generated.yaml` from a seed URL |
 | `-resume`, `--resume` | restore the previous crawl from SQLite |
 | `-version`, `-license` | print version or license and exit |
+| `-gui`, `-gui-port=N` | start the embedded web Workbench on `127.0.0.1:N` (default 8765) |
 
 `-h`/`--help` prints the usage summary. Multi-language corpora can be selected with the profile
 keys `language` (default `English`) and `minLanguageConfidence`.

@@ -25,8 +25,8 @@ func withTempWorkDir(t *testing.T, fn func()) {
 	if err := os.MkdirAll(filepath.Join(dir, "logs"), 0755); err != nil {
 		t.Fatal(err)
 	}
-	for name := range rejectedLinkSets {
-		rejectedLinkSets[name] = make(map[string]struct{})
+	for name := range app.RejectedLinkSets {
+		app.RejectedLinkSets[name] = make(map[string]struct{})
 	}
 	if err := os.Chdir(dir); err != nil {
 		t.Fatal(err)
@@ -277,7 +277,7 @@ func TestLinkSeemsOkLengthBoundaries(t *testing.T) {
 }
 
 func TestIsBannedCountsAreStructured(t *testing.T) {
-	rejectionCounts = make(map[string]int)
+	app.RejectionCounts = make(map[string]int)
 	countRejection("low_relevancy")
 	countRejection("duplicate")
 	countRejection("low_relevancy")
@@ -291,33 +291,34 @@ func TestIsBannedCountsAreStructured(t *testing.T) {
 }
 
 func TestSaveLoadCrawlState(t *testing.T) {
-	oldStore := cacheStore
-	defer func() { cacheStore = oldStore }()
+	oldStore := app.CacheStore
+	defer func() { app.CacheStore = oldStore }()
 	dir := t.TempDir()
 	store, err := storelib.Init(storelib.BackendLocal, dir+"/cache.db")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer store.Close()
-	cacheStore = store
+	app.CacheStore = store
 
-	lPool = []aLink{{URL: "https://siril.org/a", Domain: "siril.org", Count: 2, Status: 0}}
-	domainCounter = map[string]int{"siril.org": 3}
-	uniqueSignature = map[string]string{"sig": "https://siril.org/a"}
-	corpusFreqs = freq{"stack": 7}
-	lastProcessedLink = 42
+	app.LPool = []aLink{{URL: "https://siril.org/a", Domain: "siril.org", Count: 2, Status: 0}}
+	app.DomainCounter = map[string]int{"siril.org": 3}
+	app.UniqueSignature = map[string]string{"sig": "https://siril.org/a"}
+	app.CorpusFreqs = freq{"stack": 7}
+	app.LastProcessedLink = 42
+	app.StateDirty = true
 	saveCrawlState()
 
-	lPool = nil
-	domainCounter = make(map[string]int)
-	uniqueSignature = make(map[string]string)
-	corpusFreqs = make(freq)
-	lastProcessedLink = 0
+	app.LPool = nil
+	app.DomainCounter = make(map[string]int)
+	app.UniqueSignature = make(map[string]string)
+	app.CorpusFreqs = make(freq)
+	app.LastProcessedLink = 0
 
 	if got := loadCrawlState(); got != 42 {
 		t.Fatalf("loadCrawlState = %d, want 42", got)
 	}
-	if len(lPool) != 1 || domainCounter["siril.org"] != 3 || corpusFreqs["stack"] != 7 {
+	if len(app.LPool) != 1 || app.DomainCounter["siril.org"] != 3 || app.CorpusFreqs["stack"] != 7 {
 		t.Fatal("crawl state was not restored correctly")
 	}
 }
@@ -337,10 +338,10 @@ func TestStartSessionOutputNaming(t *testing.T) {
 }
 
 func TestDownloadCachedFromFakeStore(t *testing.T) {
-	oldStore := cacheStore
-	defer func() { cacheStore = oldStore }()
+	oldStore := app.CacheStore
+	defer func() { app.CacheStore = oldStore }()
 	payload, _ := json.Marshal(CachedData{Content: "cached text", Links: []string{"https://a.org"}})
-	cacheStore = &memoryStore{data: map[string]string{"cache_https://a.org": string(payload)}}
+	app.CacheStore = &memoryStore{data: map[string]string{"cache_https://a.org": string(payload)}}
 
 	content, links, err := downloadCached("https://a.org")
 	if err != nil || content != "cached text" || len(links) != 1 {
@@ -355,8 +356,8 @@ func TestProxyGetAndDownloadWithLocalServer(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	downloadTimeout = 3 * time.Second
-	proxyHost = ""
+	app.DownloadTimeout = 3 * time.Second
+	app.ProxyHost = ""
 	setupTestConfig()
 
 	withTempWorkDir(t, func() {
@@ -380,13 +381,13 @@ func TestProxyGetAndDownloadWithLocalServer(t *testing.T) {
 }
 
 func TestFTS5IndexAndSearch(t *testing.T) {
-	oldPath := cachePath
-	cachePath = filepath.Join(t.TempDir(), "search.db")
+	oldPath := app.CachePath
+	app.CachePath = filepath.Join(t.TempDir(), "search.db")
 	defer func() {
-		cachePath = oldPath
-		if searchDB != nil {
-			searchDB.Close()
-			searchDB = nil
+		app.CachePath = oldPath
+		if app.SearchDB != nil {
+			app.SearchDB.Close()
+			app.SearchDB = nil
 		}
 	}()
 	if err := initSearchIndex(); err != nil {
@@ -394,14 +395,14 @@ func TestFTS5IndexAndSearch(t *testing.T) {
 	}
 	indexDocument("https://example.org/stack", "stacking images and sigma clipping")
 	var count int
-	if err := searchDB.QueryRow(`SELECT count(*) FROM corpus_fts`).Scan(&count); err != nil {
+	if err := app.SearchDB.QueryRow(`SELECT count(*) FROM corpus_fts`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
 	if count != 1 {
 		t.Fatalf("corpus_fts has %d rows, want 1", count)
 	}
 	var got string
-	if err := searchDB.QueryRow(`SELECT url FROM corpus_fts WHERE corpus_fts MATCH ?`, "stacking").Scan(&got); err != nil {
+	if err := app.SearchDB.QueryRow(`SELECT url FROM corpus_fts WHERE corpus_fts MATCH ?`, "stacking").Scan(&got); err != nil {
 		t.Fatalf("FTS5 MATCH failed: %v", err)
 	}
 	if got != "https://example.org/stack" {
@@ -410,17 +411,17 @@ func TestFTS5IndexAndSearch(t *testing.T) {
 }
 
 func TestParseCLISpaceSeparated(t *testing.T) {
-	oldArgs, oldProfile, oldWorkers, oldDry, oldBackend, oldCache := os.Args, profileName, cliWorkers, cliDryRun, cacheBackend, cachePath
+	oldArgs, oldProfile, oldWorkers, oldDry, oldBackend, oldCache := os.Args, app.ProfileName, app.CLIWorkers, app.CLIDryRun, app.CacheBackend, app.CachePath
 	defer func() {
 		os.Args = oldArgs
-		profileName, cliWorkers, cliDryRun, cacheBackend, cachePath = oldProfile, oldWorkers, oldDry, oldBackend, oldCache
+		app.ProfileName, app.CLIWorkers, app.CLIDryRun, app.CacheBackend, app.CachePath = oldProfile, oldWorkers, oldDry, oldBackend, oldCache
 	}()
 	os.Args = []string{"crawler", "-profile", "crypto", "-workers", "4", "-dry-run", "-backend", "redis"}
 	if err := parseCLI(); err != nil {
 		t.Fatal(err)
 	}
-	if profileName != "crypto" || cliWorkers != 4 || !cliDryRun || cacheBackend != "redis" {
-		t.Fatalf("parseCLI: profile=%s workers=%d dry=%v backend=%s", profileName, cliWorkers, cliDryRun, cacheBackend)
+	if app.ProfileName != "crypto" || app.CLIWorkers != 4 || !app.CLIDryRun || app.CacheBackend != "redis" {
+		t.Fatalf("parseCLI: profile=%s workers=%d dry=%v backend=%s", app.ProfileName, app.CLIWorkers, app.CLIDryRun, app.CacheBackend)
 	}
 }
 
@@ -440,32 +441,63 @@ func TestGetSecondLevelDomainMultiLabelTLD(t *testing.T) {
 }
 
 func TestPruneTerminalLinks(t *testing.T) {
-	oldPool, oldIndex := lPool, linkIndex
-	defer func() { lPool, linkIndex = oldPool, oldIndex }()
-	lPool = []aLink{
+	oldPool, oldIndex := app.LPool, app.LinkIndex
+	defer func() { app.LPool, app.LinkIndex = oldPool, oldIndex }()
+	app.LPool = []aLink{
 		{URL: "https://a.org", Status: 2},
 		{URL: "https://b.org", Status: 0},
 		{URL: "https://c.org", Status: 3},
 	}
-	linkIndex = map[string]int{"https://a.org": 0, "https://b.org": 1, "https://c.org": 2}
+	app.LinkIndex = map[string]int{"https://a.org": 0, "https://b.org": 1, "https://c.org": 2}
 	pruneTerminalLinks()
-	if len(lPool) != 1 || lPool[0].URL != "https://b.org" {
-		t.Fatalf("pruned pool = %v", lPool)
+	if len(app.LPool) != 1 || app.LPool[0].URL != "https://b.org" {
+		t.Fatalf("pruned pool = %v", app.LPool)
 	}
-	if linkIndex["https://b.org"] != 0 {
-		t.Fatalf("index not rebuilt: %v", linkIndex)
+	if app.LinkIndex["https://b.org"] != 0 {
+		t.Fatalf("index not rebuilt: %v", app.LinkIndex)
 	}
 }
 
 func TestParseCLIVersionAndLicense(t *testing.T) {
-	oldArgs, oldV, oldL := os.Args, showVersion, showLicense
-	defer func() { os.Args, showVersion, showLicense = oldArgs, oldV, oldL }()
+	oldArgs, oldV, oldL := os.Args, app.ShowVersion, app.ShowLicense
+	defer func() { os.Args, app.ShowVersion, app.ShowLicense = oldArgs, oldV, oldL }()
 	os.Args = []string{"crawler", "-version", "-license"}
-	showVersion, showLicense = false, false
+	app.ShowVersion, app.ShowLicense = false, false
 	if err := parseCLI(); err != errStop {
 		t.Fatalf("parseCLI = %v, want errStop", err)
 	}
-	if !showVersion || !showLicense {
+	if !app.ShowVersion || !app.ShowLicense {
 		t.Fatal("both informational flags should be set")
+	}
+}
+
+func TestSemanticRanking(t *testing.T) {
+	old := app.RankingStrategy
+	defer func() { app.RankingStrategy = old }()
+	setupTestConfig()
+	app.RankingStrategy = "semantic"
+	relevant := semanticScore("stack stacking integration calibration astrometry image noise")
+	unrelated := semanticScore("grocery shopping vegetables recipe cooking")
+	if relevant <= unrelated {
+		t.Fatalf("semanticScore relevant=%v unrelated=%v", relevant, unrelated)
+	}
+	if v := tokenEmbedding("stacking"); len(v) != embeddingDim {
+		t.Fatalf("tokenEmbedding length = %d", len(v))
+	}
+}
+
+func TestConfigKeysLoad(t *testing.T) {
+	old := app
+	defer func() { app = old }()
+	app = newCrawler()
+	app.ProfileName = "astrophotography"
+	if err := yamlInitGeneral(); err != nil {
+		t.Fatal(err)
+	}
+	if err := yamlInitSpecific(); err != nil {
+		t.Fatal(err)
+	}
+	if app.MinDocLen != 50 || app.MaxDocLen != 100000 || app.CacheBackend != "local" {
+		t.Fatalf("config keys not loaded: min=%d max=%d backend=%s", app.MinDocLen, app.MaxDocLen, app.CacheBackend)
 	}
 }

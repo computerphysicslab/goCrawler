@@ -3,6 +3,22 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
+## [v1.7.0] - 2026-11-17
+
+### Added
+- `Crawler` struct owning configuration, state, stores and mutexes; package-level mutable globals removed (P19).
+- `run()` split into `prepareCLI`, `setupRuntime`, `crawlLoop` and `reportResults` (P16).
+- `validateConfig()` with aggregated errors for lengths, thresholds, regexes, backend and strategy (P17).
+- Dirty-tracked incremental crawl-state persistence: saves only when state changed (P15).
+- `semantic` ranking strategy using local character-trigram hashing embeddings, no model dependency (P20).
+- Embedded web Workbench (`-gui`, `-gui-port=N`): dashboard, profile editor, corpus viewer with
+  curated text and copy button, FTS5 search, keyword extraction and one-click feedback to the profile,
+  and crawl start/stop (P21).
+
+### Changed
+- `hybrid` ranking now combines keyword, TF-IDF and semantic scores.
+- Version remains reported as v1.7.0 by `-version`.
+
 ## [v1.6.0] - 2026-11-17
 
 ### Added

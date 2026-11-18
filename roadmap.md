@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.6.0 (2026-11-17). Section 1 lists only deliberately deferred items; everything else is complete.
+**Current version:** v1.7.0 (2026-11-17). All roadmap items are now implemented.
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -8,22 +8,10 @@ table; full details of the senior audit and the GUI proposal are in `docs/`.
 
 ---
 
-## 1. Pending work — ordered by increasing difficulty
+## 1. Pending work
 
-All actionable S/M items from the 2026-11-17 senior audit were implemented in **v1.6.0** (P01–P14
-and P18). The items below remain **deliberately deferred after evaluation**; each has a recorded
-reason so no decision is lost.
-
-| ID | Effort | Item | Status / reason |
-|---|---|---|---|
-| P15 | M | Incremental `crawlState` persistence | Deferred: full-state writes every 50 links are acceptable at current scale; a correct delta design depends on P19 |
-| P16 | M | Split `run()` into `setup()/crawl()/report()` | Deferred: high regression risk for low user value; superseded by P19 |
-| P17 | M | Single validated config loader | Deferred: needs the ownership model of P19 |
-| P19 | L | `Crawler` struct replacing ~30 globals | Deferred: large refactor with no functional gain for current users |
-| P20 | L | Local embeddings for semantic ranking | Deferred: requires a model dependency and a labelled evaluation set |
-| P21 | XL | goCrawler Workbench GUI | Design complete (`docs/GUI_ANALYSIS.md`); implementation is a separate v2.x product milestone |
-
-**Completed from this audit:** P01–P14 and P18 (see v1.6.0 below).
+**None.** All items from the senior audit and the GUI analysis are implemented in v1.7.0.
+New findings should be added here with their effort estimate.
 
 ---
 
@@ -38,6 +26,7 @@ reason so no decision is lost.
 | v1.3.0 | 2026-11-17 | Go 1.26.11 + dependency upgrades (0 vulnerabilities), function-by-function audit, expanded tests, configurable TF-IDF/hybrid ranking, precompiled regexes, decomposed `doNextLink`, versioned state, O(1) link index (items 15, 21, 28–35) |
 | v1.4.0 | 2026-11-17 | Full CLI flags, SQLite FTS5 search, multi-worker crawling with mutexes, multi-language profiles, profile generator/explorer, Snap/Debian/AppStream drafts, CI/CD and release (items 7, 13, 14, 16, 17, 20, 22–25) |
 | v1.5.0 | 2026-11-17 | Roadmap refactor, senior audit, GUI design analysis, changelog and version tags, cross-platform release |
+| v1.7.0 | 2026-11-17 | All deferred items closed: `Crawler` struct replacing globals (P19), `setup/crawl/report` split (P16), validated config loader (P17), dirty-tracked incremental state (P15), local hashing-embedding semantic ranking (P20) and the embedded web workbench GUI with profile editor, run monitor, corpus viewer, FTS5 search, keyword extraction and feedback loop (P21) |
 | v1.6.0 | 2026-11-17 | Senior-audit fixes P01–P14 and CLI tests P18: HTTP status/content checks, public-suffix fix, FTS5 query sanitisation, fail-fast loggers, space-separated CLI flags and `-config`, SQLite busy timeout, robots slot reservation, prebuilt gzip frequency index, graceful Ctrl-C, generic per-domain delay, pool pruning, bounded dedup sets, top-K frequencies, document-level language detection, CLI/top-K tests; Windows CI CRLF fix |
 
 ### Historically completed items (1–35)
