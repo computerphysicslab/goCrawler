@@ -912,3 +912,10 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   perfil, Keyword Lab 2.0, Apply & Re-run, Corpus Explorer, heatmap de dominios, comparación de
   sesiones, command palette, export Markdown/PDF y análisis de impacto de keywords.
 - Backlog completo P22–P47 ordenado por esfuerzo; priorizar P22–P36 antes de los ítems L/XL.
+
+## 43. URL Seeds con contador (v1.8.5, 2026-11-18)
+
+- Pestaña `hazURL` renombrada a **URL Seeds**; muestra "Seeds in profile: <b id=u-count>N</b> URLs".
+- `loadURLs()` actualiza el contador con `d.urls.length` y `saveURLs()` muestra el total devuelto.
+- Backend ya descarta duplicados y URLs inválidas; verificado con el perfil skystacker-research (53
+  semillas, añadir 3 duplicados → sigue 53).

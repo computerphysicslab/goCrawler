@@ -734,7 +734,7 @@ func TestGUIHasURLTab(t *testing.T) {
 		server := httptest.NewServer(guiHandler())
 		defer server.Close()
 		_, body := guiRequest(t, server, "GET", "/", "")
-		for _, fragment := range []string{`data-tab="urls"`, `id="urls"`, `id="u-profile"`, `id="u-text"`, "hazURL"} {
+		for _, fragment := range []string{`data-tab="urls"`, `id="urls"`, `id="u-profile"`, `id="u-text"`, "URL Seeds", `id="u-count"`} {
 			if !strings.Contains(body, fragment) {
 				t.Fatalf("GUI HTML missing %q", fragment)
 			}
@@ -792,6 +792,58 @@ func TestGUIMetricsInHTML(t *testing.T) {
 			if !strings.Contains(body, fragment) {
 				t.Fatalf("GUI HTML missing %q", fragment)
 			}
+		}
+	})
+}
+
+func TestGUIURLCounterAndDeduplication(t *testing.T) {
+	withGUIApp(t, func() {
+		if err := os.MkdirAll("profiles", 0755); err != nil {
+			t.Fatal(err)
+		}
+		path := filepath.Join("profiles", "url_counter_test.yaml")
+		initial := "scoreThreshold: 10\nbootstrapingLinks:\n- \"https://example.org/a\"\n"
+		if err := os.WriteFile(path, []byte(initial), 0644); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(path)
+
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		_, body := guiRequest(t, server, "GET", "/api/urls?profile=url_counter_test", "")
+		var list struct{ Urls []string }
+		if err := json.Unmarshal([]byte(body), &list); err != nil {
+			t.Fatal(err)
+		}
+		if len(list.Urls) != 1 {
+			t.Fatalf("initial count = %d, want 1", len(list.Urls))
+		}
+
+		add := `{"profile":"url_counter_test","urls":["https://example.org/a","https://example.org/b","https://example.org/b","bad-url"],"mode":"append"}`
+		_, body = guiRequest(t, server, "POST", "/api/urls", add)
+		var res struct{ Urls int }
+		if err := json.Unmarshal([]byte(body), &res); err != nil {
+			t.Fatal(err)
+		}
+		if res.Urls != 2 {
+			t.Fatalf("count after adding 1 new + 1 duplicate + 1 invalid = %d, want 2", res.Urls)
+		}
+
+		add2 := `{"profile":"url_counter_test","urls":["https://example.org/c","https://example.org/d"],"mode":"append"}`
+		_, body = guiRequest(t, server, "POST", "/api/urls", add2)
+		if err := json.Unmarshal([]byte(body), &res); err != nil {
+			t.Fatal(err)
+		}
+		if res.Urls != 4 {
+			t.Fatalf("count after adding 2 more = %d, want 4", res.Urls)
+		}
+
+		_, body = guiRequest(t, server, "GET", "/api/urls?profile=url_counter_test", "")
+		if err := json.Unmarshal([]byte(body), &list); err != nil {
+			t.Fatal(err)
+		}
+		if len(list.Urls) != 4 {
+			t.Fatalf("GET after additions = %d, want 4", len(list.Urls))
 		}
 	})
 }

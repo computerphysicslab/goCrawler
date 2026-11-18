@@ -3,7 +3,13 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.8.4] - 2026-11-18
+## [v1.8.5] - 2026-11-18
+
+### Changed
+- Renamed the `hazURL` tab to "URL Seeds" and added a live "Seeds in profile: N URLs" counter that
+  refreshes after add/replace/remove. Duplicates and invalid URLs are ignored by the backend.
+
+ - 2026-11-18
 
 ### Added
 - `docs/GUI_MOCKUP_ANALYSIS.md`: assessment of the second GUI proposal; React/Vue explicitly rejected.
