@@ -228,7 +228,7 @@ func TestGUIKeywordsExtractAndApply(t *testing.T) {
 				t.Fatalf("stopword %s leaked into extracted keywords", stop)
 			}
 		}
-		apply := `{"profile":"` + name + `","keywords":["stacking","drizzle"]}`
+		apply := `{"profile":"` + name + `","keywords":["stacking","drizzle"],"removed":["old"]}`
 		code, body = guiRequest(t, server, "POST", "/api/keywords/apply", apply)
 		if code != 200 || !strings.Contains(body, "applied") {
 			t.Fatalf("apply = %d %q", code, body)
@@ -237,8 +237,19 @@ func TestGUIKeywordsExtractAndApply(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(string(got), "stacking|drizzle") || strings.Contains(string(got), "old") {
-			t.Fatalf("applied profile = %q", got)
+		content := string(got)
+		if strings.Contains(content, "old") {
+			t.Fatalf("removed keyword is still in the profile: %q", content)
+		}
+		for _, form := range []string{"stack", "stacks", "stacking", "drizzle", "drizzles", "drizzling"} {
+			if !strings.Contains(content, form) {
+				t.Fatalf("morphological variant %q missing from profile: %q", form, content)
+			}
+		}
+		for _, junk := range []string{"stackinger", "drizzleion", "stackinged"} {
+			if strings.Contains(content, junk) {
+				t.Fatalf("nonsense variant %q in profile: %q", junk, content)
+			}
 		}
 	})
 }

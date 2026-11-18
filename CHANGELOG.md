@@ -3,7 +3,15 @@
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
 correspond to Git tags. Dates are 2026-11-17 unless stated otherwise.
 
-## [v1.7.7] - 2026-11-18
+## [v1.7.8] - 2026-11-18
+
+### Changed
+- Keyword Lab: removing a keyword now marks it for deletion and `/api/keywords/apply` removes it
+  (and its morphological family) from the profile.
+- Applying keywords merges existing + selected terms, expands singular/plural/verb forms and writes
+  both `linkOk` and `regexRankingKeywords`; stopwords are filtered out.
+
+ - 2026-11-18
 
 ### Fixed
 - Restored the missing closing brace in the Workbench `loadProfile()` JavaScript, which prevented

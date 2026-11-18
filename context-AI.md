@@ -834,3 +834,12 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   detectar este tipo de rotura en CI, más tests de que `p-list` y `pr-profile` son `<select>` y de que
   todos los handlers JS están presentes.
 - Verificado en checkout limpio: `go test ./...` ✅.
+
+## 36. Keyword Lab: borrado real y extensión morfológica (v1.7.8, 2026-11-18)
+
+- `removeKeyword` añade la palabra a `removed`; `applyKeywords` envía `{profile, keywords, removed}`.
+- `/api/keywords/apply` resuelve el perfil (insensible a mayúsculas/espacios), combina keywords
+  existentes + seleccionadas, elimina las marcadas (con su familia morfológica) y expande cada
+  término con singular/plural/verbos (`image/imaged/images/imaging`, `stack/stacked/stacking/stacks`).
+- Evita generar formas absurdas (`stackinger`, `drizzleion`). Verificado con curl y tests: perfil
+  resultante solo contiene las variantes correctas.

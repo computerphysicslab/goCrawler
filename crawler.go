@@ -2217,8 +2217,8 @@ async function profiles(){const p=await json('/api/profiles');const last=await j
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
 async function search(){const d=await json('/api/search?q='+encodeURIComponent($('q').value));$('docs').innerHTML=d.results.map(x=>'<div class="card"><b>'+x.url+'</b><pre>'+x.snippet+'</pre><button class="act" onclick="copyText(this)">Copy</button></div>').join('')}
-let extracted=[];async function extract(){const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+' <button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td></tr>').join('')+'</table>'}function removeKeyword(w){extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
-async function applyKeywords(){const n=$('k-profile').value;const kws=extracted;const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws})});$('status').textContent=(await r.json()).status;document.querySelector('[data-tab=prof]').click();profiles()}
+let extracted=[];let removed=[];async function extract(){removed=[];const n=$('k-profile').value||$('p-list').value;const d=await json('/api/keywords?profile='+encodeURIComponent(n));extracted=d.keywords.slice();$('k-out').innerHTML='<table><tr><th>Word</th><th>Count</th><th>Docs</th><th>Score</th></tr>'+(d.details||[]).map(x=>'<tr><td>'+x.word+' <button class=act onclick="removeKeyword(\''+x.word+'\')">x</button></td><td>'+x.count+'</td><td>'+x.docs+'</td><td>'+x.score.toFixed(2)+'</td></tr>').join('')+'</table>'}function removeKeyword(w){removed.push(w);extracted=extracted.filter(k=>k!==w);const row=[...$('k-out').querySelectorAll('tr')].find(r=>r.textContent.startsWith(w));if(row)row.remove()}
+async function applyKeywords(){const n=$('k-profile').value;const kws=extracted;const r=await fetch('/api/keywords/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:n,keywords:kws,removed:removed})});const res=await r.json();$('status').textContent=res.status+' ('+res.keywords+' keywords)';document.querySelector('[data-tab=prof]').click();profiles()}
 async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value;const d=await json('/api/prompt?profile='+encodeURIComponent(n));$('pr-out').value=d.prompt}
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
@@ -2494,12 +2494,17 @@ func guiHandler() http.Handler {
 		var body struct {
 			Profile  string   `json:"profile"`
 			Keywords []string `json:"keywords"`
+			Removed  []string `json:"removed"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			http.Error(w, err.Error(), 400)
 			return
 		}
-		name := filepath.Base(body.Profile)
+		name, err := resolveProfileName(body.Profile)
+		if err != nil {
+			http.Error(w, err.Error(), 404)
+			return
+		}
 		path := "profiles/" + name + ".yaml"
 		b, err := os.ReadFile(path)
 		if err != nil {
@@ -2507,26 +2512,40 @@ func guiHandler() http.Handler {
 			return
 		}
 		text := string(b)
-		for _, key := range []string{"linkOk:", "regexRankingKeywords:"} {
-			if i := strings.Index(text, key); i >= 0 {
-				headerEnd := strings.Index(text[i:], "\n")
-				if headerEnd < 0 {
-					continue
-				}
-				contentStart := i + headerEnd + 1
-				contentEnd := strings.Index(text[contentStart:], "\n")
-				if contentEnd < 0 {
-					contentEnd = len(text) - contentStart
-				}
-				text = text[:contentStart] + "  " + strings.Join(body.Keywords, "|") + text[contentStart+contentEnd:]
+
+		existing := listUnique(append(yamlBlockAlternatives(text, "linkOk:"),
+			yamlBlockAlternatives(text, "regexRankingKeywords:")...))
+		removed := make(map[string]bool)
+		for _, word := range body.Removed {
+			for _, variant := range keywordFamily(word) {
+				removed[strings.ToLower(variant)] = true
 			}
 		}
+		for _, word := range body.Keywords {
+			for _, variant := range keywordFamily(word) {
+				removed[strings.ToLower(variant)] = false
+			}
+		}
+		combined := []string{}
+		for _, word := range append(existing, body.Keywords...) {
+			if !removed[strings.ToLower(word)] && !guiStopwords[strings.ToLower(word)] {
+				combined = append(combined, strings.ToLower(word))
+			}
+		}
+		final := expandKeywords(listUnique(combined))
+		if len(final) == 0 {
+			http.Error(w, "refusing to write an empty keyword set", 400)
+			return
+		}
+		text = replaceYamlBlock(text, "linkOk:", strings.Join(final, "|"))
+		text = replaceYamlBlock(text, "regexRankingKeywords:", `(?i)\W(`+strings.Join(final, "|")+`)\W`)
 		if err := os.WriteFile(path, []byte(text), 0644); err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		writeJSON(w, map[string]string{"status": "applied"})
+		writeJSON(w, map[string]interface{}{"status": "applied", "keywords": len(final)})
 	})
+
 	mux.HandleFunc("/api/crawl", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "POST required", 405)
@@ -2582,6 +2601,118 @@ func lastExecutedProfile() string {
 		return ""
 	}
 	return parts[0]
+}
+
+// yamlBlockAlternatives extracts "|"-separated terms from a YAML literal block.
+func yamlBlockAlternatives(text, key string) []string {
+	i := strings.Index(text, key)
+	if i < 0 {
+		return nil
+	}
+	headerEnd := strings.Index(text[i:], "\n")
+	if headerEnd < 0 {
+		return nil
+	}
+	content := text[i+headerEnd+1:]
+	if end := strings.Index(content, "\n"); end >= 0 {
+		content = content[:end]
+	}
+	value := strings.TrimSpace(content)
+	for _, prefix := range []string{`(?i)\W(`, `\W(`} {
+		if strings.HasPrefix(value, prefix) {
+			value = strings.TrimPrefix(value, prefix)
+			break
+		}
+	}
+	value = strings.TrimSuffix(value, `)\W`)
+	return listUnique(strings.Split(value, "|"))
+}
+
+// replaceYamlBlock replaces the content line of a YAML literal block.
+func replaceYamlBlock(text, key, value string) string {
+	i := strings.Index(text, key)
+	if i < 0 {
+		return text
+	}
+	headerEnd := strings.Index(text[i:], "\n")
+	if headerEnd < 0 {
+		return text + "\n  " + value + "\n"
+	}
+	contentStart := i + headerEnd + 1
+	contentEnd := strings.Index(text[contentStart:], "\n")
+	if contentEnd < 0 {
+		contentEnd = len(text) - contentStart
+	}
+	return text[:contentStart] + "  " + value + text[contentStart+contentEnd:]
+}
+
+// keywordFamily returns the singular/plural/verb forms of a keyword.
+func keywordFamily(word string) []string {
+	w := strings.ToLower(strings.TrimSpace(word))
+	if len(w) < 3 || guiStopwords[w] {
+		return nil
+	}
+	forms := map[string]bool{w: true}
+	add := func(value string) {
+		if len(value) >= 3 && !guiStopwords[value] {
+			forms[value] = true
+		}
+	}
+
+	base := w
+	if strings.HasSuffix(base, "ing") && len(base) > 5 {
+		base = strings.TrimSuffix(base, "ing")
+	} else if strings.HasSuffix(base, "ed") && len(base) > 4 {
+		base = strings.TrimSuffix(base, "ed")
+	} else if strings.HasSuffix(base, "es") && len(base) > 4 {
+		base = strings.TrimSuffix(base, "es")
+	} else if strings.HasSuffix(base, "s") && !strings.HasSuffix(base, "ss") && len(base) > 3 {
+		base = strings.TrimSuffix(base, "s")
+	}
+	add(base)
+
+	plural := base
+	switch {
+	case strings.HasSuffix(plural, "y") && len(plural) > 3:
+		plural = plural[:len(plural)-1] + "ies"
+	case strings.HasSuffix(plural, "s"), strings.HasSuffix(plural, "x"), strings.HasSuffix(plural, "ch"), strings.HasSuffix(plural, "sh"):
+		plural += "es"
+	default:
+		plural += "s"
+	}
+	add(plural)
+
+	verbBase := base
+	if strings.HasSuffix(verbBase, "e") {
+		add(verbBase[:len(verbBase)-1] + "ing")
+		add(verbBase + "d")
+	} else {
+		add(verbBase + "ing")
+		add(verbBase + "ed")
+	}
+
+	out := []string{}
+	for form := range forms {
+		out = append(out, form)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// expandKeywords adds morphological variants to a keyword list, removing stopwords.
+func expandKeywords(words []string) []string {
+	seen := make(map[string]bool)
+	for _, word := range words {
+		for _, variant := range keywordFamily(word) {
+			seen[variant] = true
+		}
+	}
+	out := []string{}
+	for word := range seen {
+		out = append(out, word)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // runGUI starts the embedded local web interface on loopback only.
