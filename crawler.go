@@ -3043,7 +3043,8 @@ func setupRuntime(profile string) (int, func(), error) {
 	}
 
 	if app.RespectRobots {
-		app.RobotsPolicy = robotspolicy.New(app.UserAgent, app.DownloadTimeout)
+		robotsPath := filepath.Join(filepath.Dir(app.CachePath), "robots-cache.json")
+		app.RobotsPolicy = robotspolicy.NewWithCache(app.UserAgent, app.DownloadTimeout, robotsPath)
 	}
 	if err := corpusfreqlib.Init(); err != nil {
 		return 0, cleanup, fmt.Errorf("English corpus: %w", err)

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "hosts": {
+    "http://127.0.0.1:34717": {
+      "body": "User-agent: *\nDisallow: /private\nCrawl-delay: 1\n",
+      "fetched_at": "2026-11-18T09:15:45.695007841+01:00"
+    },
+    "http://127.0.0.1:34895": {
+      "body": "User-agent: *\nDisallow: /private\nCrawl-delay: 1\n",
+      "fetched_at": "2026-11-18T09:16:00.055710573+01:00"
+    },
+    "http://127.0.0.1:39925": {
+      "body": "User-agent: *\nDisallow: /private\nCrawl-delay: 1\n",
+      "fetched_at": "2026-11-18T09:13:11.277805979+01:00"
+    },
+    "http://127.0.0.1:41487": {
+      "body": "User-agent: *\nDisallow: /private\nCrawl-delay: 1\n",
+      "fetched_at": "2026-11-18T09:12:18.462868256+01:00"
+    }
+  }
+}
