@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.14 (2026-11-18). Section 1 lists the remaining GUI Studio backlog (P24–P47).
+**Current version:** v1.8.14 (2026-11-18). Section 1 lists the remaining GUI backlog (P24–P47) plus the newly accepted P52–P67 items.
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -10,12 +10,17 @@ table; full details of the senior audit and the GUI proposal are in `docs/`.
 
 ## 1. Pending work — ordered by increasing difficulty
 
-Sources: `docs/GUI_STUDIO_ANALYSIS.md` and `docs/GUI_MOCKUP_ANALYSIS.md` (2026-11-18). Items are
-sorted by increasing effort; React/Vue frontends are explicitly rejected (they would break the
-zero-dependency single-binary design).
+Sources: `docs/GUI_STUDIO_ANALYSIS.md`, `docs/GUI_MOCKUP_ANALYSIS.md` and
+`docs/REVIEW_RECOMMENDATIONS_2026-11-18.md`. Items are sorted by increasing effort; React/Vue
+frontends are explicitly rejected (they would break the zero-dependency single-binary design).
+The review document contains the reasoning, the rejected suggestions and the fact-checks.
 
 | ID | Effort | Item |
 |---|---|---|
+| P61 | S | Onboarding pack: README badges + Go version fix, `CONTRIBUTING.md`, issue/PR templates, tracked `profiles/examples/` |
+| P62 | S | Notification hooks: webhook/desktop notice on completion, errors or rejection-threshold breach |
+| P63 | S | Accessibility polish: high-contrast and reduced-motion modes, keyboard navigation on top of P45 |
+| P59 | S | Large-file hygiene: make `freq-index.json.gz` primary and generate/move the 18 MB `all.num` (keep a small offline fixture) |
 | P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
 | P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
@@ -28,15 +33,28 @@ zero-dependency single-binary design).
 | P43 | M | Domain heatmap (accepted pages per domain) |
 | P45 | M | Command palette (Cmd/Ctrl+K) for quick actions |
 | P46 | M | Report export to Markdown and print-to-PDF |
+| P52 | M | Adaptive politeness: 429/503 + `Retry-After`, per-domain exponential back-off, max req/s and connections per host |
+| P54 | M | Corpus export pack: Markdown bundle, JSONL, CSV and Hugging Face-style dataset folder with metadata |
+| P56 | M | Profile inheritance/composition: base profiles + overlays (English + PDF + strict robots) |
+| P64 | M | GUI/API contract: JSON Schema or generated OpenAPI for the `/api/*` handlers |
+| P65 | M | Fuzz/property tests for URL parsing, PDF extraction and FTS5 sanitisation; expand multi-worker `httptest` coverage |
 | P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) in SQLite |
 | P29 | L | Audit table with instant search and filters by HTTP status and Content-Type |
 | P37 | L | Structured profile editor: chips, live regex validation, YAML advanced view |
 | P39 | L | Profile version history (snapshot per run with diff) |
 | P42 | L | Corpus Explorer: virtualised list, keyword highlighting, filters, export MD/JSON/CSV |
 | P44 | L | Session comparison between two runs of the same profile |
+| P53 | L | Corpus quality dashboard: readability, lexical diversity, domain coverage, language-confidence histogram, topic purity |
+| P55 | L | Optional JS rendering behind a build tag/runtime flag; default stays pure HTTP |
+| P58 | L | Incremental/delta crawls via ETag/Last-Modified/content hash with new-vs-updated reporting |
+| P66 | L | Staged modularisation: extract `gui/`, then `pipeline/`, then `download/` from `crawler.go` |
+| P67 | L | Streaming/memory bounds for large corpora: stream paragraphs and bound in-memory frequency/dedup structures |
 | P30 | XL | Interactive topology graph and URL inspection drawer |
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
+
+**Recommended next step:** P27 (SSE) is the highest-leverage item; it makes P24, P25, P34 and P36
+much cheaper. Ship telemetry/control first, then the small S items (P61–P63, P59).
 
 Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8) and PDF support P48–P51 (v1.8.14).
 
@@ -75,6 +93,10 @@ dependency audit · 23 Snapcraft draft · 24 Debian skeleton · 25 AppStream · 
 |---|---|---|
 | 26 — Universe / Debian Mentors | **Deferred** | Needs Debian-packaged versions of unported Go modules and a sponsor; see `docs/UBUNTU_SUBMISSION.md` |
 | 27 — Main / preinstalled ISO | **Out of scope** | Requires MIR, Canonical security audit, mass adoption and 5-year LTS support |
+| 60 — Plugin interface / WASM filters | **Deferred** | ABI and sandboxing surface too large before the core API stabilises |
+| Wails/Fyne desktop wrapper | **Deferred** | Loopback web GUI already works; packaging burden without new capability |
+| Docker image | **Deferred (optional)** | Native single binary is the primary distribution; add on demand |
+| Per-request HTTP client fix | **Rejected** | Already solved by `initHTTPClient()` with a shared tuned `Transport` |
 
 ---
 

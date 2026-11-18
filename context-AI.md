@@ -1038,3 +1038,16 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   prefijo `pdf_` y registra `too_large`/`invalid_pdf`/`pdf_no_text`. El texto pasa por los mismos
   filtros, corpus y FTS5.
 - Tests nuevos: extracción unitaria, gate de URL y descarga/cache de PDF. `go test ./...` ✅.
+
+
+## 32. Revisión de recomendación externa y roadmap ampliado (v1.8.14, 2026-11-18)
+
+- Análisis completo en `docs/REVIEW_RECOMMENDATIONS_2026-11-18.md`. Verificación: el cliente HTTP ya
+  es compartido (la recomendación estaba desactualizada); `all.num` (18 MB) sí está versionado;
+  `profiles/` está en .gitignore; README dice Go 1.20 en la cabecera (error menor).
+- Aceptados y ordenados por dificultad: S → P61 onboarding, P62 notificaciones, P63 accesibilidad,
+  P59 archivos grandes; M → P52 cortesía adaptativa, P54 export pack, P56 herencia de perfiles,
+  P64 contrato API, P65 fuzz tests; L → P53 dashboard de calidad, P55 JS opcional, P58 crawls
+  incrementales, P66 modularización por fases, P67 streaming/memoria.
+- P27 (SSE) se mantiene como punto de apalancamiento máximo. Diferidos: plugins/WASM, wrapper
+  Wails/Fyne y Docker; rechazado el "fix" de cliente HTTP por ya implementado.
