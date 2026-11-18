@@ -34,6 +34,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 	"unicode"
 
@@ -2442,7 +2443,7 @@ const (
 	linkStaleTimeout  = 60 * time.Second
 )
 
-const appVersion = "1.8.16"
+const appVersion = "1.8.17"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
@@ -3534,28 +3535,113 @@ func replaceSeedBlock(text string, urls []string) string {
 	return strings.Join(result, "\n")
 }
 
-// runGUI starts the embedded local web interface on loopback only.
+var guiLockDirOverride string
+
+// guiLockPath returns a per-user lock file so only one Workbench runs at a time.
+func guiLockPath() (string, error) {
+	base := guiLockDirOverride
+	var err error
+	if base == "" {
+		base, err = os.UserCacheDir()
+		if err != nil {
+			return "", err
+		}
+	}
+	dir := filepath.Join(base, "goCrawler")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "gui.lock"), nil
+}
+
+// processAlive reports whether a PID still refers to a running process.
+func processAlive(pid int) bool {
+	if pid <= 0 {
+		return false
+	}
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+	if runtime.GOOS == "windows" {
+		return true
+	}
+	return proc.Signal(syscall.Signal(0)) == nil
+}
+
+// acquireGUILock creates the single-instance lock and returns its release function.
+func acquireGUILock() (func(), error) {
+	path, err := guiLockPath()
+	if err != nil {
+		return nil, fmt.Errorf("GUI lock: %w", err)
+	}
+	for attempt := 0; attempt < 2; attempt++ {
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+		if err == nil {
+			fmt.Fprintf(file, "%d %d\n", os.Getpid(), app.GUIPort)
+			file.Close()
+			var once sync.Once
+			return func() { once.Do(func() { os.Remove(path) }) }, nil
+		}
+		if !os.IsExist(err) {
+			return nil, fmt.Errorf("GUI lock: %w", err)
+		}
+		content, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return nil, fmt.Errorf("GUI lock: %w", readErr)
+		}
+		fields := strings.Fields(string(content))
+		pid := 0
+		if len(fields) > 0 {
+			pid, _ = strconv.Atoi(fields[0])
+		}
+		port := "unknown"
+		if len(fields) > 1 {
+			port = fields[1]
+		}
+		if processAlive(pid) {
+			return nil, fmt.Errorf("another goCrawler Workbench is already running (PID %d, port %s); stop it before starting a new one", pid, port)
+		}
+		if err := os.Remove(path); err != nil {
+			return nil, fmt.Errorf("GUI lock: cannot remove stale lock: %w", err)
+		}
+	}
+	return nil, fmt.Errorf("GUI lock: cannot acquire lock at %s after clearing stale file", path)
+}
+
+// runGUI starts a single embedded local web interface on loopback only.
 func runGUI() error {
 	if app.GUIPort <= 0 || app.GUIPort > 65535 {
 		app.GUIPort = 8765
 	}
-	base := app.GUIPort
-	var listener net.Listener
-	var addr string
-	var err error
-	for port := base; port < base+20; port++ {
-		addr = fmt.Sprintf("127.0.0.1:%d", port)
-		listener, err = net.Listen("tcp", addr)
-		if err == nil {
-			app.GUIPort = port
-			break
-		}
+	release, err := acquireGUILock()
+	if err != nil {
+		return err
 	}
-	if listener == nil {
-		return fmt.Errorf("no free port between %d and %d: %w", base, base+19, err)
+	defer release()
+
+	addr := fmt.Sprintf("127.0.0.1:%d", app.GUIPort)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("cannot listen on %s (another Workbench may still be running): %w", addr, err)
 	}
 	fmt.Printf("goCrawler Workbench: http://%s\n", addr)
-	return http.Serve(listener, guiHandler())
+
+	server := &http.Server{Handler: guiHandler()}
+	stop := make(chan os.Signal, 2)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(stop)
+	go func() {
+		<-stop
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		server.Shutdown(ctx)
+	}()
+
+	if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
 }
 
 // writeJSON writes a JSON response.

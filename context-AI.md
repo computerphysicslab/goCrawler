@@ -1076,3 +1076,13 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
   `regexRankingKeywords` del perfil seleccionado (sin tocar la config global) y escribe
   `output/corpus-<perfil>.txt`. Endpoints: POST `/api/corpus/save` y GET `/api/corpus/download`.
 - Tests HTTP en `gui_test.go` comprueban el TXT filtrado y la descarga; nombres de archivo saneados.
+
+
+## 35. Instancia única del Workbench (v1.8.17, 2026-11-18)
+
+- `acquireGUILock()` crea `~/.cache/goCrawler/gui.lock` con PID y puerto (override de directorio para
+  tests). Una segunda instancia muestra el PID/port en ejecución y termina; locks huérfanos (PID
+  muerto) se recuperan automáticamente.
+- `runGUI()` ya no busca puertos libres: si el puerto está ocupado, falla con mensaje claro.
+- Ctrl+C/SIGTERM llama a `server.Shutdown()` y libera el lock. Tests: lock duplicado, lock obsoleto
+  y puerto ocupado. Verificado con dos lanzamientos reales.

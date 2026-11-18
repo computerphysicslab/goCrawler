@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -1265,5 +1266,57 @@ func TestGUICorpusSaveAndDownload(t *testing.T) {
 				t.Fatalf("download status = %d body=%q", code, downloaded)
 			}
 		})
+	})
+}
+
+func TestGUILockSingleInstanceAndStaleRecovery(t *testing.T) {
+	oldOverride := guiLockDirOverride
+	guiLockDirOverride = t.TempDir()
+	defer func() { guiLockDirOverride = oldOverride }()
+
+	release, err := acquireGUILock()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path, err := guiLockPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := acquireGUILock(); err == nil || !strings.Contains(err.Error(), "already running") {
+		t.Fatalf("second instance should be rejected, got %v", err)
+	}
+	release()
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("lock file was not released: %v", err)
+	}
+
+	if err := os.WriteFile(path, []byte("-1 8765\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	release2, err := acquireGUILock()
+	if err != nil {
+		t.Fatalf("stale lock should be recovered: %v", err)
+	}
+	release2()
+}
+
+func TestRunGUIFailsOnBusyPort(t *testing.T) {
+	oldOverride := guiLockDirOverride
+	guiLockDirOverride = t.TempDir()
+	defer func() { guiLockDirOverride = oldOverride }()
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	port := listener.Addr().(*net.TCPAddr).Port
+
+	withGUIApp(t, func() {
+		app.GUIPort = port
+		err := runGUI()
+		if err == nil || !strings.Contains(err.Error(), "cannot listen") {
+			t.Fatalf("busy port should fail clearly, got %v", err)
+		}
 	})
 }

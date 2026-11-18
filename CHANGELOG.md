@@ -1,3 +1,14 @@
+## [v1.8.17] - 2026-11-18
+
+### Changed
+- The Workbench no longer silently falls back to another port when the requested one is busy; it
+  fails with a clear message instead.
+
+### Added
+- Single-instance GUI lock in the user cache dir (`~/.cache/goCrawler/gui.lock`): a second instance
+  reports the running PID/port. Stale locks from crashed processes are recovered automatically.
+- Ctrl+C/SIGTERM now shuts the GUI down gracefully and releases the lock.
+
 ## [v1.8.16] - 2026-11-18
 
 ### Changed

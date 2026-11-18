@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.16 (2026-11-18). Section 1 lists the remaining GUI backlog (P24–P47) plus the accepted P52–P67 items.
+**Current version:** v1.8.17 (2026-11-18). Section 1 lists the remaining GUI backlog (P24–P47) plus the accepted P52–P67 items.
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -72,6 +72,7 @@ Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P2
 | v1.8.14 | 2026-11-18 | PDF support (P48–P51): opt-in `process_pdf` profile flags, raw fetch split before the HTML Content-Type gate, pure-Go `pdftextlib` extraction with page/size limits, PDF cache prefix, new rejection reasons and tests |
 | v1.8.15 | 2026-11-18 | Onboarding pack, notification hooks, Workbench accessibility and large-file hygiene (P61–P63, P59): badges/CONTRIBUTING/templates/examples, webhook + desktop notices, high-contrast/reduced-motion/keyboard navigation, generated frequency index with small offline fixtures |
 | v1.8.16 | 2026-11-18 | Workbench Corpus tab: profile-matched TXT corpus export with download link |
+| v1.8.17 | 2026-11-18 | Single-instance Workbench lock with stale recovery, graceful SIGINT/SIGTERM shutdown and no silent port fallback |
 
 ### Historically completed items (1–35)
 
