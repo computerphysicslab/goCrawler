@@ -383,3 +383,84 @@ func TestGUIKeywordsMorphologicalGrouping(t *testing.T) {
 		}
 	})
 }
+
+// jsDelimitersBalanced ignores quoted strings and checks that all JS delimiters match.
+func jsDelimitersBalanced(js string) bool {
+	var stack []rune
+	var quote rune
+	escaped := false
+	for _, r := range js {
+		if quote != 0 {
+			if escaped {
+				escaped = false
+				continue
+			}
+			if r == '\\' {
+				escaped = true
+				continue
+			}
+			if r == quote {
+				quote = 0
+			}
+			continue
+		}
+		switch r {
+		case '\'', '"', '`':
+			quote = r
+		case '{', '(', '[':
+			stack = append(stack, r)
+		case '}', ')', ']':
+			if len(stack) == 0 {
+				return false
+			}
+			last := stack[len(stack)-1]
+			if (r == '}' && last != '{') || (r == ')' && last != '(') || (r == ']' && last != '[') {
+				return false
+			}
+			stack = stack[:len(stack)-1]
+		}
+	}
+	return len(stack) == 0 && quote == 0
+}
+
+func TestGUIScriptIsSyntacticallyBalanced(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		code, body := guiRequest(t, server, "GET", "/", "")
+		if code != 200 {
+			t.Fatalf("root = %d", code)
+		}
+		start := strings.Index(body, "<script>")
+		end := strings.Index(body, "</script>")
+		if start < 0 || end < start {
+			t.Fatal("no script block in GUI HTML")
+		}
+		js := body[start+len("<script>") : end]
+		if !jsDelimitersBalanced(js) {
+			t.Fatal("GUI JavaScript has unbalanced delimiters")
+		}
+		for _, name := range []string{"stats", "profiles", "loadProfile", "saveProfile", "search",
+			"extract", "removeKeyword", "applyKeywords", "generatePrompt", "startCrawl", "stopCrawl"} {
+			if !strings.Contains(js, "function "+name+"(") && !strings.Contains(js, " "+name+"=") {
+				t.Fatalf("GUI JavaScript is missing %s", name)
+			}
+		}
+	})
+}
+
+func TestGUIProfilesAndPromptAreSelects(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		_, body := guiRequest(t, server, "GET", "/", "")
+		for _, fragment := range []string{`<select id="p-list"`, `<select id="pr-profile"`, `id="run-profile"`} {
+			if !strings.Contains(body, fragment) {
+				t.Fatalf("GUI HTML missing %q", fragment)
+			}
+		}
+		if !strings.Contains(body, `const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase())`) {
+			t.Fatal("last profile should be selected case-insensitively")
+		}
+	})
+}
