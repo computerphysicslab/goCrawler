@@ -941,3 +941,11 @@ Se cerró el proceso colgante y se modificó `runGUI` para probar hasta 20 puert
 - Segundo problema: `replaceSeedBlock` solo reemplazaba el primer bloque de semillas, acumulando
   duplicados (105 líneas / 73 únicas). Reescrito para eliminar todas las líneas de semillas antes de
   escribir. Perfil limpio: 73 semillas únicas, todas las nuevas presentes.
+
+## 46. Pestaña About (v1.8.8, 2026-11-18)
+
+- Contenido habitual del About: nombre, versión, fecha, copyright, licencia, web/contacto, créditos, info del
+  sistema y componentes (fuentes: CDE guidelines, GTK AboutDialog, GNOME HIG).
+- Última pestaña "About" con `/api/about`: versión sincronizada (`appVersion`), copyright, MIT,
+  autor/email, enlaces repo/issues/changelog/roadmap, versión de Go, plataforma, componentes y
+  **QR local** del repositorio generado con `github.com/skip2/go-qrcode` (puro Go, sin servicio).

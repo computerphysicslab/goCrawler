@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.2 (2026-11-18). Section 1 lists the new GUI Studio backlog (P22–P47).
+**Current version:** v1.8.8 (2026-11-18). Section 1 lists the new GUI Studio backlog (P22–P47).
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -38,7 +38,7 @@ zero-dependency single-binary design).
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
 
-Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6).
+Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8).
 
 ---
 

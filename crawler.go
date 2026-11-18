@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"container/heap"
 	"database/sql"
+	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
@@ -23,6 +24,8 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+
+	"github.com/skip2/go-qrcode"
 	"sort"
 	"strconv"
 	"strings"
@@ -2091,7 +2094,7 @@ func runSearch(query string) error {
 	return nil
 }
 
-const appVersion = "1.7.1"
+const appVersion = "1.8.8"
 
 // parseCLI parses the command line while keeping positional-profile compatibility.
 func parseCLI() error {
@@ -2263,13 +2266,14 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 @media(max-width:760px){header,nav{padding-left:var(--space);padding-right:var(--space)}main{padding:var(--space)}.row>*{flex:1 1 100%}nav button{padding:var(--space)}}
 </style></head><body>
 <header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span><button class="act" onclick="toggleTheme()">Theme</button></header>
-<nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button></nav><main>
+<nav><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus search</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main>
 <section id="dash" hidden><div class="card"><div class="row"><div>Pages visited<div id="s-visits">0</div></div><div>Cache hits<div id="s-cache">0</div></div><div>Online<div id="s-online">0</div></div><div>Download ms<div id="s-ms">0</div></div><div>Accepted<div id="s-accepted">0</div></div><div>Not accepted<div id="s-rejected">0</div></div><div>Crawls running<div id="s-running">0</div></div><div>Net reqs<div id="s-net">0</div></div><div>Cache I/O<div id="s-io">0</div></div><div>URLs/s<div id="s-rate" class="kpi">0</div></div><div>Avg ms<div id="s-lat" class="kpi">0</div></div><div>Queue<div id="s-queue" class="kpi">0</div></div><div>Go routines<div id="s-goroutines" class="kpi">0</div></div></div></div>
 <div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div></section>
 <section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><select id="pr-profile"></select><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
+<section id="about" hidden><div class="card"><h3 id="a-name">goCrawler Workbench</h3><p class="muted" id="a-desc"></p><p>Version <b id="a-version"></b> — <span id="a-date"></span></p><p id="a-copyright"></p><p>License: <b id="a-license"></b> · Go: <span id="a-go"></span> · Platform: <span id="a-platform"></span></p><p>Author: <span id="a-author"></span> — <a id="a-email" href="#"></a></p><p><a id="a-repo" href="#" target="_blank" rel="noopener">Repository</a> · <a id="a-issues" href="#" target="_blank" rel="noopener">Issues</a> · <a id="a-changelog" href="#" target="_blank" rel="noopener">Changelog</a> · <a id="a-roadmap" href="#" target="_blank" rel="noopener">Roadmap</a></p><p>Components: <span id="a-components" class="muted"></span></p></div><div class="card"><h3>Scan to open the repository</h3><img id="a-qr" alt="QR code of the repository" style="max-width:180px"></div></section>
 <section id="urls" hidden><div class="card"><h3>URL Seeds</h3><p class="muted">Seeds in profile: <b id="u-count">0</b> URLs. Paste one URL per line; duplicates are ignored. Add, replace or remove seeds; changes are written to the profile YAML.</p><select id="u-profile"></select><textarea id="u-text" rows="12" placeholder="https://example.org/page"></textarea><div><button class="act" onclick="addURLs()">Add URLs</button> <button class="act" onclick="replaceURLs()">Replace all</button> <button class="act" onclick="removeURLs()">Remove selected</button></div><div id="u-list"></div></div></section>
 <section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><div id="k-out"></div><button class="act" onclick="applyKeywords()">Apply to profile</button> <button class="act" onclick="applyAndRun()">Apply &amp; Re-run</button></div></section>
 </main><script>
@@ -2277,7 +2281,7 @@ const $=id=>document.getElementById(id);
 if(localStorage.getItem('gc-theme')==='light')document.body.classList.add('light');
 function toggleTheme(){document.body.classList.toggle('light');localStorage.setItem('gc-theme',document.body.classList.contains('light')?'light':'dark')}
 
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus','prompt','urls'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['prof','dash','keys','corpus','prompt','urls','about'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
 async function json(u,o){const r=await fetch(u,o);return r.json()}
 async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?('running ('+s.running_count+')'):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
 async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;$('u-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;$('u-profile').value=match;}loadProfile()}
@@ -2293,13 +2297,14 @@ async function addURLs(){await saveURLs('append',[])}
 async function replaceURLs(){await saveURLs('replace',[])}
 async function removeURLs(){const n=$('u-profile').value||$('p-list').value;const d=await json('/api/urls?profile='+encodeURIComponent(n));const picked=[...$('u-list').querySelectorAll('input:checked')].map(x=>d.urls[parseInt(x.value)]);await saveURLs('append',picked)}
 async function applyAndRun(){if(!confirm('Apply extracted keywords and start a new crawl?'))return;await applyKeywords();$('run-profile').value=$('k-profile').value;startCrawl()}
+async function loadAbout(){const a=await json('/api/about');for(const [id,key] of [['a-name','name'],['a-version','version'],['a-date','release_date'],['a-copyright','copyright'],['a-license','license'],['a-go','go_version'],['a-platform','platform'],['a-author','author'],['a-desc','description'],['a-components','components']]){if($(id))$(id).textContent=a[key]}for(const [id,key] of [['a-repo','repo'],['a-issues','issues'],['a-changelog','changelog'],['a-roadmap','roadmap']]){if($(id)){$(id).href=a[key];$(id).textContent=key}}if($('a-email')){$('a-email').href='mailto:'+a.email;$('a-email').textContent=a.email}if($('a-qr'))$('a-qr').src=a.qr}
 async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value;const d=await json('/api/prompt?profile='+encodeURIComponent(n));$('pr-out').value=d.prompt}
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
 async function stopCrawl(){await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent='stopping';stats()}
 async function showReason(reason){const d=await json('/api/rejections?reason='+encodeURIComponent(reason));if(!d.events||!d.events.length){$('reason-detail').innerHTML='<p class=muted>No cases recorded for '+reason+'</p>';return}$('reason-detail').innerHTML='<h4>Last '+d.events.length+' cases: '+reason+'</h4>'+d.events.slice().reverse().map(e=>'<div class=card><b><a href="'+e.url+'" target="_blank" rel="noopener">'+e.url+'</a></b><div>'+(e.detail||'')+'</div>'+(e.text?'<pre>'+e.text.slice(0,600)+'</pre>':'')+'<span class=muted>'+new Date(e.time).toLocaleString()+'</span></div>').join('')}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
-setInterval(stats,1500);stats();profiles()
+setInterval(stats,1500);stats();profiles();loadAbout()
 </script></body></html>`
 
 var guiStopwords = map[string]bool{}
@@ -2484,6 +2489,36 @@ func guiHandler() http.Handler {
 		events := append([]rejectionEvent{}, app.RejectionEvents[reason]...)
 		app.RejectionMu.Unlock()
 		writeJSON(w, map[string]interface{}{"reason": reason, "events": events})
+	})
+	mux.HandleFunc("/api/about", func(w http.ResponseWriter, r *http.Request) {
+		repoURL := "https://github.com/computerphysicslab/goCrawler"
+		png, err := qrcode.Encode(repoURL, qrcode.Medium, 180)
+		qr := ""
+		if err == nil {
+			qr = "data:image/png;base64," + base64.StdEncoding.EncodeToString(png)
+		}
+		writeJSON(w, map[string]interface{}{
+			"name":         "goCrawler Workbench",
+			"version":      appVersion,
+			"release_date": "2026-11-18",
+			"copyright":    "Copyright (c) 2020-2026 Juan Ignacio Pérez Sacristán",
+			"license":      "MIT",
+			"author":       "Juan Ignacio Pérez Sacristán",
+			"email":        "computerphysicslab@gmail.com",
+			"description":  "Topic-restricted crawler that builds curated English text corpora with keyword, language, length and relevance filters.",
+			"repo":         repoURL,
+			"issues":       repoURL + "/issues",
+			"changelog":    repoURL + "/blob/master/CHANGELOG.md",
+			"roadmap":      repoURL + "/blob/master/roadmap.md",
+			"go_version":   runtime.Version(),
+			"platform":     runtime.GOOS + "/" + runtime.GOARCH,
+			"goroutines":   runtime.NumGoroutine(),
+			"components": []string{"Go standard library (net/http, database/sql, log/slog)",
+				"modernc.org/sqlite", "github.com/temoto/robotstxt", "github.com/abadojack/whatlanggo",
+				"jaytaylor.com/html2text", "github.com/jackdanger/collectlinks", "github.com/spf13/viper",
+				"github.com/skip2/go-qrcode"},
+			"qr": qr,
+		})
 	})
 	mux.HandleFunc("/api/last-profile", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]string{"profile": lastExecutedProfile()})

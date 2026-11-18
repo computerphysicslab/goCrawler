@@ -346,6 +346,9 @@ This is roadmap item 14; it is **not implemented**. Use `go test -race` when imp
 | `-version`, `-license` | print version or license and exit |
 | `-gui`, `-gui-port=N` | start the embedded web Workbench on `127.0.0.1:N` (default 8765) |
 
+The Workbench ends with an **About** tab showing version, copyright, MIT license, author, links,
+platform, bundled components and a QR code pointing to the repository.
+
 `-h`/`--help` prints the usage summary. Multi-language corpora can be selected with the profile
 keys `language` (default `English`) and `minLanguageConfidence`.
 

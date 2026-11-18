@@ -927,3 +927,43 @@ func TestGUIURLManagerAcceptsMarkdownLinks(t *testing.T) {
 		}
 	})
 }
+
+func TestGUIAboutEndpointAndTab(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+
+		code, body := guiRequest(t, server, "GET", "/api/about", "")
+		if code != 200 {
+			t.Fatalf("about = %d %q", code, body)
+		}
+		var about map[string]interface{}
+		if err := json.Unmarshal([]byte(body), &about); err != nil {
+			t.Fatal(err)
+		}
+		if about["license"] != "MIT" || about["version"] == "" ||
+			about["repo"] != "https://github.com/computerphysicslab/goCrawler" {
+			t.Fatalf("unexpected about payload: %v", about)
+		}
+		qr, ok := about["qr"].(string)
+		if !ok || !strings.HasPrefix(qr, "data:image/png;base64,") {
+			t.Fatalf("missing QR data URL: %v", about["qr"])
+		}
+		for _, field := range []string{"copyright", "author", "email", "go_version", "platform", "components", "changelog", "roadmap", "issues"} {
+			if _, ok := about[field]; !ok {
+				t.Fatalf("about is missing %q", field)
+			}
+		}
+
+		_, html := guiRequest(t, server, "GET", "/", "")
+		for _, fragment := range []string{`data-tab="about"`, `id="a-qr"`, `id="a-version"`, "loadAbout"} {
+			if !strings.Contains(html, fragment) {
+				t.Fatalf("GUI HTML missing %q", fragment)
+			}
+		}
+		js := strings.Split(strings.Split(html, "<script>")[1], "</script>")[0]
+		if !jsDelimitersBalanced(js) {
+			t.Fatal("GUI JavaScript is not balanced after adding About tab")
+		}
+	})
+}

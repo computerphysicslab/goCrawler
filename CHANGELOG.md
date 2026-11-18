@@ -1,3 +1,10 @@
+## [v1.8.8] - 2026-11-18
+
+### Added
+- Final "About" tab in the Workbench: name, version, release date, copyright, MIT license, author
+  and contact, repository/issue/changelog/roadmap links, Go version, platform, bundled components,
+  and a locally generated QR code linking to the repository (`/api/about`, `github.com/skip2/go-qrcode`).
+
 # Changelog
 
 All notable changes to goCrawler are documented here. Versions follow semantic versioning and
