@@ -95,6 +95,7 @@ type Crawler struct {
 	ShowLicense           bool
 	GUIPort               int
 	GUIProcess            *exec.Cmd
+	GUILastError          string
 	ResumeEnabled         bool
 
 	// state
@@ -2162,7 +2163,7 @@ const guiHTML = `<!doctype html><html><head><meta charset="utf-8"><title>goCrawl
 const $=id=>document.getElementById(id);
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));b.classList.add('on');['dash','prof','corpus','keys'].forEach(t=>$(t).hidden=t!==b.dataset.tab)});
 async function json(u,o){const r=await fetch(u,o);return r.json()}
-async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('status').textContent=s.running?'running':'ready'}
+async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('status').textContent=s.error?('error: '+s.error):(s.running?'running':'ready')}
 async function profiles(){const p=await json('/api/profiles');$('p-list').innerHTML=p.map(x=>'<option>'+x+'</option>').join('');loadProfile()}
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
@@ -2182,6 +2183,30 @@ var guiStopwords = map[string]bool{
 	"most": true, "some": true, "such": true, "also": true, "just": true, "were": true,
 	"was": true, "are": true, "the": true, "and": true, "for": true, "you": true,
 	"its": true, "not": true, "but": true, "can": true, "all": true, "one": true,
+}
+
+var guiCrawling atomic.Bool
+
+// launchGUICrawl runs a crawl inside the GUI process so its metrics are live.
+func launchGUICrawl(profile string) error {
+	if !guiCrawling.CompareAndSwap(false, true) {
+		return fmt.Errorf("a crawl is already running")
+	}
+	go func() {
+		defer guiCrawling.Store(false)
+		app = newCrawler()
+		app.ProfileName = profile
+		app.GUILastError = ""
+		startIndex, cleanup, err := setupRuntime(profile)
+		if err != nil {
+			app.GUILastError = err.Error()
+			return
+		}
+		defer cleanup()
+		final := crawlLoop(startIndex)
+		reportResults(final)
+	}()
+	return nil
 }
 
 // runGUI starts the embedded local web interface on loopback only.
@@ -2351,25 +2376,15 @@ func runGUI() error {
 			http.Error(w, "profile required", 400)
 			return
 		}
-		exe, err := os.Executable()
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		app.GUIProcess = exec.Command(exe, name)
-		app.GUIProcess.Stdout = io.Discard
-		app.GUIProcess.Stderr = io.Discard
-		if err := app.GUIProcess.Start(); err != nil {
-			http.Error(w, err.Error(), 500)
+		if err := launchGUICrawl(name); err != nil {
+			http.Error(w, err.Error(), 409)
 			return
 		}
 		writeJSON(w, map[string]string{"status": "started", "profile": name})
 	})
 	mux.HandleFunc("/api/crawl/stop", func(w http.ResponseWriter, r *http.Request) {
-		if app.GUIProcess != nil && app.GUIProcess.Process != nil {
-			app.GUIProcess.Process.Kill()
-		}
-		writeJSON(w, map[string]string{"status": "stopped"})
+		app.StopRequested.Store(true)
+		writeJSON(w, map[string]string{"status": "stopping"})
 	})
 
 	if app.GUIPort <= 0 || app.GUIPort > 65535 {
@@ -2552,7 +2567,7 @@ func validateConfig() error {
 }
 
 // setupRuntime prepares folders, configuration, stores and outputs.
-func setupRuntime() (int, func(), error) {
+func setupRuntime(profile string) (int, func(), error) {
 	noop := func() {}
 	if err := os.MkdirAll("./logs", os.ModePerm); err != nil {
 		return 0, noop, err
@@ -2561,7 +2576,7 @@ func setupRuntime() (int, func(), error) {
 		return 0, noop, err
 	}
 
-	stopSession := startSessionOutput(os.Args[1])
+	stopSession := startSessionOutput(profile)
 	cleanup := func() {
 		stopSession()
 		if app.CSVFile != nil {
@@ -2692,7 +2707,7 @@ func run() error {
 		return nil
 	}
 
-	startIndex, cleanup, err := setupRuntime()
+	startIndex, cleanup, err := setupRuntime(app.ProfileName)
 	if err != nil {
 		return err
 	}
