@@ -1669,3 +1669,59 @@ func TestGUIEventConsoleTab(t *testing.T) {
 		}
 	})
 }
+
+func TestGUICrawlRuntimeControls(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		guiCrawling.Store(true)
+		defer guiCrawling.Store(false)
+
+		for _, step := range []struct{ path, status string }{
+			{"/api/crawl/pause", "paused"},
+			{"/api/crawl/resume", "resumed"},
+			{"/api/crawl/drain", "draining"},
+			{"/api/crawl/stop", "stopping"},
+		} {
+			code, body := guiRequest(t, server, "POST", step.path, "")
+			if code != 200 || !strings.Contains(body, step.status) {
+				t.Fatalf("POST %s = %d %s", step.path, code, body)
+			}
+		}
+		code, body := guiRequest(t, server, "GET", "/api/crawl/pause", "")
+		if code != http.StatusMethodNotAllowed {
+			t.Fatalf("GET pause = %d, want 405", code)
+		}
+		code, _ = guiRequest(t, server, "POST", "/api/crawl/pause", "")
+		if code != 409 {
+			t.Fatalf("pause while stopping = %d, want 409", code)
+		}
+		_, body = guiRequest(t, server, "GET", "/api/stats", "")
+		var stats map[string]interface{}
+		if err := json.Unmarshal([]byte(body), &stats); err != nil {
+			t.Fatal(err)
+		}
+		if stats["stopping"] != true {
+			t.Fatalf("stats after stop: %v", stats)
+		}
+	})
+}
+
+func TestGUIRuntimeButtons(t *testing.T) {
+	withGUIApp(t, func() {
+		for _, fragment := range []string{
+			`id="btn-pause" class="act" onclick="pauseCrawl()" disabled`,
+			`id="btn-resume" class="act" onclick="resumeCrawl()" disabled`,
+			`id="btn-drain" class="act" onclick="drainCrawl()" disabled`,
+			`s.paused`, `s.draining`, `function drainCrawl()`,
+		} {
+			if !strings.Contains(guiHTML, fragment) {
+				t.Fatalf("GUI is missing %q", fragment)
+			}
+		}
+		script := guiHTML[strings.Index(guiHTML, "<script>")+8 : strings.Index(guiHTML, "</script>")]
+		if !jsDelimitersBalanced(script) {
+			t.Fatal("JavaScript delimiters are not balanced")
+		}
+	})
+}

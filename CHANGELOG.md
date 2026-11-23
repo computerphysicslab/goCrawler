@@ -23,6 +23,8 @@
   and `queue` pushes, keepalives, browser fallback; cache/download counters are now atomic.
 - Workbench event console (P24): bounded capture of slog records, level/text filters, live `logs`
   SSE events and `/api/logs` + `/api/logs/export` with JSON, CSV and sitemap output.
+- Pause / Resume / Drain runtime controls (P25): safe per-link pause gate with broadcast wakeup,
+  drain-finishes-in-flight, `POST /api/crawl/pause|resume|drain` and new `paused`/`draining` stats.
 
 ### Fixed
 - Default `regexBannedDomains` no longer bans `en.wikipedia.org`.

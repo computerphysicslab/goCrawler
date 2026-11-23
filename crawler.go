@@ -254,6 +254,10 @@ type Crawler struct {
 	CrawlMu       sync.Mutex
 	DomainDelayMu sync.Mutex
 	StopRequested atomic.Bool
+	Paused        atomic.Bool
+	Draining      atomic.Bool
+	RunMu         sync.Mutex
+	pauseWake     chan struct{}
 }
 
 // newCrawler returns a crawler with sane defaults.
@@ -299,6 +303,7 @@ func newCrawler() *Crawler {
 		LogLevel:           "info",
 		NotifyOnCompletion: true,
 		NotifyOnError:      true,
+		pauseWake:          make(chan struct{}),
 	}
 }
 
@@ -329,6 +334,8 @@ func (c *Crawler) ResetForProfile(profile string) {
 	c.CrawlStartedAt = time.Time{}
 	c.GUILastError = ""
 	c.StopRequested.Store(false)
+	c.Paused.Store(false)
+	c.Draining.Store(false)
 	for name := range c.RejectedLinkSets {
 		c.RejectedLinkSets[name] = make(map[string]struct{})
 	}
@@ -2810,7 +2817,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 <nav role="tablist" aria-label="Workbench sections"><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button><button data-tab="events">Events</button></nav><main id="main">
 <section id="dash" hidden><div class="card"><div class="kpi-grid"><div class="kpi-card"><span class="kpi-label">Pages visited</span><span class="kpi-value" id="s-visits">0</span></div><div class="kpi-card"><span class="kpi-label">Cache hits</span><span class="kpi-value" id="s-cache">0</span></div><div class="kpi-card"><span class="kpi-label">Online</span><span class="kpi-value" id="s-online">0</span></div><div class="kpi-card"><span class="kpi-label">Download ms</span><span class="kpi-value" id="s-ms">0</span></div><div class="kpi-card"><span class="kpi-label">Accepted</span><span class="kpi-value" id="s-accepted">0</span></div><div class="kpi-card"><span class="kpi-label">Not accepted</span><span class="kpi-value" id="s-rejected">0</span></div><div class="kpi-card"><span class="kpi-label">Crawls running</span><span class="kpi-value" id="s-running">0</span></div><div class="kpi-card"><span class="kpi-label">Net reqs</span><span class="kpi-value" id="s-net">0</span></div><div class="kpi-card"><span class="kpi-label">Cache I/O</span><span class="kpi-value" id="s-io">0</span></div><div class="kpi-card"><span class="kpi-label">URLs/s</span><span class="kpi-value" id="s-rate">0</span></div><div class="kpi-card"><span class="kpi-label">Avg ms</span><span class="kpi-value" id="s-lat">0</span></div><div class="kpi-card"><span class="kpi-label">Queue</span><span class="kpi-value" id="s-queue">0</span></div><div class="kpi-card"><span class="kpi-label">Go routines</span><span class="kpi-value" id="s-goroutines">0</span></div></div></div><div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>URL queue</h3><p class="muted">Pending: <b id="q-total">0</b>. States: requested → retrieved/failed → removed.</p><div id="queue-list"></div></div>
-<div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><select id="w-workers"><option value="1">1 worker</option><option value="2">2 workers</option><option value="4" selected>4 workers</option><option value="8">8 workers</option></select><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
+<div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><select id="w-workers"><option value="1">1 worker</option><option value="2">2 workers</option><option value="4" selected>4 workers</option><option value="8">8 workers</option></select><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button> <button id="btn-pause" class="act" onclick="pauseCrawl()" disabled>Pause</button> <button id="btn-resume" class="act" onclick="resumeCrawl()" disabled>Resume</button> <button id="btn-drain" class="act" onclick="drainCrawl()" disabled>Drain</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><h3>Search the curated corpus</h3><p class="muted">Full-text search over the accepted documents (SQLite FTS5).</p><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div>
 <div class="card"><h3>Save corpus for a profile</h3><p class="muted">Select a profile and a scope, then export the curated documents whose URL and text match it to a TXT file.</p><select id="c-profile"></select><select id="c-scope"><option value="all">All accumulated</option><option value="last">Last crawl only</option><option value="today">Today only</option></select><button class="act" onclick="saveCorpus()">Save corpus</button> <a id="c-download" hidden>Download TXT</a><pre id="c-out"></pre></div></section>
@@ -2837,7 +2844,7 @@ function selectTab(index){const b=navButtons()[index];if(b)b.click()}
 navButtons().forEach((b,i)=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.title='Alt+'+(i+1);b.onclick=()=>{navButtons().forEach(x=>{x.classList.remove('on');x.setAttribute('aria-selected','false')});b.classList.add('on');b.setAttribute('aria-selected','true');['prof','dash','keys','corpus','prompt','urls','about','events'].forEach(t=>$(t).hidden=t!==b.dataset.tab)}});
 document.addEventListener('keydown',e=>{if(e.altKey&&e.key>='1'&&e.key<='8'){e.preventDefault();selectTab(parseInt(e.key,10)-1)}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('[data-tab=corpus]').click();setTimeout(()=>$('q').focus(),0)}});
 async function json(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
-function applyStats(s){$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?(s.stopping?'stopping...':('running ('+s.running_count+')')):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
+function applyStats(s){$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('btn-pause').disabled=!(s.running&&!s.paused&&!s.draining&&!s.stopping);$('btn-resume').disabled=!(s.running&&s.paused);$('btn-drain').disabled=!(s.running&&!s.draining&&!s.stopping);$('status').textContent=s.error?('error: '+s.error):(s.running?(s.stopping?'stopping...':(s.paused?'paused':(s.draining?'draining':('running ('+s.running_count+')')))):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
 async function stats(){applyStats(await json('/api/stats'))}
 async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;$('u-profile').innerHTML=opts;if($('c-profile'))$('c-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;$('u-profile').value=match;if($('c-profile'))$('c-profile').value=match;}loadProfile()}
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n;if($('u-profile')){$('u-profile').value=n;loadURLs()}}
@@ -2858,6 +2865,10 @@ async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value,workers:parseInt($('w-workers').value)})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
 async function stopCrawl(){const r=await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent=(await r.json()).status;stats()}
+async function runtimeAction(name){const r=await fetch('/api/crawl/'+name,{method:'POST'});$('status').textContent=r.ok?(await r.json()).status:((await r.text()).slice(0,120));stats()}
+function pauseCrawl(){runtimeAction('pause')}
+function resumeCrawl(){runtimeAction('resume')}
+function drainCrawl(){runtimeAction('drain')}
 function applyQueue(q){$('q-total').textContent=q.total;const rows=q.recent.slice(-12).reverse().map(e=>'<div><span class=muted>'+new Date(e.time).toLocaleTimeString()+'</span> <b>'+e.state+'</b> '+e.url+'</div>');const pend=q.pending.slice(0,20).map(p=>'<div><span class=muted>pending</span> '+p.url+'</div>');$('queue-list').innerHTML=rows.join('')+pend.join('')||'<span class=muted>Queue empty</span>'}
 async function loadQueue(){applyQueue(await json('/api/queue'))}
 async function showReason(reason){const d=await json('/api/rejections?reason='+encodeURIComponent(reason));if(!d.events||!d.events.length){$('reason-detail').innerHTML='<p class=muted>No cases recorded for '+reason+'</p>';return}$('reason-detail').innerHTML='<h4>Last '+d.events.length+' cases: '+reason+'</h4>'+d.events.slice().reverse().map(e=>'<div class=card><b><a href="'+e.url+'" target="_blank" rel="noopener">'+e.url+'</a></b><div>'+(e.detail||'')+'</div>'+(e.text?'<pre>'+e.text.slice(0,600)+'</pre>':'')+'<span class=muted>'+new Date(e.time).toLocaleString()+'</span></div>').join('')}
@@ -2895,6 +2906,92 @@ func guiCrawlContext() context.Context {
 	crawlCtxMu.Lock()
 	defer crawlCtxMu.Unlock()
 	return crawlCtx
+}
+
+// signalRunState wakes every worker parked at the pause gate by closing and
+// replacing the broadcast channel.
+func signalRunState() {
+	app.RunMu.Lock()
+	if app.pauseWake != nil {
+		close(app.pauseWake)
+	}
+	app.pauseWake = make(chan struct{})
+	app.RunMu.Unlock()
+}
+
+// runWakeChannel returns the current broadcast channel, creating it if needed.
+func runWakeChannel() <-chan struct{} {
+	app.RunMu.Lock()
+	defer app.RunMu.Unlock()
+	if app.pauseWake == nil {
+		app.pauseWake = make(chan struct{})
+	}
+	return app.pauseWake
+}
+
+// waitWhilePaused parks a worker at a link boundary (nothing reserved yet).
+// It returns false when the worker should exit because of stop/drain/cancel.
+func waitWhilePaused(ctx context.Context) bool {
+	for app.Paused.Load() && !app.StopRequested.Load() && !app.Draining.Load() {
+		if ctx == nil {
+			<-runWakeChannel()
+			continue
+		}
+		select {
+		case <-runWakeChannel():
+		case <-ctx.Done():
+			return false
+		}
+	}
+	return !app.StopRequested.Load() && !app.Draining.Load() && (ctx == nil || ctx.Err() == nil)
+}
+
+func pauseCrawl() error {
+	if !guiCrawling.Load() {
+		return fmt.Errorf("no crawl is running")
+	}
+	if app.StopRequested.Load() || app.Draining.Load() {
+		return fmt.Errorf("crawl is already stopping")
+	}
+	app.Paused.Store(true)
+	return nil
+}
+
+func resumeCrawl() error {
+	if !guiCrawling.Load() {
+		return fmt.Errorf("no crawl is running")
+	}
+	app.Paused.Store(false)
+	signalRunState()
+	return nil
+}
+
+func drainCrawl() error {
+	if !guiCrawling.Load() {
+		return fmt.Errorf("no crawl is running")
+	}
+	if app.StopRequested.Load() {
+		return fmt.Errorf("crawl is already stopping")
+	}
+	app.Draining.Store(true)
+	app.Paused.Store(false)
+	app.StateDirty = true
+	signalRunState()
+	return nil
+}
+
+// stopCrawlState applies hard-stop semantics: in-flight HTTP is cancelled and
+// any worker parked at the pause gate is released so the loop can finish.
+func stopCrawlState() {
+	app.StopRequested.Store(true)
+	app.Paused.Store(false)
+	app.StateDirty = true
+	signalRunState()
+	crawlCtxMu.Lock()
+	if cancelCrawl != nil {
+		cancelCrawl()
+	}
+	crawlCtxMu.Unlock()
 }
 
 // launchGUICrawl runs a crawl inside the GUI process so its metrics are live.
@@ -3076,6 +3173,8 @@ func buildStatsPayload() map[string]interface{} {
 		"running":       running,
 		"running_count": runningCount,
 		"stopping":      app.StopRequested.Load(),
+		"paused":        app.Paused.Load(),
+		"draining":      app.Draining.Load(),
 		"rejections":    reasons,
 		"error":         app.GUILastError,
 	}
@@ -3662,15 +3761,31 @@ func guiHandler() http.Handler {
 		writeJSON(w, map[string]string{"status": "started", "profile": name})
 	})
 	mux.HandleFunc("/api/crawl/stop", func(w http.ResponseWriter, r *http.Request) {
-		app.StopRequested.Store(true)
-		app.StateDirty = true
-		crawlCtxMu.Lock()
-		if cancelCrawl != nil {
-			cancelCrawl()
-		}
-		crawlCtxMu.Unlock()
+		stopCrawlState()
 		writeJSON(w, map[string]string{"status": "stopping"})
 	})
+	for _, control := range []struct {
+		path   string
+		status string
+		action func() error
+	}{
+		{"pause", "paused", pauseCrawl},
+		{"resume", "resumed", resumeCrawl},
+		{"drain", "draining", drainCrawl},
+	} {
+		mux.HandleFunc("/api/crawl/"+control.path, func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				w.Header().Set("Allow", http.MethodPost)
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+			if err := control.action(); err != nil {
+				http.Error(w, err.Error(), 409)
+				return
+			}
+			writeJSON(w, map[string]string{"status": control.status})
+		})
+	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
@@ -4735,6 +4850,9 @@ func crawlLoop(startIndex int) int {
 				if app.StopRequested.Load() || (ctx != nil && ctx.Err() != nil) {
 					return
 				}
+				if !waitWhilePaused(ctx) {
+					return
+				}
 				if !app.CrawlStartedAt.IsZero() && time.Since(app.CrawlStartedAt) >= maxCrawlDuration {
 					app.StopRequested.Store(true)
 					return
@@ -5039,9 +5157,7 @@ func run() error {
 	go func() {
 		<-sigCh
 		fmt.Println("\nInterrupt received, saving state...")
-		app.StopRequested.Store(true)
-		app.StateDirty = true
-		cancelCrawl()
+		stopCrawlState()
 		<-sigCh
 		fmt.Println("\nSecond interrupt: forced exit")
 		os.Exit(130)

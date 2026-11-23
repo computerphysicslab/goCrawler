@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -964,5 +965,101 @@ func TestRotateSessionLogsBySize(t *testing.T) {
 				t.Fatal("newest session should remain uncompressed")
 			}
 		})
+	})
+}
+
+func TestRunStateHelpers(t *testing.T) {
+	withApp(t, func() {
+		guiCrawling.Store(true)
+		defer guiCrawling.Store(false)
+
+		if err := pauseCrawl(); err != nil || !app.Paused.Load() {
+			t.Fatalf("pauseCrawl = %v, paused = %v", err, app.Paused.Load())
+		}
+		if err := resumeCrawl(); err != nil || app.Paused.Load() {
+			t.Fatalf("resumeCrawl = %v, paused = %v", err, app.Paused.Load())
+		}
+		if err := drainCrawl(); err != nil || !app.Draining.Load() {
+			t.Fatalf("drainCrawl = %v, draining = %v", err, app.Draining.Load())
+		}
+		stopCrawlState()
+		if !app.StopRequested.Load() || !app.StateDirty {
+			t.Fatal("stopCrawlState did not set stop markers")
+		}
+		if err := pauseCrawl(); err == nil {
+			t.Fatal("pause after stop was accepted")
+		}
+	})
+}
+
+func TestRunStateWakeBroadcast(t *testing.T) {
+	withApp(t, func() {
+		first, second := runWakeChannel(), runWakeChannel()
+		if first != second {
+			t.Fatal("runWakeChannel should return the same channel until signalled")
+		}
+		signalRunState()
+		for i, ch := range []<-chan struct{}{first, second} {
+			select {
+			case <-ch:
+			default:
+				t.Fatalf("waiter %d was not woken", i)
+			}
+		}
+		next := runWakeChannel()
+		if next == first {
+			t.Fatal("broadcast channel was not replaced")
+		}
+		select {
+		case <-next:
+			t.Fatal("new broadcast channel is already closed")
+		default:
+		}
+	})
+}
+
+func TestWaitWhilePausedGate(t *testing.T) {
+	withApp(t, func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		guiCrawling.Store(true)
+		defer guiCrawling.Store(false)
+
+		app.Paused.Store(true)
+		result := make(chan bool, 1)
+		go func() { result <- waitWhilePaused(ctx) }()
+		select {
+		case <-result:
+			t.Fatal("worker did not park while paused")
+		case <-time.After(150 * time.Millisecond):
+		}
+		if err := resumeCrawl(); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case ok := <-result:
+			if !ok {
+				t.Fatal("worker exited instead of resuming")
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatal("resume did not wake the parked worker")
+		}
+
+		app.Paused.Store(true)
+		go func() { result <- waitWhilePaused(ctx) }()
+		select {
+		case <-result:
+			t.Fatal("worker did not park on the second pause")
+		case <-time.After(150 * time.Millisecond):
+		}
+		stopCrawlState()
+		select {
+		case ok := <-result:
+			if ok {
+				t.Fatal("worker should exit after stop")
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatal("stop did not release the parked worker")
+		}
 	})
 }

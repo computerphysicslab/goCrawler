@@ -403,6 +403,13 @@ builders. Cache and download counters are atomic so the stream reads them safely
 stream carries `logs` snapshots for the Events tab; `/api/logs?level=&q=&limit=` and
 `/api/logs/export?format=json|csv|sitemap` serve the same filtered records on demand.
 
+The launcher also has **Pause**, **Resume** and **Drain** controls (P25), backed by
+`POST /api/crawl/pause|resume|drain`. Pause parks each worker at the next link boundary (in-flight
+requests finish), Resume releases them and Drain lets every in-flight link complete before exiting
+without reserving new work; hard Stop still cancels in-flight HTTP. `/api/stats` and the SSE stream
+report `paused` / `draining` / `stopping`, and all controls release a parked worker so a crawl can
+never get stuck.
+
 The **URL Seeds** tab extracts URLs from anywhere in the text area — one per line, or mixed with
 prose, tabs and Markdown links — and deduplicates them before saving.
 
@@ -649,7 +656,7 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ## Testing
 
-The suite has 139 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
+The suite has 144 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
 state persistence, download errors, link filtering, stores and robots policy; HTTP handler tests for
 every Workbench endpoint via `httptest`; and an end-to-end crawl against a local HTTP server with two
 workers.

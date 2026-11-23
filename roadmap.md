@@ -17,7 +17,6 @@ The review document contains the reasoning, the rejected suggestions and the fac
 
 | ID | Effort | Item |
 |---|---|---|
-| P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
 | P32 | M | Fixed sidebar navigation with active profile selector and crawler status indicator |
 | P34 | M | Live activity feed: last 20 processed URLs with status colours (`/api/activity`) |
@@ -48,9 +47,8 @@ The review document contains the reasoning, the rejected suggestions and the fac
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
 
-**Recommended next step:** N01–N11, P27 and P24 are done. The SSE stream and event console make
-P25, P34 and P36 cheaper; pick P25 (runtime pause/drain) next, then N12 (technical-corpus quality
-metrics) and the remaining P52/P54/P56/P64/P65 items.
+**Recommended next step:** N01–N11, P27, P24 and P25 are done. Pick N12 (technical-corpus quality
+metrics) next, then P34/P36 and the remaining P52/P54/P56/P64/P65 items.
 
 Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8), PDF support P48–P51 (v1.8.14) and onboarding/notifications/accessibility/large-file hygiene P61–P63/P59 (v1.8.15).
 
@@ -75,7 +73,7 @@ Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P2
 | v1.8.17 | 2026-11-18 | Single-instance Workbench lock with stale recovery, graceful SIGINT/SIGTERM shutdown and no silent port fallback |
 | v1.8.18 | 2026-11-18 | Interactive termination of previous Workbench instances, inline URL capture in URL Seeds and clear `pdf_disabled` rejection |
 | v1.8.19 | 2026-11-18 | Default-yes instance prompt and scoped corpus export (all / last crawl / today) with session markers |
-| Unreleased | 2026-11-23 | Module-root autodetection + `./run.sh`; configurable stopword ratio with `technical` example profile; Wikipedia unblocked in default config; N01–N05 (general ratio keys and flags, profile lint, foreign-cwd tests, CI race/govulncheck, Windows wrappers); N06–N11 (rejection trace/report, URL trace mode, log rotation, dependency triage, checksummed resume, technical profile pack); P27 (SSE dashboard, atomic counters); P24 (event console with JSON/CSV/sitemap export) |
+| Unreleased | 2026-11-23 | Module-root autodetection + `./run.sh`; configurable stopword ratio with `technical` example profile; Wikipedia unblocked in default config; N01–N05 (general ratio keys and flags, profile lint, foreign-cwd tests, CI race/govulncheck, Windows wrappers); N06–N11 (rejection trace/report, URL trace mode, log rotation, dependency triage, checksummed resume, technical profile pack); P27 (SSE dashboard, atomic counters); P24 (event console with JSON/CSV/sitemap export); P25 (pause/resume/drain with safe link-boundary gate) |
 
 ### Historically completed items (1–35)
 
