@@ -13,6 +13,12 @@
   without starting a crawl (N02).
 - Windows wrappers `run.bat` and `run.ps1` mirror `run.sh` (N05).
 - CI now also runs `go test -race ./...` and `govulncheck ./...` on Linux (N04).
+- Three tuned technical profiles: astrophysics, machine learning and mathematics (N10).
+- Rejection trace (`logs/rejections.jsonl`), `-reject-report=` and `-trace-url=` modes (N06/N07).
+- Log rotation with gzip for completed session files (`logRotateDays` / `logRotateMaxMB`) (N09).
+- Version-2 crawl snapshots with SHA-256 checksum; version 1 remains readable with a warning (N11).
+- `docs/DEPENDENCY_TRIAGE.md`: Dependabot's 12 alerts are stale `go.sum` hashes, not reachable
+  vulnerabilities; `govulncheck` stays clean (N08).
 
 ### Fixed
 - Default `regexBannedDomains` no longer bans `en.wikipedia.org`.

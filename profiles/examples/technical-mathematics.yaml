@@ -1,0 +1,25 @@
+# Technical profile: mathematics and mathematics education research.
+# Notation- and symbol-heavy prose needs minStopwordRatio 0.
+# Copy to profiles/ and edit the seeds before running.
+
+curatedDomains: |
+  arxiv\.org|ams\.org|mathoverflow\.net|encyclopediaofmath\.org|springer\.com|cambridge\.org|eric\.ed\.gov|tandfonline\.com
+
+linkOk: |
+  mathematic|theorem|proof|algebra|geometry|analysis|number|education|teaching|learning|curriculum|paper|article|journal
+
+regexRankingKeywords: |
+  (?i)\W(theorem|lemma|proof|corollary|definition|algebra|geometry|topology|analysis|number|function|equation|inequality|integral|derivative|matrix|group|ring|field|set|space|probability|statistics|mathematics|curriculum|didactic|assessment|reasoning|problem|solving|education|classroom|student|teacher)\W
+
+minDocLen: 200
+maxDocLen: 100000
+minStopwordRatio: 0.0
+maxStopwordRatio: 0.60
+scoreThreshold: 15
+rankingStrategy: hybrid
+maxLinksPerPage: 200
+
+bootstrapingLinks:
+- "https://arxiv.org/list/math/recent"
+- "https://www.ams.org/publications/journals/journals"
+- "https://mathoverflow.net/questions"

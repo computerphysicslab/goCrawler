@@ -107,7 +107,8 @@ For each downloaded page (`doNextLink`, `crawler.go:1089`):
 1. Split into paragraphs; drop paragraphs not detected as English.
 2. Strip URLs, HTML tags, very long tokens (> 80 chars) and markup leftovers.
 3. Compute the stopword ratio; drop paragraphs below `minStopwordRatio` (default `0.1`).
-4. Build `curatedContent` from paragraphs of at least 200 characters within `minStopwordRatio`..`maxStopwordRatio` (defaults `0.1`..`0.38`). Technical prose can set `minStopwordRatio: 0.0` via the profile; see `profiles/examples/technical.yaml`.
+4. Build `curatedContent` from paragraphs of at least 200 characters within `minStopwordRatio`..`maxStopwordRatio` (defaults `0.1`..`0.38`). Technical prose can set `minStopwordRatio: 0.0` via the profile; a tuned pack is in
+`profiles/examples/technical-{astrophysics,machine-learning,mathematics}.yaml` (N10).
 5. Apply `minDocLen` / `maxDocLen`.
 6. Reject near-duplicates using a signature of the seven most frequent tokens.
 7. Apply `scoreThreshold`.
@@ -378,6 +379,10 @@ This is roadmap item 14; it is **not implemented**. Use `go test -race` when imp
 | `-query=TEXT` | full-text search over the curated corpus (SQLite FTS5) |
 | `-explore` | print corpus statistics and top topic terms |
 | `-generate-profile=URL` | write `profiles/generated.yaml` from a seed URL |
+| `-lint-profile=NAME` | validate a profile (keys, regexes, seeds, ranges) without crawling |
+| `-min-stopword-ratio=F`, `-max-stopword-ratio=F` | override the stopword window from the command line |
+| `-reject-report=TRACE.jsonl` | write a rejection breakdown with samples to `logs/rejection-report.txt` |
+| `-trace-url=SUBSTRING [-trace-file=TRACE.jsonl]` | show every rejection recorded for matching URLs |
 | `-resume`, `--resume` | restore the previous crawl from SQLite |
 | `-version`, `-license` | print version or license and exit |
 | `-gui`, `-gui-port=N` | start the embedded web Workbench on `127.0.0.1:N` (default 8765); only one instance per user is allowed, and a busy port is an error (no silent fallback) |
@@ -410,10 +415,18 @@ final summary log the counts by reason (`non_english`, `stopword_ratio`, `too_sh
 `duplicate`, `low_relevancy`, `token_distribution`, `invalid_url`, `off_topic_url`,
 `robots_blocked`). This makes profile tuning measurable instead of guesswork.
 
+Every rejection is also streamed to `logs/rejections.jsonl` with its reason, profile, seed (when the
+URL is a seed) and sampled paragraph. At the end of a crawl a human-readable breakdown with up to
+three samples per reason is written to `logs/rejection-report.txt`. Outside a crawl, use
+`-reject-report=TRACE.jsonl` to regenerate that report and `-trace-url=SUBSTRING` to inspect why a
+particular URL was rejected (add `-trace-file=TRACE.jsonl` to read an arbitrary trace).
+
 The link pool, domain counters, uniqueness signatures and accumulated frequencies are saved in the
 SQLite store under `state:crawl` every 50 links and at shutdown. Running with `--resume` restores
 them, appends to `ranking-URL.csv` and the corpus instead of truncating them, and continues from the
-last processed index. Without `--resume`, any previous state is cleared at startup.
+last processed index. State snapshots are versioned (`2`) and carry a SHA-256 checksum: a tampered
+or truncated snapshot is refused, while legacy version-1 snapshots are still accepted with a warning.
+Without `--resume`, any previous state is cleared at startup.
 
 ### Notifications (optional)
 
@@ -427,7 +440,10 @@ reached. Webhook URLs are treated as secrets and are never logged.
 ## Security scan
 
 `govulncheck ./...` reports **no vulnerabilities** with the pinned toolchain and dependencies
-(`golang.org/x/net v0.62.0`, `gopkg.in/yaml.v2 v2.4.0`). Re-run it after every dependency update.
+(`golang.org/x/net v0.62.0`, `gopkg.in/yaml.v2 v2.4.0`). GitHub Dependabot still lists 12 alerts
+from stale `/go.mod` hashes in `go.sum`; the full triage and evidence are in
+[`docs/DEPENDENCY_TRIAGE.md`](docs/DEPENDENCY_TRIAGE.md). Re-run `govulncheck` after every dependency
+update; CI does it on Linux.
 
 Packaging drafts are included: `snap/snapcraft.yaml` (strict confinement), `debian/` (source
 skeleton for a PPA), AppStream metadata and a desktop launcher in `assets/`. See
@@ -471,6 +487,8 @@ line, the curated text, and a `----` separator.
 | `linksNotOk.ParseRequestURI.log` | **append-only** | Links failing Go's URI parser. |
 | `robotsBlocked.log` | **append-only, deduplicated** | URLs skipped because `robots.txt` disallows them. |
 | `<Profile>-YYYY-MM-DD-ZHH-MM-SS.txt` | one per run | Full console output of the session (see below). |
+| `rejections.jsonl` | append-only, gzipped over 20 MiB | One JSON object per rejection (reason, profile, seed, URL, sample). |
+| `rejection-report.txt` | rewritten at the end of each crawl | Breakdown by reason with up to three sampled paragraphs. |
 
 ### Session output files
 
@@ -478,6 +496,11 @@ Every run tees its console output to `logs/<Profile>-<YYYY-MM-DD>-Z<HH>-<MM>-<SS
 timestamp is **UTC** (the `Z` prefix). Example: `Astrophotography-2026-11-17-Z20-30-33.txt`.
 The profile name is capitalised; the file contains the complete output from configuration loading
 to the final `Done!!!` message, including `[CACHE]` / `[ONLINE]` / `[ROBOTS-BLOCKED]` markers.
+
+Completed session files are gzipped automatically after `logRotateDays` (default 14) or when their
+combined size exceeds `logRotateMaxMB` (default 500). Set both to `0` in `crawler.yaml` to disable
+rotation. The active session, the corpus with its `@@SESSION` markers and the dedup logs are never
+compressed, so `--resume` and the Workbench keep working with older runs.
 
 ### Measured cache benefit
 
@@ -614,7 +637,7 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ## Testing
 
-The suite has 127 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
+The suite has 134 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
 state persistence, download errors, link filtering, stores and robots policy; HTTP handler tests for
 every Workbench endpoint via `httptest`; and an end-to-end crawl against a local HTTP server with two
 workers.

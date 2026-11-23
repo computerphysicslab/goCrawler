@@ -793,3 +793,176 @@ anotherBadSeed: ["not-a-url"]
 		}
 	})
 }
+
+func TestTechnicalProfilePack(t *testing.T) {
+	matches, err := filepath.Glob("profiles/examples/technical-*.yaml")
+	if err != nil || len(matches) < 3 {
+		t.Fatalf("expected at least 3 technical example profiles, got %d (%v)", len(matches), err)
+	}
+	withApp(t, func() {
+		for _, path := range matches {
+			name := "examples/" + strings.TrimSuffix(filepath.Base(path), ".yaml")
+			if err := lintProfile(name); err != nil {
+				t.Errorf("lint %s: %v", name, err)
+			}
+		}
+	})
+}
+
+func TestRejectTraceAndReport(t *testing.T) {
+	withTempWorkDir(t, func() {
+		withApp(t, func() {
+			app.RejectTracePath = "./logs/rejections.jsonl"
+			app.ProfileName = "technical"
+			app.BootstrapLinks = []string{"https://example.org/start"}
+			if err := openRejectTrace(); err != nil {
+				t.Fatalf("openRejectTrace: %v", err)
+			}
+			recordRejection("stopword_ratio", "https://example.org/start", "below 0.1", "Photometric calibration residuals")
+			recordRejection("too_short", "https://example.org/other", "length 10", "")
+			closeRejectTrace()
+
+			events, err := readRejectTrace(app.RejectTracePath)
+			if err != nil || len(events) != 2 {
+				t.Fatalf("readRejectTrace = %d events, %v", len(events), err)
+			}
+			if events[0].Reason != "stopword_ratio" || events[0].Profile != "technical" {
+				t.Fatalf("unexpected event metadata: %+v", events[0])
+			}
+			if events[0].Seed != "https://example.org/start" || events[1].Seed != "" {
+				t.Fatalf("unexpected seed attribution: %+v", events)
+			}
+			reportPath := "./logs/rejection-report.txt"
+			if err := writeRejectionReport(events, reportPath); err != nil {
+				t.Fatalf("writeRejectionReport: %v", err)
+			}
+			body, err := os.ReadFile(reportPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(body), "stopword_ratio: 1") || !strings.Contains(string(body), "Photometric calibration") {
+				t.Fatalf("report missing breakdown or sample:\n%s", body)
+			}
+		})
+	})
+}
+
+func TestRejectReportAndTraceModes(t *testing.T) {
+	withTempWorkDir(t, func() {
+		withApp(t, func() {
+			app.RejectTracePath = "./logs/rejections.jsonl"
+			if err := openRejectTrace(); err != nil {
+				t.Fatal(err)
+			}
+			recordRejection("non_english", "https://example.org/french", "detected fra", "Bonjour le monde")
+			closeRejectTrace()
+
+			if err := rejectReportFile(app.RejectTracePath); err != nil {
+				t.Fatalf("rejectReportFile: %v", err)
+			}
+			if err := traceRejectedURL(app.RejectTracePath, "french"); err != nil {
+				t.Fatalf("traceRejectedURL: %v", err)
+			}
+			if err := traceRejectedURL(app.RejectTracePath, "absent"); err == nil {
+				t.Fatal("missing URL filter should fail")
+			}
+		})
+	})
+}
+
+func TestCrawlStateChecksumRoundTrip(t *testing.T) {
+	withApp(t, func() {
+		store := &memoryStore{data: map[string]string{}}
+		app.CacheStore = store
+		app.StateDirty = true
+		app.LastProcessedLink = 42
+		saveCrawlState()
+
+		if got := loadCrawlState(); got != 42 {
+			t.Fatalf("restored index = %d, want 42", got)
+		}
+
+		tampered := strings.Replace(store.data[crawlStateKey], `"processed":42`, `"processed":99`, 1)
+		if tampered == store.data[crawlStateKey] {
+			t.Fatal("test fixture did not change the stored state")
+		}
+		store.data[crawlStateKey] = tampered
+		if got := loadCrawlState(); got != 0 {
+			t.Fatalf("tampered state accepted: %d", got)
+		}
+	})
+}
+
+func TestLoadLegacyCrawlStateWithoutChecksum(t *testing.T) {
+	withApp(t, func() {
+		app.CacheStore = &memoryStore{data: map[string]string{
+			crawlStateKey: `{"version":1,"processed":42}`,
+		}}
+		if got := loadCrawlState(); got != 42 {
+			t.Fatalf("legacy state not accepted: %d", got)
+		}
+	})
+}
+
+func TestRotateSessionLogsByAge(t *testing.T) {
+	withTempWorkDir(t, func() {
+		withApp(t, func() {
+			oldFile := "./logs/Crypto-2026-01-02-Z10-00-00.txt"
+			newFile := "./logs/Crypto-2026-11-23-Z10-00-00.txt"
+			if err := os.WriteFile(oldFile, []byte("old session"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(newFile, []byte("new session"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			oldTime := time.Now().Add(-40 * 24 * time.Hour)
+			if err := os.Chtimes(oldFile, oldTime, oldTime); err != nil {
+				t.Fatal(err)
+			}
+			app.LogRotateDays = 14
+			app.LogRotateMaxMB = 500
+			if err := rotateSessionLogs(); err != nil {
+				t.Fatalf("rotateSessionLogs: %v", err)
+			}
+			if _, err := os.Stat(oldFile + ".gz"); err != nil {
+				t.Fatal("old session was not gzipped")
+			}
+			if _, err := os.Stat(oldFile); !os.IsNotExist(err) {
+				t.Fatal("old plaintext session still present")
+			}
+			if _, err := os.Stat(newFile); err != nil {
+				t.Fatal("recent session was rotated")
+			}
+		})
+	})
+}
+
+func TestRotateSessionLogsBySize(t *testing.T) {
+	withTempWorkDir(t, func() {
+		withApp(t, func() {
+			older := "./logs/A-2026-11-23-Z10-00-00.txt"
+			newer := "./logs/B-2026-11-23-Z11-00-00.txt"
+			if err := os.WriteFile(older, bytes.Repeat([]byte("x"), 600000), 0644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(newer, bytes.Repeat([]byte("y"), 600000), 0644); err != nil {
+				t.Fatal(err)
+			}
+			oldTime := time.Now().Add(-2 * time.Hour)
+			if err := os.Chtimes(older, oldTime, oldTime); err != nil {
+				t.Fatal(err)
+			}
+			app.LogRotateDays = 0
+			app.LogRotateMaxMB = 1
+			if err := rotateSessionLogs(); err != nil {
+				t.Fatalf("rotateSessionLogs: %v", err)
+			}
+			if _, err := os.Stat(older + ".gz"); err != nil {
+				t.Fatal("oldest session was not gzipped by size cap")
+			}
+			if _, err := os.Stat(newer); err != nil {
+				t.Fatal("newest session should remain uncompressed")
+			}
+		})
+	})
+}

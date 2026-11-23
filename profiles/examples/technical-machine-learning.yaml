@@ -1,0 +1,25 @@
+# Technical profile: machine learning research papers and implementation notes.
+# minStopwordRatio 0 keeps acronym- and formula-heavy paragraphs.
+# Copy to profiles/ and edit the seeds before running.
+
+curatedDomains: |
+  arxiv\.org|proceedings\.mlr\.press|jmlr\.org|papers\.nips\.cc|openreview\.net|distill\.pub|acm\.org|ieee\.org
+
+linkOk: |
+  machine|learning|deep|neural|model|training|dataset|benchmark|paper|arxiv|theory|algorithm
+
+regexRankingKeywords: |
+  (?i)\W(algorithm|architecture|attention|backpropagation|batch|classifier|convolution|dataset|embedding|epoch|gradient|inference|layer|learning|loss|model|network|optimizer|parameter|perceptron|precision|recall|regularization|reinforcement|representation|sampling|supervision|token|training|transformer|validation|vector)\W
+
+minDocLen: 200
+maxDocLen: 100000
+minStopwordRatio: 0.0
+maxStopwordRatio: 0.60
+scoreThreshold: 15
+rankingStrategy: hybrid
+maxLinksPerPage: 200
+
+bootstrapingLinks:
+- "https://arxiv.org/list/cs.LG/recent"
+- "https://jmlr.org/papers/"
+- "https://distill.pub/archive/"

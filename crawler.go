@@ -4,11 +4,14 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"container/heap"
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
 	"encoding/csv"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -69,10 +72,13 @@ type queueEvent struct {
 }
 
 type rejectionEvent struct {
-	URL    string    `json:"url"`
-	Detail string    `json:"detail"`
-	Text   string    `json:"text,omitempty"`
-	Time   time.Time `json:"time"`
+	URL     string    `json:"url"`
+	Reason  string    `json:"reason,omitempty"`
+	Profile string    `json:"profile,omitempty"`
+	Seed    string    `json:"seed,omitempty"`
+	Detail  string    `json:"detail"`
+	Text    string    `json:"text,omitempty"`
+	Time    time.Time `json:"time"`
 }
 
 type corpusExportInfo struct {
@@ -135,6 +141,14 @@ type Crawler struct {
 	CLIExplore               bool
 	CLIGenerate              string
 	CLIProfileLint           string
+	CLIRejectReport          string
+	CLITraceURL              string
+	CLITraceFile             string
+	RejectTracePath          string
+	LogRotateDays            int
+	LogRotateMaxMB           int
+	rejectTraceFile          *os.File
+	rejectTraceMu            sync.Mutex
 	minRatioFromCLI          bool
 	maxRatioFromCLI          bool
 	ShowVersion              bool
@@ -200,6 +214,9 @@ func newCrawler() *Crawler {
 		PDFPagesLimit:    pdftextlib.DefaultPageLimit,
 		MinStopwordRatio: 0.1,
 		MaxStopwordRatio: 0.38,
+		RejectTracePath:  "./logs/rejections.jsonl",
+		LogRotateDays:    14,
+		LogRotateMaxMB:   500,
 		RankingStrategy:  "hybrid",
 		Synonyms:         make(map[string][]string),
 		LinkIndex:        make(map[string]int),
@@ -344,10 +361,11 @@ const maxUniqueRejectedLinks = 1000000
 const crawlStateKey = "state:crawl"
 
 // crawlState is the serializable snapshot needed to resume a run.
-const crawlStateVersion = 1
+const crawlStateVersion = 2
 
 type crawlState struct {
 	Version       int               `json:"version"`
+	Checksum      string            `json:"checksum,omitempty"`
 	Pool          []aLink           `json:"pool"`
 	DomainCounter map[string]int    `json:"domainCounter"`
 	FailedDomains map[string]int    `json:"failedDomains"`
@@ -357,6 +375,18 @@ type crawlState struct {
 	DocFreq       map[string]int    `json:"docFreq"`
 	DocCount      int               `json:"docCount"`
 	SavedAt       time.Time         `json:"savedAt"`
+}
+
+// crawlStateChecksum hashes the canonical JSON of a state with its checksum
+// field blanked, so the digest can be stored alongside the data.
+func crawlStateChecksum(state crawlState) string {
+	state.Checksum = ""
+	b, err := json.Marshal(state)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
 }
 
 // saveCrawlState stores the current crawl progress in the cache store.
@@ -382,6 +412,7 @@ func saveCrawlState() {
 		DocCount:      app.CorpusDocCount,
 		SavedAt:       time.Now(),
 	}
+	state.Checksum = crawlStateChecksum(state)
 	b, err := json.Marshal(state)
 	if err != nil {
 		app.Logger.Error("cannot serialize crawl state", "error", err)
@@ -407,7 +438,16 @@ func loadCrawlState() int {
 		app.Logger.Error("cannot decode crawl state", "error", err)
 		return 0
 	}
-	if state.Version != crawlStateVersion {
+	switch state.Version {
+	case 1:
+		// Legacy snapshots predate checksums; accept them with a warning.
+		app.Logger.Warn("legacy crawl state without checksum accepted", "version", state.Version)
+	case 2:
+		if state.Checksum == "" || state.Checksum != crawlStateChecksum(state) {
+			app.Logger.Error("crawl state checksum mismatch, refusing to resume")
+			return 0
+		}
+	default:
 		app.Logger.Warn("unsupported crawl state version", "version", state.Version, "expected", crawlStateVersion)
 		return 0
 	}
@@ -539,7 +579,21 @@ func countRejection(reason string) {
 	recordRejection(reason, "", "", "")
 }
 
-// recordRejection increments a counter and keeps the latest cases for the GUI.
+// seedForRejectedURL returns the bootstrap seed when the rejected URL is one
+// of them. Full seed provenance is not tracked in aLink, so other links return
+// an empty seed (reported honestly by the trace).
+func seedForRejectedURL(link string) string {
+	trim := func(s string) string { return strings.TrimRight(strings.TrimSpace(s), "/") }
+	for _, seed := range app.BootstrapLinks {
+		if trim(seed) == trim(link) {
+			return seed
+		}
+	}
+	return ""
+}
+
+// recordRejection increments a counter, keeps the latest cases for the GUI and
+// streams every event to the JSONL trace used by the report and trace modes.
 func recordRejection(reason, url, detail, text string) {
 	app.CrawlMu.Lock()
 	app.RejectionCounts[reason]++
@@ -558,12 +612,23 @@ func recordRejection(reason, url, detail, text string) {
 
 	app.RejectionMu.Lock()
 	defer app.RejectionMu.Unlock()
+	event := rejectionEvent{
+		URL: url, Reason: reason, Profile: app.ProfileName, Seed: seedForRejectedURL(url),
+		Detail: detail, Text: text, Time: time.Now(),
+	}
 	events := app.RejectionEvents[reason]
-	events = append(events, rejectionEvent{URL: url, Detail: detail, Text: text, Time: time.Now()})
+	events = append(events, event)
 	if len(events) > 10 {
 		events = events[len(events)-10:]
 	}
 	app.RejectionEvents[reason] = events
+	if app.rejectTraceFile != nil {
+		if line, err := json.Marshal(event); err == nil {
+			app.rejectTraceMu.Lock()
+			_, _ = app.rejectTraceFile.Write(append(line, '\n'))
+			app.rejectTraceMu.Unlock()
+		}
+	}
 }
 
 const notificationTimeout = 3 * time.Second
@@ -2254,6 +2319,12 @@ func yamlInitGeneral() error {
 	if viper.IsSet("maxStopwordRatio") && !app.maxRatioFromCLI {
 		app.MaxStopwordRatio = viper.GetFloat64("maxStopwordRatio")
 	}
+	if viper.IsSet("logRotateDays") {
+		app.LogRotateDays = viper.GetInt("logRotateDays")
+	}
+	if viper.IsSet("logRotateMaxMB") {
+		app.LogRotateMaxMB = viper.GetInt("logRotateMaxMB")
+	}
 	app.DownloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
 	if app.DownloadTimeout <= 0 || app.DownloadTimeout > maxRequestTimeout {
 		app.DownloadTimeout = maxRequestTimeout
@@ -2536,6 +2607,12 @@ func parseCLI() error {
 			app.maxRatioFromCLI = true
 		case strings.HasPrefix(arg, "-lint-profile="), strings.HasPrefix(arg, "--lint-profile="):
 			app.CLIProfileLint = strings.SplitN(arg, "=", 2)[1]
+		case strings.HasPrefix(arg, "-reject-report="), strings.HasPrefix(arg, "--reject-report="):
+			app.CLIRejectReport = strings.SplitN(arg, "=", 2)[1]
+		case strings.HasPrefix(arg, "-trace-url="), strings.HasPrefix(arg, "--trace-url="):
+			app.CLITraceURL = strings.SplitN(arg, "=", 2)[1]
+		case strings.HasPrefix(arg, "-trace-file="), strings.HasPrefix(arg, "--trace-file="):
+			app.CLITraceFile = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-query="), strings.HasPrefix(arg, "--query="):
 			app.CLIQuery = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-generate-profile="):
@@ -2565,7 +2642,7 @@ func parseCLI() error {
 		}
 		return errStop
 	}
-	if app.ProfileName == "" && app.CLIQuery == "" && !app.CLIExplore && app.CLIGenerate == "" && app.CLIProfileLint == "" && !appGUI {
+	if app.ProfileName == "" && app.CLIQuery == "" && !app.CLIExplore && app.CLIGenerate == "" && app.CLIProfileLint == "" && app.CLIRejectReport == "" && app.CLITraceURL == "" && !appGUI {
 		return fmt.Errorf("profile argument required")
 	}
 	return nil
@@ -4161,6 +4238,7 @@ func usage() {
 	fmt.Println("  -dry-run, -explore, -query=TEXT, -generate-profile=URL, -version, -license, -gui [-gui-port=N]")
 	fmt.Println("  Profiles accept minStopwordRatio / maxStopwordRatio (defaults 0.1 / 0.38).")
 	fmt.Println("  -min-stopword-ratio=F, -max-stopword-ratio=F, -lint-profile=NAME")
+	fmt.Println("  -reject-report=TRACE.jsonl, -trace-url=SUBSTRING [-trace-file=TRACE.jsonl]")
 	fmt.Println("Examples: ./run.sh crypto --resume | ./run.sh -lint-profile=technical | ./run.sh -query=drizzle")
 }
 
@@ -4235,6 +4313,16 @@ func prepareCLI() (bool, error) {
 	if app.CLIProfileLint != "" {
 		return true, lintProfile(app.CLIProfileLint)
 	}
+	if app.CLIRejectReport != "" {
+		return true, rejectReportFile(app.CLIRejectReport)
+	}
+	if app.CLITraceURL != "" {
+		tracePath := app.RejectTracePath
+		if app.CLITraceFile != "" {
+			tracePath = app.CLITraceFile
+		}
+		return true, traceRejectedURL(tracePath, app.CLITraceURL)
+	}
 	if app.CLIGenerate != "" {
 		return true, generateProfile(app.CLIGenerate, "./profiles/generated.yaml")
 	}
@@ -4303,6 +4391,12 @@ func setupRuntime(profile string) (int, func(), error) {
 	if err := os.MkdirAll("./logs", os.ModePerm); err != nil {
 		return 0, noop, err
 	}
+	if err := rotateSessionLogs(); err != nil {
+		fmt.Fprintln(os.Stderr, "Warning: session log rotation failed:", err)
+	}
+	if err := openRejectTrace(); err != nil {
+		return 0, noop, err
+	}
 	if err := os.MkdirAll("./output", os.ModePerm); err != nil {
 		return 0, noop, err
 	}
@@ -4322,6 +4416,7 @@ func setupRuntime(profile string) (int, func(), error) {
 		}
 		saveCrawlState()
 		closeFileLoggers()
+		closeRejectTrace()
 	}
 
 	if err := initFileLoggers(); err != nil {
@@ -4421,15 +4516,232 @@ func crawlLoop(startIndex int) int {
 }
 
 // reportResults writes the final summaries.
+var sessionLogPattern = regexp.MustCompile(`-Z\d\d-\d\d-\d\d\.txt$`)
+
+// gzipSessionLog compresses a completed session log using a temporary file so
+// an interrupted rotation never leaves a half-written .gz behind.
+func gzipSessionLog(path string) error {
+	in, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	tmp := path + ".gz.tmp"
+	out, err := os.Create(tmp)
+	if err != nil {
+		return err
+	}
+	zw := gzip.NewWriter(out)
+	if _, err := io.Copy(zw, in); err != nil {
+		zw.Close()
+		out.Close()
+		os.Remove(tmp)
+		return err
+	}
+	if err := zw.Close(); err != nil {
+		out.Close()
+		os.Remove(tmp)
+		return err
+	}
+	if err := out.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	if err := os.Rename(tmp, path+".gz"); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	return os.Remove(path)
+}
+
+// rotateSessionLogs gzips session logs older than LogRotateDays or when their
+// combined size exceeds LogRotateMaxMB. Setting both to 0 disables rotation.
+// Active session files, corpusCuratedText.log and the dedup logs are untouched.
+func rotateSessionLogs() error {
+	if app.LogRotateDays <= 0 && app.LogRotateMaxMB <= 0 {
+		return nil
+	}
+	entries, err := os.ReadDir("./logs")
+	if err != nil {
+		return err
+	}
+	type item struct {
+		path string
+		info os.FileInfo
+	}
+	var items []item
+	var total int64
+	for _, entry := range entries {
+		if entry.IsDir() || !sessionLogPattern.MatchString(entry.Name()) {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		items = append(items, item{filepath.Join("./logs", entry.Name()), info})
+		total += info.Size()
+	}
+	sort.Slice(items, func(i, j int) bool { return items[i].info.ModTime().Before(items[j].info.ModTime()) })
+	limit := int64(app.LogRotateMaxMB) << 20
+	for _, it := range items {
+		old := app.LogRotateDays > 0 && time.Since(it.info.ModTime()) > time.Duration(app.LogRotateDays)*24*time.Hour
+		large := app.LogRotateMaxMB > 0 && total > limit
+		if !old && !large {
+			continue
+		}
+		if err := gzipSessionLog(it.path); err != nil {
+			return err
+		}
+		total -= it.info.Size()
+	}
+	return nil
+}
+
+const maxRejectTraceBytes = 20 << 20
+
+// openRejectTrace opens the append-only JSONL sink for rejection events,
+// compressing it first if it has grown too large.
+func openRejectTrace() error {
+	if app.RejectTracePath == "" {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(app.RejectTracePath), os.ModePerm); err != nil {
+		return err
+	}
+	if info, err := os.Stat(app.RejectTracePath); err == nil && info.Size() > maxRejectTraceBytes {
+		if err := gzipSessionLog(app.RejectTracePath); err != nil {
+			return err
+		}
+	}
+	file, err := os.OpenFile(app.RejectTracePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	app.rejectTraceFile = file
+	return nil
+}
+
+// closeRejectTrace closes the JSONL sink; it is safe to call twice.
+func closeRejectTrace() {
+	if app.rejectTraceFile != nil {
+		app.rejectTraceFile.Close()
+		app.rejectTraceFile = nil
+	}
+}
+
+// readRejectTrace loads a JSONL trace, skipping malformed lines.
+func readRejectTrace(path string) ([]rejectionEvent, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var events []rejectionEvent
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var event rejectionEvent
+		if err := json.Unmarshal([]byte(line), &event); err == nil {
+			events = append(events, event)
+		}
+	}
+	return events, nil
+}
+
+// writeRejectionReport writes a breakdown by reason with up to three sampled
+// paragraphs per reason.
+func writeRejectionReport(events []rejectionEvent, path string) error {
+	counts, samples := map[string]int{}, map[string][]string{}
+	for _, event := range events {
+		counts[event.Reason]++
+		if event.Text == "" || len(samples[event.Reason]) >= 3 {
+			continue
+		}
+		snippet := event.Text
+		if len(snippet) > 300 {
+			snippet = snippet[:300] + "..."
+		}
+		samples[event.Reason] = append(samples[event.Reason],
+			fmt.Sprintf("%s | %s | %s", event.URL, event.Detail, snippet))
+	}
+	reasons := make([]string, 0, len(counts))
+	for reason := range counts {
+		reasons = append(reasons, reason)
+	}
+	sort.Strings(reasons)
+	var out strings.Builder
+	out.WriteString("# Rejection report\n\n")
+	for _, reason := range reasons {
+		fmt.Fprintf(&out, "## %s: %d\n", reason, counts[reason])
+		for _, sample := range samples[reason] {
+			fmt.Fprintf(&out, "- %s\n", sample)
+		}
+		out.WriteString("\n")
+	}
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(out.String()), 0644)
+}
+
+// rejectReportFile summarises a JSONL trace into logs/rejection-report.txt.
+func rejectReportFile(path string) error {
+	events, err := readRejectTrace(path)
+	if err != nil {
+		return err
+	}
+	if err := writeRejectionReport(events, "./logs/rejection-report.txt"); err != nil {
+		return err
+	}
+	fmt.Printf("Rejection report: ./logs/rejection-report.txt (%d events)\n", len(events))
+	return nil
+}
+
+// traceRejectedURL prints every rejection recorded for URLs containing filter.
+func traceRejectedURL(path, filter string) error {
+	events, err := readRejectTrace(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("no rejection trace at %s; run a crawl first or use -reject-report=FILE", path)
+		}
+		return err
+	}
+	found := 0
+	for _, event := range events {
+		if !strings.Contains(event.URL, filter) {
+			continue
+		}
+		found++
+		fmt.Printf("%s reason=%s profile=%s seed=%s\n  detail=%s\n",
+			event.Time.Format(time.RFC3339), event.Reason, event.Profile, event.Seed, event.Detail)
+		if event.Text != "" {
+			fmt.Printf("  text=%s\n", event.Text)
+		}
+	}
+	if found == 0 {
+		return fmt.Errorf("no rejection events for %q in %s", filter, path)
+	}
+	return nil
+}
+
 func reportResults(finalIndex int) {
 	dumpFrequencies(finalIndex, true)
 	app.Logger.Info("crawl finished", "processed", finalIndex,
 		"accepted", app.AcceptedDocs, "rejections", rejectionSummary())
+	closeRejectTrace()
+	if app.RejectTracePath != "" {
+		if events, err := readRejectTrace(app.RejectTracePath); err == nil {
+			if err := writeRejectionReport(events, "./logs/rejection-report.txt"); err == nil {
+				fmt.Println("Rejection report: ./logs/rejection-report.txt")
+			}
+		}
+	}
 	notifyCompletion(finalIndex)
 	fmt.Println("\n\n\n***** Done!!!")
 }
 
-// run initializes the crawler, executes the crawl and reports results.
 // ensureModuleRoot moves to the module root when the working directory lacks
 // crawler.yaml but an ancestor (or the executable's directory chain) has it.
 // This lets a compiled binary run from any directory. `go run crawler.go` must
@@ -4474,6 +4786,7 @@ func ensureModuleRoot() {
 	}
 }
 
+// run initializes the crawler, executes the crawl and reports results.
 func run() error {
 	app = newCrawler()
 	ensureModuleRoot()

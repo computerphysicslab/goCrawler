@@ -1,0 +1,25 @@
+# Technical profile: astrophysics and astronomical instrumentation.
+# Dense nominal prose: minStopwordRatio is 0 so equations/abbreviations survive.
+# Copy to profiles/ and edit the seeds before running.
+
+curatedDomains: |
+  arxiv\.org|nasa\.gov|stsci\.edu|esahubble\.org|iopscience\.iop\.org|aanda\.org|academic\.oup\.com|spiedigitallibrary\.org
+
+linkOk: |
+  astro|astronom|telescope|observator|photometr|spectroscop|image|imaging|detector|sensor|calibration|data|paper|article|instrument
+
+regexRankingKeywords: |
+  (?i)\W(astrophysics|astronomy|telescope|observatory|photometry|spectroscopy|spectra|detector|sensor|calibration|exposure|noise|signal|snr|wavelength|redshift|galaxy|nebula|star|orbit|transit|exoplanet|instrument|ccd|CMOS|focal|aperture|resolution|pipeline|reduction|analysis)\W
+
+minDocLen: 200
+maxDocLen: 100000
+minStopwordRatio: 0.0
+maxStopwordRatio: 0.60
+scoreThreshold: 15
+rankingStrategy: hybrid
+maxLinksPerPage: 200
+
+bootstrapingLinks:
+- "https://arxiv.org/list/astro-ph/recent"
+- "https://science.nasa.gov/missions/hubble/"
+- "https://www.stsci.edu/scientific-community"

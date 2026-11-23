@@ -23,6 +23,11 @@ specialStopwords: |
 
 downloadTimeout: 8
 
+# Completed session logs are gzipped after this many days or when their total
+# size exceeds this many MiB. Set both to 0 to disable rotation.
+logRotateDays: 14
+logRotateMaxMB: 500
+
 # Stopword ratio window used to keep a paragraph (profiles may override these).
 # Dense technical prose often needs minStopwordRatio: 0.0
 minStopwordRatio: 0.1
