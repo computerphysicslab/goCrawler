@@ -677,3 +677,119 @@ func TestDefaultBannedDomainsAllowsWikipedia(t *testing.T) {
 		}
 	})
 }
+
+func TestEnsureModuleRootFromForeignDirectory(t *testing.T) {
+	original, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(original)
+	if err := os.Chdir(t.TempDir()); err != nil {
+		t.Fatal(err)
+	}
+	ensureModuleRoot()
+	got, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != original {
+		t.Fatalf("working directory = %q, want module root %q", got, original)
+	}
+}
+
+func TestStopwordRatioCLIFlags(t *testing.T) {
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"crawler", "-profile=tech", "-min-stopword-ratio=0.02", "--max-stopword-ratio=0.9"}
+	withApp(t, func() {
+		if err := parseCLI(); err != nil {
+			t.Fatalf("parseCLI: %v", err)
+		}
+		if app.MinStopwordRatio != 0.02 || app.MaxStopwordRatio != 0.9 {
+			t.Fatalf("ratios = %.2f/%.2f, want 0.02/0.90", app.MinStopwordRatio, app.MaxStopwordRatio)
+		}
+	})
+}
+
+func TestGeneralConfigStopwordRatios(t *testing.T) {
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(old)
+	dir := t.TempDir()
+	config := `regexBannedDomains: "nomatch"
+regexLinkBannedTokens: "nomatch"
+engStopWordsWOthe: "a|and|of|the|with"
+engLowRelevancyWords: "|news|info"
+specialStopwords: ""
+minStopwordRatio: 0.05
+maxStopwordRatio: 0.75
+`
+	if err := os.WriteFile(filepath.Join(dir, "crawler.yaml"), []byte(config), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	viper.Reset()
+	defer viper.Reset()
+	withApp(t, func() {
+		if err := yamlInitGeneral(); err != nil {
+			t.Fatalf("yamlInitGeneral: %v", err)
+		}
+		if app.MinStopwordRatio != 0.05 || app.MaxStopwordRatio != 0.75 {
+			t.Fatalf("ratios = %.2f/%.2f, want 0.05/0.75", app.MinStopwordRatio, app.MaxStopwordRatio)
+		}
+		// CLI values win over both general and profile configuration.
+		app.minRatioFromCLI = true
+		app.MinStopwordRatio = 0.3
+		if err := yamlInitGeneral(); err != nil {
+			t.Fatalf("yamlInitGeneral with CLI override: %v", err)
+		}
+		if app.MinStopwordRatio != 0.3 {
+			t.Fatalf("CLI ratio overwritten: %.2f", app.MinStopwordRatio)
+		}
+	})
+}
+
+func TestLintProfile(t *testing.T) {
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(old)
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "profiles"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	valid := `curatedDomains: "example\\.org"
+linkOk: "article"
+regexRankingKeywords: "(?i)\\W(data|method)\\W"
+bootstrapingLinks: ["https://example.org/article"]
+minDocLen: 50
+maxDocLen: 100000
+minStopwordRatio: 0.0
+maxStopwordRatio: 0.6
+`
+	invalid := valid + `bogusKey: 1
+anotherBadSeed: ["not-a-url"]
+`
+	if err := os.WriteFile(filepath.Join(dir, "profiles", "valid.yaml"), []byte(valid), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "profiles", "invalid.yaml"), []byte(invalid), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	withApp(t, func() {
+		if err := lintProfile("valid"); err != nil {
+			t.Fatalf("valid profile rejected: %v", err)
+		}
+		if err := lintProfile("invalid"); err == nil {
+			t.Fatal("invalid profile accepted")
+		}
+	})
+}

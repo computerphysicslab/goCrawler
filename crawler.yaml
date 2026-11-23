@@ -23,6 +23,11 @@ specialStopwords: |
 
 downloadTimeout: 8
 
+# Stopword ratio window used to keep a paragraph (profiles may override these).
+# Dense technical prose often needs minStopwordRatio: 0.0
+minStopwordRatio: 0.1
+maxStopwordRatio: 0.38
+
 # Structured log level: debug, info, warn or error
 logLevel: info
 

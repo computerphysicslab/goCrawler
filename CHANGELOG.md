@@ -6,6 +6,13 @@
   source path; an explicit `-config=` disables relocation.
 - Profile keys `minStopwordRatio` / `maxStopwordRatio` (defaults `0.1` / `0.38`) with validation,
   plus `profiles/examples/technical.yaml` for dense technical prose that the old 0.1 floor rejected.
+- Roadmap proposals N01–N12 (42 pending items) and fixes to three inconsistencies in `roadmap.md`.
+- `crawler.yaml` now accepts the two ratio keys; `-min-stopword-ratio=` / `-max-stopword-ratio=` flags
+  override both general and profile configuration (N01).
+- `-lint-profile=<name>` validates required keys, regexes, seed URLs, numeric ranges and unknown keys
+  without starting a crawl (N02).
+- Windows wrappers `run.bat` and `run.ps1` mirror `run.sh` (N05).
+- CI now also runs `go test -race ./...` and `govulncheck ./...` on Linux (N04).
 
 ### Fixed
 - Default `regexBannedDomains` no longer bans `en.wikipedia.org`.

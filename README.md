@@ -192,6 +192,7 @@ all checks pass.
 | `engLowRelevancyWords` | Low-information words added to the stopword regex. |
 | `specialStopwords` | URL parts, months, file extensions and TLDs for cleaning. |
 | `downloadTimeout` | HTTP timeout in seconds (default `8`). |
+| `minStopwordRatio` / `maxStopwordRatio` | Global stopword window (defaults `0.1` / `0.38`); a profile can override it, and `-min-stopword-ratio=` / `-max-stopword-ratio=` win over both. |
 | `addUrl` | Optional external indexer endpoint (currently commented out). |
 | `cacheBackend` | `local` (SQLite, default) or `redis`. |
 | `cachePath` | SQLite database path (default `./cache/cache.db`). |
@@ -240,9 +241,9 @@ name without its extension; the resolved path is printed as `profile file:` at s
 **Run from the module root.** `go run crawler.go` resolves the `goCrawler/...` imports from the
 current working directory, so launching it elsewhere fails with
 `cannot find package goCrawler/iolib`. Use `./run.sh <profile>` from any directory: it `cd`s to the
-module root first. A compiled binary also autodetects its module root (via the working directory,
-the executable path and the build-time source path) when `crawler.yaml` is not in the current
-directory; an explicit `-config=` disables that relocation.
+module root first (`run.bat` / `run.ps1` do the same on Windows). A compiled binary also autodetects
+its module root (via the working directory, the executable path and the build-time source path)
+when `crawler.yaml` is not in the current directory; an explicit `-config=` disables that relocation.
 
 PDF URLs stay in `regexLinkBannedTokens` by default. Setting `process_pdf: true` bypasses that
 single token check for `.pdf` URLs when the profile is loaded; banned domains and the `linkOk`
@@ -270,6 +271,9 @@ go run crawler.go -query=drizzle               # search the curated corpus (SQLi
 go run crawler.go -explore                     # corpus stats and top terms
 go run crawler.go -generate-profile=https://example.org/stacking
 go run crawler.go -version -license
+go run crawler.go -lint-profile=astrophotography   # validate a profile without crawling
+./run.bat crypto          # Windows: same root resolution as run.sh
+./run.ps1 -profile=crypto # Windows PowerShell
 ```
 
 The crawler runs until its link pool is exhausted. Progress is printed to stdout, including
@@ -610,7 +614,7 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ## Testing
 
-The suite has 123 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
+The suite has 127 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
 state persistence, download errors, link filtering, stores and robots policy; HTTP handler tests for
 every Workbench endpoint via `httptest`; and an end-to-end crawl against a local HTTP server with two
 workers.

@@ -134,6 +134,9 @@ type Crawler struct {
 	CLIQuery                 string
 	CLIExplore               bool
 	CLIGenerate              string
+	CLIProfileLint           string
+	minRatioFromCLI          bool
+	maxRatioFromCLI          bool
 	ShowVersion              bool
 	ShowLicense              bool
 	GUIPort                  int
@@ -2245,6 +2248,12 @@ func yamlInitGeneral() error {
 	app.EngStopWords = `the|` + app.EngStopWordsWOthe
 	app.EngLowRelevancyWords = `|` + stringlib.RmNewLines(viper.GetString("engLowRelevancyWords"))
 	app.RegexStopwords = `(?i)\W([0-9]+|.|..|` + app.EngStopWordsWOthe + app.EngLowRelevancyWords + `|` + stringlib.RmNewLines(viper.GetString("specialStopwords")) + `)\W`
+	if viper.IsSet("minStopwordRatio") && !app.minRatioFromCLI {
+		app.MinStopwordRatio = viper.GetFloat64("minStopwordRatio")
+	}
+	if viper.IsSet("maxStopwordRatio") && !app.maxRatioFromCLI {
+		app.MaxStopwordRatio = viper.GetFloat64("maxStopwordRatio")
+	}
 	app.DownloadTimeout = time.Duration(viper.GetInt("downloadTimeout")) * time.Second
 	if app.DownloadTimeout <= 0 || app.DownloadTimeout > maxRequestTimeout {
 		app.DownloadTimeout = maxRequestTimeout
@@ -2344,10 +2353,10 @@ func yamlInitSpecific() error {
 	app.BootstrapLinks = vp.GetStringSlice("bootstrapingLinks")
 	app.MinDocLen = vp.GetInt("minDocLen")
 	app.MaxDocLen = vp.GetInt("maxDocLen")
-	if vp.IsSet("minStopwordRatio") {
+	if vp.IsSet("minStopwordRatio") && !app.minRatioFromCLI {
 		app.MinStopwordRatio = vp.GetFloat64("minStopwordRatio")
 	}
-	if vp.IsSet("maxStopwordRatio") {
+	if vp.IsSet("maxStopwordRatio") && !app.maxRatioFromCLI {
 		app.MaxStopwordRatio = vp.GetFloat64("maxStopwordRatio")
 	}
 	app.ScoreThreshold = float64(vp.GetInt("scoreThreshold"))
@@ -2511,6 +2520,22 @@ func parseCLI() error {
 				return fmt.Errorf("invalid -workers (1..32): %s", arg)
 			}
 			app.CLIWorkers = v
+		case strings.HasPrefix(arg, "-min-stopword-ratio="), strings.HasPrefix(arg, "--min-stopword-ratio="):
+			v, err := strconv.ParseFloat(strings.SplitN(arg, "=", 2)[1], 64)
+			if err != nil {
+				return fmt.Errorf("invalid -min-stopword-ratio: %w", err)
+			}
+			app.MinStopwordRatio = v
+			app.minRatioFromCLI = true
+		case strings.HasPrefix(arg, "-max-stopword-ratio="), strings.HasPrefix(arg, "--max-stopword-ratio="):
+			v, err := strconv.ParseFloat(strings.SplitN(arg, "=", 2)[1], 64)
+			if err != nil {
+				return fmt.Errorf("invalid -max-stopword-ratio: %w", err)
+			}
+			app.MaxStopwordRatio = v
+			app.maxRatioFromCLI = true
+		case strings.HasPrefix(arg, "-lint-profile="), strings.HasPrefix(arg, "--lint-profile="):
+			app.CLIProfileLint = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-query="), strings.HasPrefix(arg, "--query="):
 			app.CLIQuery = strings.SplitN(arg, "=", 2)[1]
 		case strings.HasPrefix(arg, "-generate-profile="):
@@ -2540,7 +2565,7 @@ func parseCLI() error {
 		}
 		return errStop
 	}
-	if app.ProfileName == "" && app.CLIQuery == "" && !app.CLIExplore && app.CLIGenerate == "" && !appGUI {
+	if app.ProfileName == "" && app.CLIQuery == "" && !app.CLIExplore && app.CLIGenerate == "" && app.CLIProfileLint == "" && !appGUI {
 		return fmt.Errorf("profile argument required")
 	}
 	return nil
@@ -3351,6 +3376,101 @@ func resolveProfileName(name string) (string, error) {
 	return "", fmt.Errorf("profile not found: %s", name)
 }
 
+// knownProfileKeys lists every key understood by yamlInitSpecific. Unknown keys
+// are reported by `lintProfile` because Viper silently ignores them.
+var knownProfileKeys = map[string]bool{
+	"bootstrapinglinks":     true,
+	"crawldelayms":          true,
+	"curateddomains":        true,
+	"excludedkeywords":      true,
+	"language":              true,
+	"linkok":                true,
+	"maxdoclen":             true,
+	"maxlinksperpage":       true,
+	"maxstopwordratio":      true,
+	"mindoclen":             true,
+	"minlanguageconfidence": true,
+	"minstopwordratio":      true,
+	"pdf_max_bytes":         true,
+	"pdf_pages_limit":       true,
+	"process_pdf":           true,
+	"rankingstrategy":       true,
+	"regexrankingkeywords":  true,
+	"scorethreshold":        true,
+	"synonyms":              true,
+}
+
+// lintProfile checks a profile file without starting a crawl: required keys,
+// regexes, seed URLs, numeric ranges and unknown keys.
+func lintProfile(name string) error {
+	path := "./profiles/" + name + ".yaml"
+	if !iolib.FileExists(path) {
+		path = "./" + name + ".yaml"
+	}
+	if !iolib.FileExists(path) {
+		return fmt.Errorf("profile not found: %s", name)
+	}
+	vp := viper.New()
+	vp.SetConfigFile(path)
+	if err := vp.ReadInConfig(); err != nil {
+		return fmt.Errorf("cannot read profile %s: %w", path, err)
+	}
+
+	var problems []string
+	for _, key := range vp.AllKeys() {
+		if !knownProfileKeys[strings.ToLower(key)] {
+			problems = append(problems, "unknown key: "+key)
+		}
+	}
+	for _, key := range []string{"curateddomains", "linkok", "regexrankingkeywords"} {
+		if strings.TrimSpace(vp.GetString(key)) == "" {
+			problems = append(problems, "missing or empty: "+key)
+		}
+	}
+	seeds := vp.GetStringSlice("bootstrapinglinks")
+	if len(seeds) == 0 {
+		problems = append(problems, "missing or empty: bootstrapingLinks")
+	}
+	for _, seed := range seeds {
+		u, err := url.Parse(strings.TrimSpace(seed))
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			problems = append(problems, "invalid seed URL: "+seed)
+		}
+	}
+	for label, expr := range map[string]string{
+		"curatedDomains":       vp.GetString("curateddomains"),
+		"linkOk":               `(?i)^https*://.*(` + vp.GetString("linkok") + `)`,
+		"regexRankingKeywords": vp.GetString("regexrankingkeywords"),
+	} {
+		if _, err := regexp.Compile(expr); err != nil {
+			problems = append(problems, fmt.Sprintf("%s: %v", label, err))
+		}
+	}
+	if minDoc, maxDoc := vp.GetInt("mindoclen"), vp.GetInt("maxdoclen"); minDoc < 0 || maxDoc <= minDoc {
+		problems = append(problems, fmt.Sprintf("invalid document length range %d..%d", minDoc, maxDoc))
+	}
+	minRatio, maxRatio := app.MinStopwordRatio, app.MaxStopwordRatio
+	if vp.IsSet("minstopwordratio") {
+		minRatio = vp.GetFloat64("minstopwordratio")
+	}
+	if vp.IsSet("maxstopwordratio") {
+		maxRatio = vp.GetFloat64("maxstopwordratio")
+	}
+	if math.IsNaN(minRatio) || math.IsNaN(maxRatio) || minRatio < 0 || maxRatio > 1 || minRatio > maxRatio {
+		problems = append(problems, fmt.Sprintf("invalid stopword ratio range %.3f..%.3f", minRatio, maxRatio))
+	}
+
+	fmt.Printf("Linting profile %s: %s\n", name, vp.ConfigFileUsed())
+	if len(problems) == 0 {
+		fmt.Println("OK: profile is valid")
+		return nil
+	}
+	for _, problem := range problems {
+		fmt.Println("  - " + problem)
+	}
+	return fmt.Errorf("profile %s has %d problem(s)", name, len(problems))
+}
+
 // lastExecutedProfile derives the most recent profile from session log filenames.
 func lastExecutedProfile() string {
 	files, err := filepath.Glob("logs/*-Z??-??-??.txt")
@@ -4040,7 +4160,8 @@ func usage() {
 	fmt.Println("  -profile=, -backend=, -cache=, -log-level=, -workers=N, -max-links=N")
 	fmt.Println("  -dry-run, -explore, -query=TEXT, -generate-profile=URL, -version, -license, -gui [-gui-port=N]")
 	fmt.Println("  Profiles accept minStopwordRatio / maxStopwordRatio (defaults 0.1 / 0.38).")
-	fmt.Println("Examples: ./run.sh crypto --resume | ./run.sh -query=drizzle")
+	fmt.Println("  -min-stopword-ratio=F, -max-stopword-ratio=F, -lint-profile=NAME")
+	fmt.Println("Examples: ./run.sh crypto --resume | ./run.sh -lint-profile=technical | ./run.sh -query=drizzle")
 }
 
 // startSessionOutput tees stdout to the terminal and to a timestamped file in logs/.
@@ -4110,6 +4231,9 @@ func prepareCLI() (bool, error) {
 			return true, nil
 		}
 		return true, err
+	}
+	if app.CLIProfileLint != "" {
+		return true, lintProfile(app.CLIProfileLint)
 	}
 	if app.CLIGenerate != "" {
 		return true, generateProfile(app.CLIGenerate, "./profiles/generated.yaml")
@@ -4384,8 +4508,9 @@ func run() error {
 	defer cleanup()
 
 	if app.CLIDryRun {
-		fmt.Printf("Dry run: profile=%s backend=%s cache=%s language=%s strategy=%s workers=%d\n",
-			app.ProfileName, app.CacheBackend, app.CachePath, app.TargetLanguage, app.RankingStrategy, app.CLIWorkers)
+		fmt.Printf("Dry run: profile=%s backend=%s cache=%s language=%s strategy=%s workers=%d stopwordRatio=%.2f..%.2f\n",
+			app.ProfileName, app.CacheBackend, app.CachePath, app.TargetLanguage, app.RankingStrategy,
+			app.CLIWorkers, app.MinStopwordRatio, app.MaxStopwordRatio)
 		return nil
 	}
 
