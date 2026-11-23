@@ -380,6 +380,7 @@ This is roadmap item 14; it is **not implemented**. Use `go test -race` when imp
 | `-dry-run` | load configuration and exit without crawling |
 | `-query=TEXT` | full-text search over the curated corpus (SQLite FTS5) |
 | `-explore` | print corpus statistics and top topic terms |
+| `-quality` | print technical-corpus metrics (acronym density, numeric ratio, token length) |
 | `-generate-profile=URL` | write `profiles/generated.yaml` from a seed URL |
 | `-lint-profile=NAME` | validate a profile (keys, regexes, seeds, ranges) without crawling |
 | `-min-stopword-ratio=F`, `-max-stopword-ratio=F` | override the stopword window from the command line |
@@ -409,6 +410,10 @@ requests finish), Resume releases them and Drain lets every in-flight link compl
 without reserving new work; hard Stop still cancels in-flight HTTP. `/api/stats` and the SSE stream
 report `paused` / `draining` / `stopping`, and all controls release a parked worker so a crawl can
 never get stuck.
+
+The Corpus tab can also compute **technical-quality metrics** (`-quality` on the CLI or
+`GET /api/quality?scope=all|last|today`): per-document acronym density, numeric-token ratio and mean
+token length, averaged over the scope with the ten densest documents listed first (N12).
 
 The **URL Seeds** tab extracts URLs from anywhere in the text area — one per line, or mixed with
 prose, tabs and Markdown links — and deduplicates them before saving.
@@ -656,7 +661,7 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ## Testing
 
-The suite has 144 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
+The suite has 147 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
 state persistence, download errors, link filtering, stores and robots policy; HTTP handler tests for
 every Workbench endpoint via `httptest`; and an end-to-end crawl against a local HTTP server with two
 workers.

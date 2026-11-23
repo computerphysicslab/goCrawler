@@ -1063,3 +1063,24 @@ func TestWaitWhilePausedGate(t *testing.T) {
 		}
 	})
 }
+
+func TestTechnicalQualityMetrics(t *testing.T) {
+	technical := "WCS FWHM Gaia DR3 1234 pixels calibration pipeline noise SNR 42 photometry"
+	metrics := technicalQuality(technical)
+	if metrics["acronym_density"] <= 0 {
+		t.Fatalf("acronym density = %v, want > 0", metrics["acronym_density"])
+	}
+	if metrics["numeric_ratio"] <= 0 {
+		t.Fatalf("numeric ratio = %v, want > 0", metrics["numeric_ratio"])
+	}
+	general := technicalQuality("the quick brown fox jumped over the lazy dog")
+	if general["acronym_density"] != 0 || general["numeric_ratio"] != 0 {
+		t.Fatalf("general prose has technical metrics: %v", general)
+	}
+	if metrics["mean_token_len"] <= general["mean_token_len"] {
+		t.Fatalf("technical tokens should be longer: %v vs %v", metrics, general)
+	}
+	if empty := technicalQuality(""); empty["tokens"] != 0 {
+		t.Fatalf("empty text = %v", empty)
+	}
+}

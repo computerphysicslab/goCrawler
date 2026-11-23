@@ -187,6 +187,7 @@ type Crawler struct {
 	CLIDryRun                bool
 	CLIQuery                 string
 	CLIExplore               bool
+	CLIQuality               bool
 	CLIGenerate              string
 	CLIProfileLint           string
 	CLIRejectReport          string
@@ -2681,6 +2682,8 @@ func parseCLI() error {
 			app.CLIDryRun = true
 		case arg == "-explore", arg == "--explore":
 			app.CLIExplore = true
+		case arg == "-quality", arg == "--quality":
+			app.CLIQuality = true
 		case arg == "-version", arg == "--version":
 			app.ShowVersion = true
 		case arg == "-license", arg == "--license":
@@ -2702,7 +2705,7 @@ func parseCLI() error {
 		}
 		return errStop
 	}
-	if app.ProfileName == "" && app.CLIQuery == "" && !app.CLIExplore && app.CLIGenerate == "" && app.CLIProfileLint == "" && app.CLIRejectReport == "" && app.CLITraceURL == "" && !appGUI {
+	if app.ProfileName == "" && app.CLIQuery == "" && !app.CLIExplore && !app.CLIQuality && app.CLIGenerate == "" && app.CLIProfileLint == "" && app.CLIRejectReport == "" && app.CLITraceURL == "" && !appGUI {
 		return fmt.Errorf("profile argument required")
 	}
 	return nil
@@ -2748,6 +2751,87 @@ func exploreCorpus() error {
 	for i := 0; i < limit; i++ {
 		fmt.Println(" ", lines[i])
 	}
+	return nil
+}
+
+var acronymTokenRe = regexp.MustCompile(`^[A-Z]{2,}[A-Z0-9]*$`)
+
+// technicalQuality returns density metrics that distinguish dense technical
+// prose from general text: uppercase acronyms, numeric tokens and token length.
+func technicalQuality(text string) map[string]float64 {
+	tokens := tokenize(text)
+	total := len(tokens)
+	result := map[string]float64{
+		"tokens":          0,
+		"acronym_density": 0,
+		"numeric_ratio":   0,
+		"mean_token_len":  0,
+	}
+	if total == 0 {
+		return result
+	}
+	acronyms, numeric, letters := 0, 0, 0
+	for _, token := range tokens {
+		if acronymTokenRe.MatchString(token) {
+			acronyms++
+		}
+		if strings.ContainsAny(token, "0123456789") {
+			numeric++
+		}
+		letters += len([]rune(token))
+	}
+	result["tokens"] = float64(total)
+	result["acronym_density"] = float64(acronyms) / float64(total)
+	result["numeric_ratio"] = float64(numeric) / float64(total)
+	result["mean_token_len"] = float64(letters) / float64(total)
+	return result
+}
+
+type qualityRow struct {
+	URL            string  `json:"url"`
+	Tokens         float64 `json:"tokens"`
+	AcronymDensity float64 `json:"acronym_density"`
+	NumericRatio   float64 `json:"numeric_ratio"`
+}
+
+// corpusQuality aggregates technical-quality metrics over a corpus scope.
+func corpusQuality(scope string) map[string]interface{} {
+	docs := filterCorpusScope(corpusDocuments(100000), scope)
+	sums := map[string]float64{"tokens": 0, "acronym_density": 0, "numeric_ratio": 0, "mean_token_len": 0}
+	rows := make([]qualityRow, 0, len(docs))
+	for _, doc := range docs {
+		metrics := technicalQuality(doc["text"])
+		for key := range sums {
+			sums[key] += metrics[key]
+		}
+		rows = append(rows, qualityRow{
+			URL: doc["url"], Tokens: metrics["tokens"],
+			AcronymDensity: metrics["acronym_density"], NumericRatio: metrics["numeric_ratio"],
+		})
+	}
+	averages := map[string]float64{}
+	count := float64(len(docs))
+	for key, value := range sums {
+		if count > 0 {
+			averages[key] = value / count
+		}
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].AcronymDensity+rows[i].NumericRatio > rows[j].AcronymDensity+rows[j].NumericRatio
+	})
+	if len(rows) > 10 {
+		rows = rows[:10]
+	}
+	return map[string]interface{}{"documents": len(docs), "scope": scope, "averages": averages, "top": rows}
+}
+
+// printCorpusQuality is the CLI view of corpusQuality.
+func printCorpusQuality() error {
+	data, err := json.MarshalIndent(corpusQuality("all"), "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
 	return nil
 }
 
@@ -2820,7 +2904,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><select id="w-workers"><option value="1">1 worker</option><option value="2">2 workers</option><option value="4" selected>4 workers</option><option value="8">8 workers</option></select><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button> <button id="btn-pause" class="act" onclick="pauseCrawl()" disabled>Pause</button> <button id="btn-resume" class="act" onclick="resumeCrawl()" disabled>Resume</button> <button id="btn-drain" class="act" onclick="drainCrawl()" disabled>Drain</button><pre id="run-out"></pre></div></section>
 <section id="prof"><div class="card"><select id="p-list" onchange="loadProfile()"></select><textarea id="p-text" rows="22"></textarea><button class="act" onclick="saveProfile()">Save profile</button></div></section>
 <section id="corpus" hidden><div class="card"><h3>Search the curated corpus</h3><p class="muted">Full-text search over the accepted documents (SQLite FTS5).</p><input id="q" placeholder="FTS5 query"><button class="act" onclick="search()">Search</button><div id="docs"></div></div>
-<div class="card"><h3>Save corpus for a profile</h3><p class="muted">Select a profile and a scope, then export the curated documents whose URL and text match it to a TXT file.</p><select id="c-profile"></select><select id="c-scope"><option value="all">All accumulated</option><option value="last">Last crawl only</option><option value="today">Today only</option></select><button class="act" onclick="saveCorpus()">Save corpus</button> <a id="c-download" hidden>Download TXT</a><pre id="c-out"></pre></div></section>
+<div class="card"><h3>Save corpus for a profile</h3><p class="muted">Select a profile and a scope, then export the curated documents whose URL and text match it to a TXT file.</p><select id="c-profile"></select><select id="c-scope"><option value="all">All accumulated</option><option value="last">Last crawl only</option><option value="today">Today only</option></select><button class="act" onclick="saveCorpus()">Save corpus</button> <a id="c-download" hidden>Download TXT</a> <button class="act" onclick="qualityMetrics()">Quality metrics</button><pre id="c-quality"></pre><pre id="c-out"></pre></div></section>
 <section id="prompt" hidden><div class="card"><h3>AI research prompt</h3><p class="muted">Built from the selected profile keywords, seed URLs and curated text.</p><select id="pr-profile"></select><button class="act" onclick="generatePrompt()">Generate prompt</button><textarea id="pr-out" rows="18"></textarea><button class="act" onclick="copyPrompt()">Copy</button></div></section>
 <section id="about" hidden><div class="about-row"><div class="card about-info"><h3 id="a-name">goCrawler Workbench</h3><p class="muted" id="a-desc"></p><p>Version <b id="a-version"></b> — <span id="a-date"></span></p><p id="a-copyright"></p><p>License: <b id="a-license"></b> · Go: <span id="a-go"></span> · Platform: <span id="a-platform"></span></p><p>Contact: <a id="a-author" href="#"></a> · <a id="a-linkedin" href="#" target="_blank" rel="noopener">LinkedIn</a></p><p><a id="a-repo" href="#" target="_blank" rel="noopener">Repository</a> · <a id="a-issues" href="#" target="_blank" rel="noopener">Issues</a> · <a id="a-changelog" href="#" target="_blank" rel="noopener">Changelog</a> · <a id="a-roadmap" href="#" target="_blank" rel="noopener">Roadmap</a></p><p>Components: <span id="a-components" class="muted"></span></p></div><div class="card about-qr"><h3>Scan to open the repository</h3><img id="a-qr" alt="QR code of the repository" style="max-width:180px"></div></div></section>
 <section id="urls" hidden><div class="card"><h3>URL Seeds</h3><p class="muted">Seeds in profile: <b id="u-count">0</b> URLs. Paste one URL per line or URLs mixed with text, tabs and line breaks; duplicates are ignored. Changes are written to the profile YAML.</p><select id="u-profile"></select><textarea id="u-text" rows="12" placeholder="https://example.org/page"></textarea><div><button class="act" onclick="addURLs()">Add URLs</button> <button class="act" onclick="replaceURLs()">Replace all</button> <button class="act" onclick="removeURLs()">Remove selected</button></div><div id="u-list"></div></div></section>
@@ -2875,6 +2959,7 @@ async function showReason(reason){const d=await json('/api/rejections?reason='+e
 function applyLogs(d){$('ev-count').textContent=d.total;$('ev-list').textContent=(d.events||[]).map(e=>new Date(e.time).toLocaleTimeString()+' ['+e.level+'] '+e.message+(e.url?' '+e.url:'')).join('\n')||'No matching events'}
 async function loadLogs(){const level=$('ev-level')?$('ev-level').value:'ALL',q=$('ev-q')?$('ev-q').value:'';applyLogs(await json('/api/logs?level='+encodeURIComponent(level)+'&q='+encodeURIComponent(q)))}
 function exportLogs(format){const level=$('ev-level').value,q=$('ev-q').value,a=$('ev-download');a.href='/api/logs/export?format='+format+'&level='+encodeURIComponent(level)+'&q='+encodeURIComponent(q);a.download='goCrawler-events.'+(format==='sitemap'?'xml':format);a.textContent='Download '+format.toUpperCase();a.hidden=false;a.click()}
+async function qualityMetrics(){try{const d=await json('/api/quality?scope='+encodeURIComponent($('c-scope').value)),a=d.averages||{};$('c-quality').textContent=d.documents+' documents · acronym density '+((a.acronym_density||0)*100).toFixed(2)+'% · numeric '+((a.numeric_ratio||0)*100).toFixed(2)+'% · mean token length '+(a.mean_token_len||0).toFixed(1)+'\n'+((d.top||[]).map(x=>x.url+' ['+((x.acronym_density+x.numeric_ratio)*100).toFixed(1)+'%]').join('\n'))}catch(e){$('c-quality').textContent='Error: '+e.message}}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
 let gcFallback=null,gcRetry=null;
 function connectEvents(){if(!window.EventSource){gcFallback=setInterval(()=>{stats();loadQueue()},1500);stats();loadQueue();return}const es=new EventSource('/api/events');es.addEventListener('stats',e=>{try{applyStats(JSON.parse(e.data))}catch(_){}});es.addEventListener('queue',e=>{try{applyQueue(JSON.parse(e.data))}catch(_){}});es.addEventListener('logs',()=>{loadLogs()});es.onopen=()=>{if(gcFallback){clearInterval(gcFallback);gcFallback=null}};es.onerror=()=>{es.close();if(!gcFallback)gcFallback=setInterval(()=>{stats();loadQueue()},5000);if(!gcRetry)gcRetry=setTimeout(()=>{gcRetry=null;connectEvents()},15000)}}connectEvents();profiles();loadAbout();loadLogs()
@@ -3474,6 +3559,9 @@ func guiHandler() http.Handler {
 		writeJSON(w, buildStatsPayload())
 	})
 	mux.HandleFunc("/api/events", guiEventsHandler)
+	mux.HandleFunc("/api/quality", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, corpusQuality(r.URL.Query().Get("scope")))
+	})
 	mux.HandleFunc("/api/logs", func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		limit := 100
@@ -4591,7 +4679,7 @@ func usage() {
 	fmt.Println("  --selftest run built-in checks and exit")
 	fmt.Println("  --resume   restore a previous crawl from the cache store")
 	fmt.Println("  -profile=, -backend=, -cache=, -log-level=, -workers=N, -max-links=N")
-	fmt.Println("  -dry-run, -explore, -query=TEXT, -generate-profile=URL, -version, -license, -gui [-gui-port=N]")
+	fmt.Println("  -dry-run, -explore, -quality, -query=TEXT, -generate-profile=URL, -version, -license, -gui [-gui-port=N]")
 	fmt.Println("  Profiles accept minStopwordRatio / maxStopwordRatio (defaults 0.1 / 0.38).")
 	fmt.Println("  -min-stopword-ratio=F, -max-stopword-ratio=F, -lint-profile=NAME")
 	fmt.Println("  -reject-report=TRACE.jsonl, -trace-url=SUBSTRING [-trace-file=TRACE.jsonl]")
@@ -4687,6 +4775,9 @@ func prepareCLI() (bool, error) {
 	}
 	if app.CLIExplore {
 		return true, exploreCorpus()
+	}
+	if app.CLIQuality {
+		return true, printCorpusQuality()
 	}
 	if appGUI {
 		return true, runGUI()

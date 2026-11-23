@@ -1725,3 +1725,52 @@ func TestGUIRuntimeButtons(t *testing.T) {
 		}
 	})
 }
+
+func TestGUICorpusQualityEndpoint(t *testing.T) {
+	withTempWorkDir(t, func() {
+		withGUIApp(t, func() {
+			corpus := "https://example.org/a\nWCS FWHM Gaia DR3 1234 calibration pipeline\n----\n" +
+				"https://example.org/b\nthe quick brown fox jumped over the lazy dog\n----\n"
+			if err := os.WriteFile("./logs/corpusCuratedText.log", []byte(corpus), 0644); err != nil {
+				t.Fatal(err)
+			}
+			server := httptest.NewServer(guiHandler())
+			defer server.Close()
+			code, body := guiRequest(t, server, "GET", "/api/quality?scope=all", "")
+			if code != 200 {
+				t.Fatalf("/api/quality = %d %s", code, body)
+			}
+			var data struct {
+				Documents int                      `json:"documents"`
+				Averages  map[string]float64       `json:"averages"`
+				Top       []map[string]interface{} `json:"top"`
+			}
+			if err := json.Unmarshal([]byte(body), &data); err != nil {
+				t.Fatal(err)
+			}
+			if data.Documents != 2 || len(data.Top) != 2 {
+				t.Fatalf("quality payload = %+v", data)
+			}
+			if data.Averages["acronym_density"] <= 0 || data.Averages["numeric_ratio"] <= 0 {
+				t.Fatalf("averages = %v", data.Averages)
+			}
+			if data.Top[0]["url"] != "https://example.org/a" {
+				t.Fatalf("top document = %v", data.Top[0])
+			}
+		})
+	})
+}
+
+func TestGUIQualityControl(t *testing.T) {
+	withGUIApp(t, func() {
+		for _, fragment := range []string{`id="c-quality"`, `onclick="qualityMetrics()"`, `/api/quality?scope=`} {
+			if !strings.Contains(guiHTML, fragment) {
+				t.Fatalf("GUI is missing %q", fragment)
+			}
+		}
+		script := guiHTML[strings.Index(guiHTML, "<script>")+8 : strings.Index(guiHTML, "</script>")]
+		if !jsDelimitersBalanced(script) {
+			t.Fatal("JavaScript delimiters are not balanced")
+		}
+	})
+}

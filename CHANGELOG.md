@@ -25,6 +25,8 @@
   SSE events and `/api/logs` + `/api/logs/export` with JSON, CSV and sitemap output.
 - Pause / Resume / Drain runtime controls (P25): safe per-link pause gate with broadcast wakeup,
   drain-finishes-in-flight, `POST /api/crawl/pause|resume|drain` and new `paused`/`draining` stats.
+- Technical-corpus quality metrics (N12): `-quality` CLI mode, `/api/quality` endpoint and a Corpus
+  tab card with acronym density, numeric-token ratio, token length and top documents.
 
 ### Fixed
 - Default `regexBannedDomains` no longer bans `en.wikipedia.org`.

@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.19 (2026-11-18); the 2026-11-23 changes are recorded as `Unreleased` in section 2. Section 1 lists the remaining GUI backlog (P24–P47), the accepted P52–P67 items and the pending new proposal N12.
+**Current version:** v1.8.19 (2026-11-18); the 2026-11-23 changes are recorded as `Unreleased` in section 2. Section 1 lists the remaining GUI backlog (P24–P47) and the accepted P52–P67 items.
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -31,7 +31,6 @@ The review document contains the reasoning, the rejected suggestions and the fac
 | P56 | M | Profile inheritance/composition: base profiles + overlays (English + PDF + strict robots) |
 | P64 | M | GUI/API contract: JSON Schema or generated OpenAPI for the `/api/*` handlers |
 | P65 | M | Fuzz/property tests for URL parsing, PDF extraction and FTS5 sanitisation; expand multi-worker `httptest` coverage |
-| N12 | L | Technical-corpus quality metrics: acronym density and numeric-token ratio (extends P53) |
 | P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) in SQLite |
 | P29 | L | Audit table with instant search and filters by HTTP status and Content-Type |
 | P37 | L | Structured profile editor: chips, live regex validation, YAML advanced view |
@@ -47,8 +46,8 @@ The review document contains the reasoning, the rejected suggestions and the fac
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
 
-**Recommended next step:** N01–N11, P27, P24 and P25 are done. Pick N12 (technical-corpus quality
-metrics) next, then P34/P36 and the remaining P52/P54/P56/P64/P65 items.
+**Recommended next step:** all N proposals and P24/P25/P27 are done. Pick P34 (live activity feed)
+or P36 (progress ring and ETA) next, then the remaining P52/P54/P56/P64/P65 items.
 
 Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8), PDF support P48–P51 (v1.8.14) and onboarding/notifications/accessibility/large-file hygiene P61–P63/P59 (v1.8.15).
 
@@ -73,7 +72,7 @@ Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P2
 | v1.8.17 | 2026-11-18 | Single-instance Workbench lock with stale recovery, graceful SIGINT/SIGTERM shutdown and no silent port fallback |
 | v1.8.18 | 2026-11-18 | Interactive termination of previous Workbench instances, inline URL capture in URL Seeds and clear `pdf_disabled` rejection |
 | v1.8.19 | 2026-11-18 | Default-yes instance prompt and scoped corpus export (all / last crawl / today) with session markers |
-| Unreleased | 2026-11-23 | Module-root autodetection + `./run.sh`; configurable stopword ratio with `technical` example profile; Wikipedia unblocked in default config; N01–N05 (general ratio keys and flags, profile lint, foreign-cwd tests, CI race/govulncheck, Windows wrappers); N06–N11 (rejection trace/report, URL trace mode, log rotation, dependency triage, checksummed resume, technical profile pack); P27 (SSE dashboard, atomic counters); P24 (event console with JSON/CSV/sitemap export); P25 (pause/resume/drain with safe link-boundary gate) |
+| Unreleased | 2026-11-23 | Module-root autodetection + `./run.sh`; configurable stopword ratio with `technical` example profile; Wikipedia unblocked in default config; N01–N05 (general ratio keys and flags, profile lint, foreign-cwd tests, CI race/govulncheck, Windows wrappers); N06–N11 (rejection trace/report, URL trace mode, log rotation, dependency triage, checksummed resume, technical profile pack); P27 (SSE dashboard, atomic counters); P24 (event console with JSON/CSV/sitemap export); P25 (pause/resume/drain with safe link-boundary gate); N12 (technical-corpus quality metrics) |
 
 ### Historically completed items (1–35)
 
