@@ -1,6 +1,6 @@
 # goCrawler roadmap
 
-**Current version:** v1.8.19 (2026-11-18). Section 1 lists the remaining GUI backlog (P24–P47) plus the accepted P52–P67 items.
+**Current version:** v1.8.19 (2026-11-18); the 2026-11-23 changes are recorded as `Unreleased` in section 2. Section 1 lists the remaining GUI backlog (P24–P47), the accepted P52–P67 items and the new proposals N01–N12.
 
 This roadmap is reorganised so the only things you need to plan next work are in the first section,
 sorted by increasing difficulty (S → M → L → XL). Completed work is kept as a compact per-version
@@ -17,6 +17,17 @@ The review document contains the reasoning, the rejected suggestions and the fac
 
 | ID | Effort | Item |
 |---|---|---|
+| N01 | S | Expose `minStopwordRatio` / `maxStopwordRatio` in `crawler.yaml` and add `-min-stopword-ratio=` / `-max-stopword-ratio=` flags |
+| N02 | S | `-lint-profile=<name>`: validate regexes, seed URLs, ratio range and unknown keys |
+| N03 | S | Regression tests running the compiled binary from a foreign working directory (path robustness) |
+| N04 | S | Add `go test -race` and `govulncheck` to CI (currently only gofmt/build/vet/test/selftest) |
+| N05 | S | Windows equivalents of `run.sh` (`run.bat` / `run.ps1`), since CI already covers Windows |
+| N10 | S–M | Pack of tuned technical profiles (astrophysics, ML, maths) based on `profiles/examples/technical.yaml` |
+| N06 | M | Rejection report: breakdown by reason, paragraph sampling and JSONL export |
+| N07 | M | Trace mode «why was this URL rejected?» per profile/seed |
+| N08 | M | Dependency triage: upgrade `viper v1.7.1` / `modernc.org/sqlite v1.28.0` or document Dependabot false positives |
+| N09 | M | Rotate and gzip `logs/` (2.2 GB in the workspace) |
+| N11 | M | Verify state checksum when restoring with `--resume` |
 | P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
 | P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
@@ -34,6 +45,7 @@ The review document contains the reasoning, the rejected suggestions and the fac
 | P56 | M | Profile inheritance/composition: base profiles + overlays (English + PDF + strict robots) |
 | P64 | M | GUI/API contract: JSON Schema or generated OpenAPI for the `/api/*` handlers |
 | P65 | M | Fuzz/property tests for URL parsing, PDF extraction and FTS5 sanitisation; expand multi-worker `httptest` coverage |
+| N12 | L | Technical-corpus quality metrics: acronym density and numeric-token ratio (extends P53) |
 | P28 | L | Structured per-URL audit records (HTTP status, Content-Type, latency) in SQLite |
 | P29 | L | Audit table with instant search and filters by HTTP status and Content-Type |
 | P37 | L | Structured profile editor: chips, live regex validation, YAML advanced view |
@@ -49,8 +61,10 @@ The review document contains the reasoning, the rejected suggestions and the fac
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
 
-**Recommended next step:** P27 (SSE) is the highest-leverage item; it makes P24, P25, P34 and P36
-much cheaper. Ship telemetry/control first, then the remaining P52/P54/P56/P64/P65 items.
+**Recommended next step:** N01–N05 (S) are low-risk quick wins that also close the CI/security and
+cross-platform gaps; do those first. P27 (SSE, **M**) remains the highest-leverage GUI item: it makes
+P24, P25, P34 and P36 much cheaper. Ship telemetry/control next, then N06/N08/N09 and the remaining
+P52/P54/P56/P64/P65 items.
 
 Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8), PDF support P48–P51 (v1.8.14) and onboarding/notifications/accessibility/large-file hygiene P61–P63/P59 (v1.8.15).
 
@@ -104,7 +118,7 @@ dependency audit · 23 Snapcraft draft · 24 Debian skeleton · 25 AppStream · 
 
 ## 4. How to use this file
 
-- Section 1 now contains only deferred items; new work should be added there with its effort.
+- Section 1 contains all pending work (backlog plus new proposals); add new work there with its effort.
 - When an item is finished, move it to the version table in section 2 with the release version that
   contains it and delete it from section 1.
 - Never re-add a completed item; add new findings to section 1 at the position matching their effort.
