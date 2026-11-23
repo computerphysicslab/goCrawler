@@ -1511,8 +1511,8 @@ func TestGUIEventsPushOnChange(t *testing.T) {
 		}
 		defer resp.Body.Close()
 		reader := bufio.NewReader(resp.Body)
-		// Drain the two initial events.
-		for i := 0; i < 2; i++ {
+		// Drain the three initial events (stats, queue, logs).
+		for i := 0; i < 3; i++ {
 			if _, err := reader.ReadString('\n'); err != nil {
 				t.Fatal(err)
 			}
@@ -1546,5 +1546,126 @@ func TestGUIEventsPushOnChange(t *testing.T) {
 			}
 		}
 		t.Fatal("no stats update was pushed after state changed")
+	})
+}
+
+func TestLogCaptureAndFilter(t *testing.T) {
+	withGUIApp(t, func() {
+		app.Logger.Info("downloaded", "url", "https://example.org/a")
+		app.Logger.Warn("slow response", "url", "https://example.org/b")
+		app.Logger.Error("fetch failed", "url", "https://example.org/c")
+		app.Logger.Info("unrelated", "profile", "other")
+
+		all := buildLogPayload("ALL", "", 0)
+		if all["total"] != 4 {
+			t.Fatalf("total = %v, want 4", all["total"])
+		}
+		warn := buildLogPayload("WARN", "", 0)
+		if warn["total"] != 1 {
+			t.Fatalf("WARN total = %v, want 1", warn["total"])
+		}
+		filtered := buildLogPayload("ALL", "example.org/c", 0)
+		if filtered["total"] != 1 {
+			t.Fatalf("query total = %v, want 1", filtered["total"])
+		}
+		limited := buildLogPayload("ALL", "", 2)
+		if limited["total"] != 2 {
+			t.Fatalf("limit = %v, want 2", limited["total"])
+		}
+		events := all["events"].([]logEvent)
+		if events[0].Message != "unrelated" || events[0].Level != "INFO" {
+			t.Fatalf("newest event = %+v", events[0])
+		}
+		if events[0].URL != "" || events[len(events)-1].URL != "https://example.org/a" {
+			t.Fatalf("URL attributes were not captured: %+v", events)
+		}
+
+		// The 300-event ring never grows without bound.
+		for i := 0; i < maxLogEvents+20; i++ {
+			app.Logger.Info("flood")
+		}
+		app.LogMu.Lock()
+		size := len(app.LogEvents)
+		app.LogMu.Unlock()
+		if size != maxLogEvents {
+			t.Fatalf("ring size = %d, want %d", size, maxLogEvents)
+		}
+	})
+}
+
+func TestGUILogsEndpoints(t *testing.T) {
+	withGUIApp(t, func() {
+		app.Logger.Info("page accepted", "url", "https://example.org/a?x=1&y=2")
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+
+		code, body := guiRequest(t, server, "GET", "/api/logs?level=INFO", "")
+		if code != 200 || !strings.Contains(body, "page accepted") {
+			t.Fatalf("/api/logs = %d %s", code, body)
+		}
+
+		for format, ext := range map[string]string{"json": "json", "csv": "csv", "sitemap": "xml"} {
+			req, _ := http.NewRequest("GET", server.URL+"/api/logs/export?format="+format, nil)
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			data, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if resp.StatusCode != 200 {
+				t.Fatalf("export %s = %d", format, resp.StatusCode)
+			}
+			if got := resp.Header.Get("Content-Disposition"); !strings.Contains(got, "goCrawler-events."+ext) {
+				t.Fatalf("%s Content-Disposition = %q", format, got)
+			}
+			text := string(data)
+			if format == "json" && !strings.Contains(text, "page accepted") {
+				t.Fatalf("JSON export missing event: %s", text)
+			}
+			if format == "csv" && !strings.Contains(text, "time,level,message,url,profile") {
+				t.Fatalf("CSV export missing header: %s", text)
+			}
+			if format == "sitemap" {
+				if !strings.Contains(text, "<urlset") || !strings.Contains(text, "x=1&amp;y=2") {
+					t.Fatalf("sitemap export invalid: %s", text)
+				}
+			}
+		}
+
+		code, _ = guiRequest(t, server, "GET", "/api/logs/export?format=bogus", "")
+		if code != http.StatusBadRequest {
+			t.Fatalf("unsupported format = %d, want 400", code)
+		}
+	})
+}
+
+func TestGUIEventConsoleTab(t *testing.T) {
+	withGUIApp(t, func() {
+		for _, fragment := range []string{
+			`<button data-tab="events">Events</button>`,
+			`<section id="events" hidden>`, `id="ev-level"`, `id="ev-q"`,
+			`id="ev-list"`, `id="ev-count"`, `id="ev-download"`,
+			`exportLogs('sitemap')`, `es.addEventListener('logs'`,
+		} {
+			if !strings.Contains(guiHTML, fragment) {
+				t.Fatalf("GUI is missing %q", fragment)
+			}
+		}
+		script := guiHTML[strings.Index(guiHTML, "<script>")+8 : strings.Index(guiHTML, "</script>")]
+		if !jsDelimitersBalanced(script) {
+			t.Fatal("JavaScript delimiters are not balanced")
+		}
+		// Debug records are not captured when the level is above debug.
+		initLogger("warn")
+		app.Logger.Debug("hidden")
+		app.LogMu.Lock()
+		size := len(app.LogEvents)
+		app.LogMu.Unlock()
+		if size != 0 {
+			t.Fatalf("debug record captured at WARN level: %d", size)
+		}
 	})
 }

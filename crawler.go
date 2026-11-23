@@ -13,6 +13,7 @@ import (
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -69,6 +70,53 @@ type queueEvent struct {
 	URL   string    `json:"url"`
 	State string    `json:"state"`
 	Time  time.Time `json:"time"`
+}
+
+// logEvent is one captured slog record for the Workbench event console.
+type logEvent struct {
+	Time    time.Time `json:"time"`
+	Level   string    `json:"level"`
+	Message string    `json:"message"`
+	URL     string    `json:"url,omitempty"`
+	Profile string    `json:"profile,omitempty"`
+}
+
+// logCaptureHandler delegates to a real slog handler while keeping a bounded
+// ring of records for the event console. It never logs from Handle (no recursion).
+type logCaptureHandler struct {
+	inner slog.Handler
+}
+
+func (h *logCaptureHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return h.inner.Enabled(ctx, level)
+}
+
+func (h *logCaptureHandler) Handle(ctx context.Context, record slog.Record) error {
+	event := logEvent{Time: record.Time, Level: record.Level.String(), Message: record.Message}
+	record.Attrs(func(attr slog.Attr) bool {
+		switch attr.Key {
+		case "url":
+			event.URL = attr.Value.String()
+		case "profile":
+			event.Profile = attr.Value.String()
+		}
+		return true
+	})
+	app.LogMu.Lock()
+	app.LogEvents = append(app.LogEvents, event)
+	if len(app.LogEvents) > maxLogEvents {
+		app.LogEvents = app.LogEvents[len(app.LogEvents)-maxLogEvents:]
+	}
+	app.LogMu.Unlock()
+	return h.inner.Handle(ctx, record)
+}
+
+func (h *logCaptureHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &logCaptureHandler{inner: h.inner.WithAttrs(attrs)}
+}
+
+func (h *logCaptureHandler) WithGroup(name string) slog.Handler {
+	return &logCaptureHandler{inner: h.inner.WithGroup(name)}
 }
 
 type rejectionEvent struct {
@@ -192,6 +240,8 @@ type Crawler struct {
 	CSVWriter       *csv.Writer
 	CSVFile         *os.File
 	Logger          *slog.Logger
+	LogEvents       []logEvent
+	LogMu           sync.Mutex
 	LogDownload     *log.Logger
 	LogCGI          *log.Logger
 	LogDomainFailed *log.Logger
@@ -238,7 +288,7 @@ func newCrawler() *Crawler {
 		},
 		DomainLastReq:      make(map[string]time.Time),
 		HTTPClient:         &http.Client{Timeout: 10 * time.Second},
-		Logger:             slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		Logger:             slog.New(&logCaptureHandler{inner: slog.NewTextHandler(os.Stdout, nil)}),
 		LogDownload:        log.New(io.Discard, "", 0),
 		LogCGI:             log.New(io.Discard, "", 0),
 		LogDomainFailed:    log.New(io.Discard, "", 0),
@@ -357,6 +407,9 @@ func compileConfigRegexes() {
 // app.Logger is replaced at startup so records are written through the session tee.
 
 const maxUniqueRejectedLinks = 1000000
+
+// maxLogEvents bounds the in-memory event-console ring.
+const maxLogEvents = 300
 
 const crawlStateKey = "state:crawl"
 
@@ -487,7 +540,7 @@ func initLogger(level string) {
 	default:
 		lvl = slog.LevelInfo
 	}
-	app.Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
+	app.Logger = slog.New(&logCaptureHandler{inner: slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl})})
 }
 
 // parseSynonyms reads "term: a|b" lines into a lookup map.
@@ -2749,12 +2802,12 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 .kpi-label{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpi-value{display:block;font-family:var(--mono);font-size:19px;font-weight:600;color:var(--accent);line-height:1.25}
 .bar{height:10px;background:var(--accent);border-radius:5px;margin:3px 0}
-#c-download:not([hidden]){display:inline-block;padding:var(--space) calc(var(--space)*2);background:var(--input);border:1px solid var(--border);border-radius:calc(var(--radius)/2);color:var(--accent)}
+#c-download:not([hidden]),#ev-download:not([hidden]){display:inline-block;padding:var(--space) calc(var(--space)*2);background:var(--input);border:1px solid var(--border);border-radius:calc(var(--radius)/2);color:var(--accent)}
 @media(max-width:760px){.about-row{flex-direction:column}.about-qr{flex:1 1 auto}}header,nav{padding-left:var(--space);padding-right:var(--space)}main{padding:var(--space)}.row>*{flex:1 1 100%}nav button{padding:var(--space)}}
 </style></head><body>
 <a class="skip" href="#main">Skip to content</a>
 <header><b>goCrawler Workbench</b> <span class="muted" id="status">ready</span><button class="act state-off" id="btn-theme" onclick="toggleTheme()" aria-label="Toggle dark and light theme">Theme: dark</button><button class="act state-off" id="btn-contrast" onclick="toggleContrast()" aria-label="Toggle high contrast" aria-pressed="false">○ Contrast OFF</button><button class="act state-off" id="btn-motion" onclick="toggleMotion()" aria-label="Toggle reduced motion" aria-pressed="false">○ Motion OFF</button></header>
-<nav role="tablist" aria-label="Workbench sections"><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button></nav><main id="main">
+<nav role="tablist" aria-label="Workbench sections"><button class="on" data-tab="prof">Profiles</button><button data-tab="dash">Crawler launcher</button><button data-tab="keys">Keyword lab</button><button data-tab="corpus">Corpus</button><button data-tab="prompt">Prompt generator</button><button data-tab="urls">URL Seeds</button><button data-tab="about">About</button><button data-tab="events">Events</button></nav><main id="main">
 <section id="dash" hidden><div class="card"><div class="kpi-grid"><div class="kpi-card"><span class="kpi-label">Pages visited</span><span class="kpi-value" id="s-visits">0</span></div><div class="kpi-card"><span class="kpi-label">Cache hits</span><span class="kpi-value" id="s-cache">0</span></div><div class="kpi-card"><span class="kpi-label">Online</span><span class="kpi-value" id="s-online">0</span></div><div class="kpi-card"><span class="kpi-label">Download ms</span><span class="kpi-value" id="s-ms">0</span></div><div class="kpi-card"><span class="kpi-label">Accepted</span><span class="kpi-value" id="s-accepted">0</span></div><div class="kpi-card"><span class="kpi-label">Not accepted</span><span class="kpi-value" id="s-rejected">0</span></div><div class="kpi-card"><span class="kpi-label">Crawls running</span><span class="kpi-value" id="s-running">0</span></div><div class="kpi-card"><span class="kpi-label">Net reqs</span><span class="kpi-value" id="s-net">0</span></div><div class="kpi-card"><span class="kpi-label">Cache I/O</span><span class="kpi-value" id="s-io">0</span></div><div class="kpi-card"><span class="kpi-label">URLs/s</span><span class="kpi-value" id="s-rate">0</span></div><div class="kpi-card"><span class="kpi-label">Avg ms</span><span class="kpi-value" id="s-lat">0</span></div><div class="kpi-card"><span class="kpi-label">Queue</span><span class="kpi-value" id="s-queue">0</span></div><div class="kpi-card"><span class="kpi-label">Go routines</span><span class="kpi-value" id="s-goroutines">0</span></div></div></div><div class="card"><h3>Why pages were not accepted</h3><div id="reasons"></div><div id="reject-chart"></div><div id="reason-detail"></div><p class="muted">Filter decisions are counted per paragraph/link, so totals can exceed the number of pages.</p></div>
 <div class="card"><h3>URL queue</h3><p class="muted">Pending: <b id="q-total">0</b>. States: requested → retrieved/failed → removed.</p><div id="queue-list"></div></div>
 <div class="card"><h3>Run a crawl</h3><input id="run-profile" placeholder="profile name"><select id="w-workers"><option value="1">1 worker</option><option value="2">2 workers</option><option value="4" selected>4 workers</option><option value="8">8 workers</option></select><button id="btn-start" class="act" onclick="startCrawl()">Start</button> <button id="btn-stop" class="act" onclick="stopCrawl()" disabled>Stop</button><pre id="run-out"></pre></div></section>
@@ -2765,6 +2818,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:var(--space);border-bott
 <section id="about" hidden><div class="about-row"><div class="card about-info"><h3 id="a-name">goCrawler Workbench</h3><p class="muted" id="a-desc"></p><p>Version <b id="a-version"></b> — <span id="a-date"></span></p><p id="a-copyright"></p><p>License: <b id="a-license"></b> · Go: <span id="a-go"></span> · Platform: <span id="a-platform"></span></p><p>Contact: <a id="a-author" href="#"></a> · <a id="a-linkedin" href="#" target="_blank" rel="noopener">LinkedIn</a></p><p><a id="a-repo" href="#" target="_blank" rel="noopener">Repository</a> · <a id="a-issues" href="#" target="_blank" rel="noopener">Issues</a> · <a id="a-changelog" href="#" target="_blank" rel="noopener">Changelog</a> · <a id="a-roadmap" href="#" target="_blank" rel="noopener">Roadmap</a></p><p>Components: <span id="a-components" class="muted"></span></p></div><div class="card about-qr"><h3>Scan to open the repository</h3><img id="a-qr" alt="QR code of the repository" style="max-width:180px"></div></div></section>
 <section id="urls" hidden><div class="card"><h3>URL Seeds</h3><p class="muted">Seeds in profile: <b id="u-count">0</b> URLs. Paste one URL per line or URLs mixed with text, tabs and line breaks; duplicates are ignored. Changes are written to the profile YAML.</p><select id="u-profile"></select><textarea id="u-text" rows="12" placeholder="https://example.org/page"></textarea><div><button class="act" onclick="addURLs()">Add URLs</button> <button class="act" onclick="replaceURLs()">Replace all</button> <button class="act" onclick="removeURLs()">Remove selected</button></div><div id="u-list"></div></div></section>
 <section id="keys" hidden><div class="card"><p class="muted">Extract topic keywords from the curated corpus and feed them back into a profile.</p><input id="k-profile" placeholder="profile name"><button class="act" onclick="extract()">Extract</button><div id="k-out"></div><button class="act" onclick="applyKeywords()">Apply to profile</button> <button class="act" onclick="applyAndRun()">Apply &amp; Re-run</button></div></section>
+<section id="events" hidden><div class="card"><h3>Event console</h3><p class="muted">Structured log records captured in this session, newest first. <b id="ev-count">0</b> matching events.</p><div class="row"><select id="ev-level" aria-label="Log level"><option value="ALL">All levels</option><option value="INFO">INFO</option><option value="WARN">WARN</option><option value="ERROR">ERROR</option><option value="DEBUG">DEBUG</option></select><input id="ev-q" placeholder="Filter message or URL"><button class="act" onclick="loadLogs()">Apply</button></div><div class="row"><button class="act" onclick="exportLogs('json')">Export JSON</button> <button class="act" onclick="exportLogs('csv')">Export CSV</button> <button class="act" onclick="exportLogs('sitemap')">Export sitemap</button></div><a id="ev-download" hidden>Download export</a><pre id="ev-list"></pre></div></section>
 </main><script>
 const $=id=>document.getElementById(id);
 const navButtons=()=>[...document.querySelectorAll('nav button')];
@@ -2780,8 +2834,8 @@ function toggleContrast(){applyContrast(!document.body.classList.contains('hc'))
 function toggleMotion(){applyMotion(!document.body.classList.contains('reduce-motion'))}
 
 function selectTab(index){const b=navButtons()[index];if(b)b.click()}
-navButtons().forEach((b,i)=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.title='Alt+'+(i+1);b.onclick=()=>{navButtons().forEach(x=>{x.classList.remove('on');x.setAttribute('aria-selected','false')});b.classList.add('on');b.setAttribute('aria-selected','true');['prof','dash','keys','corpus','prompt','urls','about'].forEach(t=>$(t).hidden=t!==b.dataset.tab)}});
-document.addEventListener('keydown',e=>{if(e.altKey&&e.key>='1'&&e.key<='7'){e.preventDefault();selectTab(parseInt(e.key,10)-1)}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('[data-tab=corpus]').click();setTimeout(()=>$('q').focus(),0)}});
+navButtons().forEach((b,i)=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.title='Alt+'+(i+1);b.onclick=()=>{navButtons().forEach(x=>{x.classList.remove('on');x.setAttribute('aria-selected','false')});b.classList.add('on');b.setAttribute('aria-selected','true');['prof','dash','keys','corpus','prompt','urls','about','events'].forEach(t=>$(t).hidden=t!==b.dataset.tab)}});
+document.addEventListener('keydown',e=>{if(e.altKey&&e.key>='1'&&e.key<='8'){e.preventDefault();selectTab(parseInt(e.key,10)-1)}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('[data-tab=corpus]').click();setTimeout(()=>$('q').focus(),0)}});
 async function json(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
 function applyStats(s){$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?(s.stopping?'stopping...':('running ('+s.running_count+')')):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
 async function stats(){applyStats(await json('/api/stats'))}
@@ -2807,9 +2861,12 @@ async function stopCrawl(){const r=await fetch('/api/crawl/stop',{method:'POST'}
 function applyQueue(q){$('q-total').textContent=q.total;const rows=q.recent.slice(-12).reverse().map(e=>'<div><span class=muted>'+new Date(e.time).toLocaleTimeString()+'</span> <b>'+e.state+'</b> '+e.url+'</div>');const pend=q.pending.slice(0,20).map(p=>'<div><span class=muted>pending</span> '+p.url+'</div>');$('queue-list').innerHTML=rows.join('')+pend.join('')||'<span class=muted>Queue empty</span>'}
 async function loadQueue(){applyQueue(await json('/api/queue'))}
 async function showReason(reason){const d=await json('/api/rejections?reason='+encodeURIComponent(reason));if(!d.events||!d.events.length){$('reason-detail').innerHTML='<p class=muted>No cases recorded for '+reason+'</p>';return}$('reason-detail').innerHTML='<h4>Last '+d.events.length+' cases: '+reason+'</h4>'+d.events.slice().reverse().map(e=>'<div class=card><b><a href="'+e.url+'" target="_blank" rel="noopener">'+e.url+'</a></b><div>'+(e.detail||'')+'</div>'+(e.text?'<pre>'+e.text.slice(0,600)+'</pre>':'')+'<span class=muted>'+new Date(e.time).toLocaleString()+'</span></div>').join('')}
+function applyLogs(d){$('ev-count').textContent=d.total;$('ev-list').textContent=(d.events||[]).map(e=>new Date(e.time).toLocaleTimeString()+' ['+e.level+'] '+e.message+(e.url?' '+e.url:'')).join('\n')||'No matching events'}
+async function loadLogs(){const level=$('ev-level')?$('ev-level').value:'ALL',q=$('ev-q')?$('ev-q').value:'';applyLogs(await json('/api/logs?level='+encodeURIComponent(level)+'&q='+encodeURIComponent(q)))}
+function exportLogs(format){const level=$('ev-level').value,q=$('ev-q').value,a=$('ev-download');a.href='/api/logs/export?format='+format+'&level='+encodeURIComponent(level)+'&q='+encodeURIComponent(q);a.download='goCrawler-events.'+(format==='sitemap'?'xml':format);a.textContent='Download '+format.toUpperCase();a.hidden=false;a.click()}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
 let gcFallback=null,gcRetry=null;
-function connectEvents(){if(!window.EventSource){gcFallback=setInterval(()=>{stats();loadQueue()},1500);stats();loadQueue();return}const es=new EventSource('/api/events');es.addEventListener('stats',e=>{try{applyStats(JSON.parse(e.data))}catch(_){}});es.addEventListener('queue',e=>{try{applyQueue(JSON.parse(e.data))}catch(_){}});es.onopen=()=>{if(gcFallback){clearInterval(gcFallback);gcFallback=null}};es.onerror=()=>{es.close();if(!gcFallback)gcFallback=setInterval(()=>{stats();loadQueue()},5000);if(!gcRetry)gcRetry=setTimeout(()=>{gcRetry=null;connectEvents()},15000)}}connectEvents();profiles();loadAbout()
+function connectEvents(){if(!window.EventSource){gcFallback=setInterval(()=>{stats();loadQueue()},1500);stats();loadQueue();return}const es=new EventSource('/api/events');es.addEventListener('stats',e=>{try{applyStats(JSON.parse(e.data))}catch(_){}});es.addEventListener('queue',e=>{try{applyQueue(JSON.parse(e.data))}catch(_){}});es.addEventListener('logs',()=>{loadLogs()});es.onopen=()=>{if(gcFallback){clearInterval(gcFallback);gcFallback=null}};es.onerror=()=>{es.close();if(!gcFallback)gcFallback=setInterval(()=>{stats();loadQueue()},5000);if(!gcRetry)gcRetry=setTimeout(()=>{gcRetry=null;connectEvents()},15000)}}connectEvents();profiles();loadAbout();loadLogs()
 </script></body></html>`
 
 var guiStopwords = map[string]bool{}
@@ -2894,6 +2951,79 @@ func queueDepth() int {
 }
 
 // guiHandler builds the HTTP handler for the workbench; exported for tests.
+// buildLogPayload returns the newest matching slog records, newest first.
+func buildLogPayload(level, query string, limit int) map[string]interface{} {
+	app.LogMu.Lock()
+	events := append([]logEvent{}, app.LogEvents...)
+	app.LogMu.Unlock()
+	want := strings.ToUpper(strings.TrimSpace(level))
+	if want == "" {
+		want = "ALL"
+	}
+	needle := strings.ToLower(strings.TrimSpace(query))
+	matching := make([]logEvent, 0, len(events))
+	for i := len(events) - 1; i >= 0; i-- {
+		event := events[i]
+		if want != "ALL" && !strings.EqualFold(event.Level, want) {
+			continue
+		}
+		if needle != "" && !strings.Contains(strings.ToLower(event.Message+" "+event.URL+" "+event.Profile), needle) {
+			continue
+		}
+		matching = append(matching, event)
+	}
+	if limit > 0 && len(matching) > limit {
+		matching = matching[:limit]
+	}
+	return map[string]interface{}{"events": matching, "total": len(matching), "level": want, "query": query}
+}
+
+// exportLogPayload renders filtered log events as JSON, CSV or a sitemap of
+// the URLs seen in them. The sitemap deduplicates URLs and uses the date of
+// the most recent event for lastmod.
+func exportLogPayload(format, level, query string) ([]byte, string, error) {
+	payload := buildLogPayload(level, query, 0)
+	events, _ := payload["events"].([]logEvent)
+	switch strings.ToLower(strings.TrimSpace(format)) {
+	case "json":
+		data, err := json.MarshalIndent(events, "", "  ")
+		if err != nil {
+			return nil, "", err
+		}
+		return append(data, '\n'), "application/json; charset=utf-8", nil
+	case "csv":
+		var buf bytes.Buffer
+		writer := csv.NewWriter(&buf)
+		writer.Write([]string{"time", "level", "message", "url", "profile"})
+		for _, event := range events {
+			writer.Write([]string{event.Time.Format(time.RFC3339), event.Level, event.Message, event.URL, event.Profile})
+		}
+		writer.Flush()
+		return buf.Bytes(), "text/csv; charset=utf-8", writer.Error()
+	case "sitemap":
+		var buf bytes.Buffer
+		buf.WriteString(xml.Header)
+		buf.WriteString(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`)
+		seen := map[string]bool{}
+		for _, event := range events {
+			loc := strings.TrimSpace(event.URL)
+			if loc == "" || seen[loc] {
+				continue
+			}
+			seen[loc] = true
+			buf.WriteString("<url><loc>")
+			xml.EscapeText(&buf, []byte(loc))
+			buf.WriteString("</loc><lastmod>")
+			buf.WriteString(event.Time.UTC().Format("2006-01-02"))
+			buf.WriteString("</lastmod></url>")
+		}
+		buf.WriteString("</urlset>\n")
+		return buf.Bytes(), "application/xml; charset=utf-8", nil
+	default:
+		return nil, "", fmt.Errorf("unsupported export format: %s", format)
+	}
+}
+
 // buildQueuePayload is shared by /api/queue and the SSE stream so both expose
 // exactly the same view of the link pool and recent events.
 func buildQueuePayload() map[string]interface{} {
@@ -2980,8 +3110,10 @@ func guiEventsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return data
 	}
+	logSnapshot := func() map[string]interface{} { return buildLogPayload("ALL", "", 50) }
 	lastStats, lastQueue := snapshot(buildStatsPayload), snapshot(buildQueuePayload)
-	if !send("stats", lastStats) || !send("queue", lastQueue) {
+	lastLogs := snapshot(logSnapshot)
+	if !send("stats", lastStats) || !send("queue", lastQueue) || !send("logs", lastLogs) {
 		return
 	}
 
@@ -3010,6 +3142,12 @@ func guiEventsHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 				lastQueue = queue
+			}
+			if logs := snapshot(logSnapshot); !bytes.Equal(logs, lastLogs) {
+				if !send("logs", logs) {
+					return
+				}
+				lastLogs = logs
 			}
 		}
 	}
@@ -3237,6 +3375,29 @@ func guiHandler() http.Handler {
 		writeJSON(w, buildStatsPayload())
 	})
 	mux.HandleFunc("/api/events", guiEventsHandler)
+	mux.HandleFunc("/api/logs", func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		limit := 100
+		if value, err := strconv.Atoi(query.Get("limit")); err == nil && value > 0 {
+			limit = value
+		}
+		writeJSON(w, buildLogPayload(query.Get("level"), query.Get("q"), limit))
+	})
+	mux.HandleFunc("/api/logs/export", func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		format := strings.ToLower(strings.TrimSpace(query.Get("format")))
+		content, contentType, err := exportLogPayload(format, query.Get("level"), query.Get("q"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		extensions := map[string]string{"json": "json", "csv": "csv", "sitemap": "xml"}
+		name := "goCrawler-events." + extensions[format]
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, name))
+		w.Header().Set("Content-Length", strconv.Itoa(len(content)))
+		w.Write(content)
+	})
 	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, corpusDocuments(20))
 	})

@@ -60,6 +60,8 @@ required. Redis remains supported as an alternative cache backend.
   avoid network load.
 - **Corpus export**: the Workbench Corpus tab searches with FTS5 or exports a profile-matched TXT
   file containing every curated document that fits the selected profile.
+- **Event console**: the Workbench Events tab filters captured `slog` records by level and text and
+  exports them as JSON, CSV or a sitemap of the URLs seen (P24).
 - **Zero required services**: the default setup needs only Go and a writable working directory.
 - **Optional PDF ingestion**: profiles can opt in to download PDFs and index their extracted text
   with the pure-Go `ledongthuc/pdf` library (no CGO); size and page limits keep it safe.
@@ -397,7 +399,9 @@ Live dashboard updates use **Server-Sent Events** at `/api/events` instead of 1.
 the server pushes `stats` and `queue` snapshots only when they change, with a 15 s keepalive.
 The browser falls back to 5 s polling if `EventSource` is unavailable or the stream drops, and
 retries SSE after 15 s. `/api/stats` and `/api/queue` remain available and share the same payload
-builders. Cache and download counters are atomic so the stream reads them safely (P27).
+builders. Cache and download counters are atomic so the stream reads them safely (P27). The same
+stream carries `logs` snapshots for the Events tab; `/api/logs?level=&q=&limit=` and
+`/api/logs/export?format=json|csv|sitemap` serve the same filtered records on demand.
 
 The **URL Seeds** tab extracts URLs from anywhere in the text area — one per line, or mixed with
 prose, tabs and Markdown links — and deduplicates them before saving.
@@ -408,7 +412,9 @@ The **Corpus** tab combines FTS5 search with a profile selector: choosing a prof
 link. Crawls mark session boundaries in `logs/corpusCuratedText.log` so the scoped exports work; older
 documents without a marker appear only in the "all" scope. The Workbench ends with an **About** tab showing
 version, copyright, MIT license, author, links, platform, bundled components and a QR code pointing
-to the repository.
+to the repository. The last tab is **Events**, a filterable console of the last 300 structured log
+records with JSON/CSV/sitemap export; it is fed live by the SSE `logs` events and can also be
+refreshed manually.
 
 `-h`/`--help` prints the usage summary. Multi-language corpora can be selected with the profile
 keys `language` (default `English`) and `minLanguageConfidence`.
@@ -643,7 +649,7 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ## Testing
 
-The suite has 136 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
+The suite has 139 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
 state persistence, download errors, link filtering, stores and robots policy; HTTP handler tests for
 every Workbench endpoint via `httptest`; and an end-to-end crawl against a local HTTP server with two
 workers.

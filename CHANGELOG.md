@@ -21,6 +21,8 @@
   vulnerabilities; `govulncheck` stays clean (N08).
 - Server-Sent Events at `/api/events` replace 1.5 s dashboard polling (P27): change-driven `stats`
   and `queue` pushes, keepalives, browser fallback; cache/download counters are now atomic.
+- Workbench event console (P24): bounded capture of slog records, level/text filters, live `logs`
+  SSE events and `/api/logs` + `/api/logs/export` with JSON, CSV and sitemap output.
 
 ### Fixed
 - Default `regexBannedDomains` no longer bans `en.wikipedia.org`.
