@@ -19,6 +19,8 @@
 - Version-2 crawl snapshots with SHA-256 checksum; version 1 remains readable with a warning (N11).
 - `docs/DEPENDENCY_TRIAGE.md`: Dependabot's 12 alerts are stale `go.sum` hashes, not reachable
   vulnerabilities; `govulncheck` stays clean (N08).
+- Server-Sent Events at `/api/events` replace 1.5 s dashboard polling (P27): change-driven `stats`
+  and `queue` pushes, keepalives, browser fallback; cache/download counters are now atomic.
 
 ### Fixed
 - Default `regexBannedDomains` no longer bans `en.wikipedia.org`.

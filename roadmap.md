@@ -20,7 +20,6 @@ The review document contains the reasoning, the rejected suggestions and the fac
 | P24 | M | Filterable event console (INFO/WARN/ERR) with JSON/CSV/Sitemap XML export |
 | P25 | M | Runtime controls: Pause and Drain in addition to Start/Stop |
 | P26 | M | Live rule configurator: workers, per-domain rate limit, User-Agent, include/exclude patterns |
-| P27 | M | Replace 1.5 s polling with Server-Sent Events (`/api/events`) |
 | P32 | M | Fixed sidebar navigation with active profile selector and crawler status indicator |
 | P34 | M | Live activity feed: last 20 processed URLs with status colours (`/api/activity`) |
 | P36 | M | Progress ring and ETA estimate for the current crawl |
@@ -50,9 +49,9 @@ The review document contains the reasoning, the rejected suggestions and the fac
 | P47 | XL | Keyword impact analysis (simulate how many more documents new keywords would accept) |
 
 
-**Recommended next step:** N01–N11 are done. P27 (SSE, **M**) is the highest-leverage GUI item: it
-makes P24, P25, P34 and P36 much cheaper. Ship telemetry/control first, then N12 (technical-corpus
-quality metrics) and the remaining P52/P54/P56/P64/P65 items.
+**Recommended next step:** N01–N11 and P27 are done. The SSE stream makes P24, P25, P34 and P36
+cheaper; pick P24 (filterable event console) next, then N12 (technical-corpus quality metrics) and
+the remaining P52/P54/P56/P64/P65 items.
 
 Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P23, P31, P33, P35 and P41 (v1.8.6), plus the URL Seeds counter and About tab (v1.8.5–v1.8.8), PDF support P48–P51 (v1.8.14) and onboarding/notifications/accessibility/large-file hygiene P61–P63/P59 (v1.8.15).
 
@@ -77,7 +76,7 @@ Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P2
 | v1.8.17 | 2026-11-18 | Single-instance Workbench lock with stale recovery, graceful SIGINT/SIGTERM shutdown and no silent port fallback |
 | v1.8.18 | 2026-11-18 | Interactive termination of previous Workbench instances, inline URL capture in URL Seeds and clear `pdf_disabled` rejection |
 | v1.8.19 | 2026-11-18 | Default-yes instance prompt and scoped corpus export (all / last crawl / today) with session markers |
-| Unreleased | 2026-11-23 | Module-root autodetection + `./run.sh`; configurable stopword ratio with `technical` example profile; Wikipedia unblocked in default config; N01–N05 (general ratio keys and flags, profile lint, foreign-cwd tests, CI race/govulncheck, Windows wrappers); N06–N11 (rejection trace/report, URL trace mode, log rotation, dependency triage, checksummed resume, technical profile pack) |
+| Unreleased | 2026-11-23 | Module-root autodetection + `./run.sh`; configurable stopword ratio with `technical` example profile; Wikipedia unblocked in default config; N01–N05 (general ratio keys and flags, profile lint, foreign-cwd tests, CI race/govulncheck, Windows wrappers); N06–N11 (rejection trace/report, URL trace mode, log rotation, dependency triage, checksummed resume, technical profile pack); P27 (SSE dashboard, atomic counters) |
 
 ### Historically completed items (1–35)
 

@@ -176,8 +176,8 @@ type Crawler struct {
 	AcceptedDocs      int
 	LastProcessedLink int
 	StateDirty        bool
-	CacheHits         int
-	OnlineDownloads   int
+	CacheHits         atomic.Int64
+	OnlineDownloads   atomic.Int64
 	DownloadMS        int64
 	CrawlStartedAt    time.Time
 	RejectedLinkSets  map[string]map[string]struct{}
@@ -270,8 +270,8 @@ func (c *Crawler) ResetForProfile(profile string) {
 	c.AcceptedDocs = 0
 	c.LastProcessedLink = 0
 	c.StateDirty = false
-	c.CacheHits = 0
-	c.OnlineDownloads = 0
+	c.CacheHits.Store(0)
+	c.OnlineDownloads.Store(0)
 	networkRequests.Store(0)
 	robotspolicy.ResetStats()
 	storelib.ResetStats()
@@ -946,7 +946,7 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 			if err := json.Unmarshal([]byte(value), &cached); err != nil {
 				app.Logger.Warn("discarding corrupt cache entry", "key", cacheKey, "error", err)
 			} else {
-				app.CacheHits++
+				app.CacheHits.Add(1)
 				fmt.Printf(" [CACHE]")
 				return cached.Content, cached.Links, nil
 			}
@@ -975,7 +975,7 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 			recordRejection("pdf_disabled", urlLink, "PDF found but process_pdf is false", "")
 			return "", nil, errors.New("download: PDF found but process_pdf is disabled in this profile")
 		}
-		app.OnlineDownloads++
+		app.OnlineDownloads.Add(1)
 		return downloadPDFCached(urlLink, page)
 	}
 
@@ -983,7 +983,7 @@ func downloadCached(urlLink string) (content string, links []string, err error) 
 	if err != nil {
 		return "", nil, err
 	}
-	app.OnlineDownloads++
+	app.OnlineDownloads.Add(1)
 	cached.Content, cached.Links = content, links
 	encoded, marshalErr := json.Marshal(cached)
 	if marshalErr != nil {
@@ -1005,7 +1005,7 @@ func downloadPDFCached(urlLink string, page *fetchedPage) (string, []string, err
 			if err := json.Unmarshal([]byte(value), &cached); err != nil {
 				app.Logger.Warn("discarding corrupt pdf cache entry", "key", cacheKey, "error", err)
 			} else {
-				app.CacheHits++
+				app.CacheHits.Add(1)
 				fmt.Printf(" [CACHE]")
 				return cached.Content, nil, nil
 			}
@@ -2783,7 +2783,8 @@ function selectTab(index){const b=navButtons()[index];if(b)b.click()}
 navButtons().forEach((b,i)=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.title='Alt+'+(i+1);b.onclick=()=>{navButtons().forEach(x=>{x.classList.remove('on');x.setAttribute('aria-selected','false')});b.classList.add('on');b.setAttribute('aria-selected','true');['prof','dash','keys','corpus','prompt','urls','about'].forEach(t=>$(t).hidden=t!==b.dataset.tab)}});
 document.addEventListener('keydown',e=>{if(e.altKey&&e.key>='1'&&e.key<='7'){e.preventDefault();selectTab(parseInt(e.key,10)-1)}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.querySelector('[data-tab=corpus]').click();setTimeout(()=>$('q').focus(),0)}});
 async function json(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error((await r.text()).slice(0,200));return r.json()}
-async function stats(){const s=await json('/api/stats');$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?(s.stopping?'stopping...':('running ('+s.running_count+')')):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
+function applyStats(s){$('s-visits').textContent=s.visits;$('s-cache').textContent=s.cache;$('s-online').textContent=s.online;$('s-ms').textContent=s.download_ms;$('s-accepted').textContent=s.accepted;$('s-rejected').textContent=s.not_accepted;$('s-running').textContent=s.running_count;$('s-net').textContent=s.network;$('s-io').textContent=s.cache_io;$('s-rate').textContent=(s.rate||0).toFixed(1);$('s-lat').textContent=(s.avg_latency||0).toFixed(0);$('s-queue').textContent=s.queue;$('s-goroutines').textContent=s.goroutines;$('btn-start').disabled=s.running;$('btn-stop').disabled=!s.running;$('status').textContent=s.error?('error: '+s.error):(s.running?(s.stopping?'stopping...':('running ('+s.running_count+')')):'ready');const entries=Object.entries(s.rejections||{}).sort((a,b)=>b[1]-a[1]);$('reasons').innerHTML=entries.length?('<table><tr><th>Reason</th><th>Count</th></tr>'+entries.map(e=>'<tr class=clickable onclick="showReason(\''+e[0]+'\')"><td>'+e[0]+'</td><td>'+e[1]+'</td></tr>').join('')+'</table>'):'<span class=muted>No filter decisions yet</span>'}
+async function stats(){applyStats(await json('/api/stats'))}
 async function profiles(){const p=await json('/api/profiles');const last=await json('/api/last-profile');const opts=p.map(x=>'<option>'+x+'</option>').join('');$('p-list').innerHTML=opts;$('pr-profile').innerHTML=opts;$('u-profile').innerHTML=opts;if($('c-profile'))$('c-profile').innerHTML=opts;const match=p.find(x=>last.profile&&x.toLowerCase()===last.profile.toLowerCase());if(match){$('p-list').value=match;$('pr-profile').value=match;$('u-profile').value=match;if($('c-profile'))$('c-profile').value=match;}loadProfile()}
 async function loadProfile(){const n=$('p-list').value;if(!n)return;const d=await json('/api/profile?name='+encodeURIComponent(n));$('p-text').value=d.content;$('k-profile').value=n;$('run-profile').value=n;if($('pr-profile'))$('pr-profile').value=n;if($('u-profile')){$('u-profile').value=n;loadURLs()}}
 async function saveProfile(){const n=$('p-list').value;await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,content:$('p-text').value})});$('status').textContent='saved'}
@@ -2803,10 +2804,12 @@ async function generatePrompt(){const n=$('pr-profile').value||$('p-list').value
 function copyPrompt(){navigator.clipboard.writeText($('pr-out').value)}
 async function startCrawl(){const r=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:$('run-profile').value,workers:parseInt($('w-workers').value)})});$('run-out').textContent=JSON.stringify(await r.json());stats()}
 async function stopCrawl(){const r=await fetch('/api/crawl/stop',{method:'POST'});$('status').textContent=(await r.json()).status;stats()}
-async function loadQueue(){const q=await json('/api/queue');$('q-total').textContent=q.total;const rows=q.recent.slice(-12).reverse().map(e=>'<div><span class=muted>'+new Date(e.time).toLocaleTimeString()+'</span> <b>'+e.state+'</b> '+e.url+'</div>');const pend=q.pending.slice(0,20).map(p=>'<div><span class=muted>pending</span> '+p.url+'</div>');$('queue-list').innerHTML=rows.join('')+pend.join('')||'<span class=muted>Queue empty</span>'}
+function applyQueue(q){$('q-total').textContent=q.total;const rows=q.recent.slice(-12).reverse().map(e=>'<div><span class=muted>'+new Date(e.time).toLocaleTimeString()+'</span> <b>'+e.state+'</b> '+e.url+'</div>');const pend=q.pending.slice(0,20).map(p=>'<div><span class=muted>pending</span> '+p.url+'</div>');$('queue-list').innerHTML=rows.join('')+pend.join('')||'<span class=muted>Queue empty</span>'}
+async function loadQueue(){applyQueue(await json('/api/queue'))}
 async function showReason(reason){const d=await json('/api/rejections?reason='+encodeURIComponent(reason));if(!d.events||!d.events.length){$('reason-detail').innerHTML='<p class=muted>No cases recorded for '+reason+'</p>';return}$('reason-detail').innerHTML='<h4>Last '+d.events.length+' cases: '+reason+'</h4>'+d.events.slice().reverse().map(e=>'<div class=card><b><a href="'+e.url+'" target="_blank" rel="noopener">'+e.url+'</a></b><div>'+(e.detail||'')+'</div>'+(e.text?'<pre>'+e.text.slice(0,600)+'</pre>':'')+'<span class=muted>'+new Date(e.time).toLocaleString()+'</span></div>').join('')}
 function copyText(b){navigator.clipboard.writeText(b.previousElementSibling.textContent)}
-setInterval(()=>{stats();loadQueue()},1500);stats();loadQueue();profiles();loadAbout()
+let gcFallback=null,gcRetry=null;
+function connectEvents(){if(!window.EventSource){gcFallback=setInterval(()=>{stats();loadQueue()},1500);stats();loadQueue();return}const es=new EventSource('/api/events');es.addEventListener('stats',e=>{try{applyStats(JSON.parse(e.data))}catch(_){}});es.addEventListener('queue',e=>{try{applyQueue(JSON.parse(e.data))}catch(_){}});es.onopen=()=>{if(gcFallback){clearInterval(gcFallback);gcFallback=null}};es.onerror=()=>{es.close();if(!gcFallback)gcFallback=setInterval(()=>{stats();loadQueue()},5000);if(!gcRetry)gcRetry=setTimeout(()=>{gcRetry=null;connectEvents()},15000)}}connectEvents();profiles();loadAbout()
 </script></body></html>`
 
 var guiStopwords = map[string]bool{}
@@ -2872,15 +2875,15 @@ func crawlRate() float64 {
 	if seconds <= 0 {
 		return 0
 	}
-	return float64(app.CacheHits+app.OnlineDownloads) / seconds
+	return float64(app.CacheHits.Load()+app.OnlineDownloads.Load()) / seconds
 }
 
 // averageLatency returns the mean download time in milliseconds.
 func averageLatency() float64 {
-	if app.OnlineDownloads == 0 {
+	if app.OnlineDownloads.Load() == 0 {
 		return 0
 	}
-	return float64(app.DownloadMS) / float64(app.OnlineDownloads)
+	return float64(app.DownloadMS) / float64(app.OnlineDownloads.Load())
 }
 
 // queueDepth reports how many links remain in the pool.
@@ -2891,6 +2894,127 @@ func queueDepth() int {
 }
 
 // guiHandler builds the HTTP handler for the workbench; exported for tests.
+// buildQueuePayload is shared by /api/queue and the SSE stream so both expose
+// exactly the same view of the link pool and recent events.
+func buildQueuePayload() map[string]interface{} {
+	app.PoolMu.Lock()
+	pending := make([]map[string]string, 0, len(app.LPool))
+	for _, link := range app.LPool {
+		state := "pending"
+		if link.Status == 1 {
+			state = "requested"
+		} else if link.Status == 4 {
+			state = "bootstrap"
+		}
+		pending = append(pending, map[string]string{"url": link.URL, "state": state})
+	}
+	app.PoolMu.Unlock()
+	app.QueueMu.Lock()
+	recent := append([]queueEvent{}, app.QueueEvents...)
+	app.QueueMu.Unlock()
+	return map[string]interface{}{"total": len(pending), "pending": pending, "recent": recent}
+}
+
+// buildStatsPayload is shared by /api/stats and the SSE stream.
+func buildStatsPayload() map[string]interface{} {
+	cached, online := app.CacheHits.Load(), app.OnlineDownloads.Load()
+	visits := cached + online
+	running := guiCrawling.Load()
+	runningCount := 0
+	if running {
+		runningCount = 1
+	}
+	app.CrawlMu.Lock()
+	reasons := make(map[string]int, len(app.RejectionCounts))
+	for reason, count := range app.RejectionCounts {
+		reasons[reason] = count
+	}
+	app.CrawlMu.Unlock()
+	return map[string]interface{}{
+		"visits":        visits,
+		"cache":         cached,
+		"online":        online,
+		"download_ms":   app.DownloadMS,
+		"accepted":      app.AcceptedDocs,
+		"not_accepted":  visits - int64(app.AcceptedDocs),
+		"rate":          crawlRate(),
+		"avg_latency":   averageLatency(),
+		"queue":         queueDepth(),
+		"goroutines":    runtime.NumGoroutine(),
+		"network":       networkRequestsTotal(),
+		"cache_io":      storelib.Operations(),
+		"running":       running,
+		"running_count": runningCount,
+		"stopping":      app.StopRequested.Load(),
+		"rejections":    reasons,
+		"error":         app.GUILastError,
+	}
+}
+
+// guiEventsHandler streams stats and queue snapshots over Server-Sent Events.
+// Payloads are pushed only when they change; a 15 s comment keeps idle
+// connections alive through proxies.
+func guiEventsHandler(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+	w.WriteHeader(http.StatusOK)
+
+	send := func(event string, data []byte) bool {
+		if _, err := fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event, data); err != nil {
+			return false
+		}
+		flusher.Flush()
+		return true
+	}
+	snapshot := func(builder func() map[string]interface{}) []byte {
+		data, err := json.Marshal(builder())
+		if err != nil {
+			return []byte("{}")
+		}
+		return data
+	}
+	lastStats, lastQueue := snapshot(buildStatsPayload), snapshot(buildQueuePayload)
+	if !send("stats", lastStats) || !send("queue", lastQueue) {
+		return
+	}
+
+	ticker := time.NewTicker(400 * time.Millisecond)
+	defer ticker.Stop()
+	heartbeat := time.NewTicker(15 * time.Second)
+	defer heartbeat.Stop()
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-heartbeat.C:
+			if _, err := io.WriteString(w, ": keepalive\n\n"); err != nil {
+				return
+			}
+			flusher.Flush()
+		case <-ticker.C:
+			if stats := snapshot(buildStatsPayload); !bytes.Equal(stats, lastStats) {
+				if !send("stats", stats) {
+					return
+				}
+				lastStats = stats
+			}
+			if queue := snapshot(buildQueuePayload); !bytes.Equal(queue, lastQueue) {
+				if !send("queue", queue) {
+					return
+				}
+				lastQueue = queue
+			}
+		}
+	}
+}
+
 func guiHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -3021,22 +3145,7 @@ func guiHandler() http.Handler {
 		writeJSON(w, map[string]interface{}{"reason": reason, "events": events})
 	})
 	mux.HandleFunc("/api/queue", func(w http.ResponseWriter, r *http.Request) {
-		app.PoolMu.Lock()
-		pending := make([]map[string]string, 0, len(app.LPool))
-		for _, link := range app.LPool {
-			state := "pending"
-			if link.Status == 1 {
-				state = "requested"
-			} else if link.Status == 4 {
-				state = "bootstrap"
-			}
-			pending = append(pending, map[string]string{"url": link.URL, "state": state})
-		}
-		app.PoolMu.Unlock()
-		app.QueueMu.Lock()
-		recent := append([]queueEvent{}, app.QueueEvents...)
-		app.QueueMu.Unlock()
-		writeJSON(w, map[string]interface{}{"total": len(pending), "pending": pending, "recent": recent})
+		writeJSON(w, buildQueuePayload())
 	})
 	mux.HandleFunc("/api/about", func(w http.ResponseWriter, r *http.Request) {
 		repoURL := "https://github.com/computerphysicslab/goCrawler"
@@ -3125,38 +3234,9 @@ func guiHandler() http.Handler {
 		}
 	})
 	mux.HandleFunc("/api/stats", func(w http.ResponseWriter, r *http.Request) {
-		visits := app.CacheHits + app.OnlineDownloads
-		running := guiCrawling.Load()
-		runningCount := 0
-		if running {
-			runningCount = 1
-		}
-		app.CrawlMu.Lock()
-		reasons := make(map[string]int, len(app.RejectionCounts))
-		for reason, count := range app.RejectionCounts {
-			reasons[reason] = count
-		}
-		app.CrawlMu.Unlock()
-		writeJSON(w, map[string]interface{}{
-			"visits":        visits,
-			"cache":         app.CacheHits,
-			"online":        app.OnlineDownloads,
-			"download_ms":   app.DownloadMS,
-			"accepted":      app.AcceptedDocs,
-			"not_accepted":  visits - app.AcceptedDocs,
-			"rate":          crawlRate(),
-			"avg_latency":   averageLatency(),
-			"queue":         queueDepth(),
-			"goroutines":    runtime.NumGoroutine(),
-			"network":       networkRequestsTotal(),
-			"cache_io":      storelib.Operations(),
-			"running":       running,
-			"running_count": runningCount,
-			"stopping":      app.StopRequested.Load(),
-			"rejections":    reasons,
-			"error":         app.GUILastError,
-		})
+		writeJSON(w, buildStatsPayload())
 	})
+	mux.HandleFunc("/api/events", guiEventsHandler)
 	mux.HandleFunc("/api/documents", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, corpusDocuments(20))
 	})

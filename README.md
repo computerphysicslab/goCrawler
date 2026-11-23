@@ -393,6 +393,12 @@ second launch lists the previous instances and asks whether to terminate them `[
 `y` confirms; only `n`/`no` declines); without a TTY it fails with an explicit message. Stale locks left by crashes are recovered, and
 Ctrl+C or SIGTERM shuts the server down gracefully and removes the lock.
 
+Live dashboard updates use **Server-Sent Events** at `/api/events` instead of 1.5 s client polling:
+the server pushes `stats` and `queue` snapshots only when they change, with a 15 s keepalive.
+The browser falls back to 5 s polling if `EventSource` is unavailable or the stream drops, and
+retries SSE after 15 s. `/api/stats` and `/api/queue` remain available and share the same payload
+builders. Cache and download counters are atomic so the stream reads them safely (P27).
+
 The **URL Seeds** tab extracts URLs from anywhere in the text area — one per line, or mixed with
 prose, tabs and Markdown links — and deduplicates them before saving.
 
@@ -637,7 +643,7 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ## Testing
 
-The suite has 134 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
+The suite has 136 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
 state persistence, download errors, link filtering, stores and robots policy; HTTP handler tests for
 every Workbench endpoint via `httptest`; and an end-to-end crawl against a local HTTP server with two
 workers.

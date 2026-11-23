@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -144,8 +146,8 @@ func TestGUIProfileGetAndSave(t *testing.T) {
 
 func TestGUIStatsEndpoint(t *testing.T) {
 	withGUIApp(t, func() {
-		app.CacheHits = 7
-		app.OnlineDownloads = 3
+		app.CacheHits.Store(7)
+		app.OnlineDownloads.Store(3)
 		app.DownloadMS = 1234
 		app.AcceptedDocs = 5
 		app.GUILastError = "sample error"
@@ -883,12 +885,12 @@ func TestRuntimeKPIHelpers(t *testing.T) {
 			t.Fatal("rate should be 0 without a start time")
 		}
 		app.CrawlStartedAt = time.Now().Add(-2 * time.Second)
-		app.CacheHits = 20
-		app.OnlineDownloads = 4
+		app.CacheHits.Store(20)
+		app.OnlineDownloads.Store(4)
 		if r := crawlRate(); r < 10 || r > 14 {
 			t.Fatalf("crawlRate = %v", r)
 		}
-		app.OnlineDownloads = 2
+		app.OnlineDownloads.Store(2)
 		app.DownloadMS = 100
 		if got := averageLatency(); got != 50 {
 			t.Fatalf("averageLatency = %v", got)
@@ -1440,5 +1442,109 @@ func TestCorpusSessionsAndScopeFiltering(t *testing.T) {
 		if len(todayDocs) != 1 || todayDocs[0]["url"] != "https://a.org/today" {
 			t.Fatalf("today = %+v", todayDocs)
 		}
+	})
+}
+
+func TestGUIEventsEndpoint(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/api/events", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		if got := resp.Header.Get("Content-Type"); !strings.Contains(got, "text/event-stream") {
+			t.Fatalf("Content-Type = %q, want text/event-stream", got)
+		}
+		reader := bufio.NewReader(resp.Body)
+		seen := map[string]map[string]interface{}{}
+		for len(seen) < 2 {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				t.Fatalf("read SSE event: %v", err)
+			}
+			line = strings.TrimSpace(line)
+			if !strings.HasPrefix(line, "event: ") {
+				continue
+			}
+			name := strings.TrimPrefix(line, "event: ")
+			dataLine, err := reader.ReadString('\n')
+			if err != nil {
+				t.Fatal(err)
+			}
+			var payload map[string]interface{}
+			if err := json.Unmarshal([]byte(strings.TrimPrefix(strings.TrimSpace(dataLine), "data: ")), &payload); err != nil {
+				t.Fatalf("invalid SSE data for %s: %v", name, err)
+			}
+			seen[name] = payload
+		}
+		if _, ok := seen["stats"]; !ok {
+			t.Fatal("SSE stream did not send an initial stats event")
+		}
+		queue, ok := seen["queue"]
+		if !ok {
+			t.Fatal("SSE stream did not send an initial queue event")
+		}
+		if _, ok := queue["total"]; !ok {
+			t.Fatalf("queue payload missing total: %v", queue)
+		}
+	})
+}
+
+func TestGUIEventsPushOnChange(t *testing.T) {
+	withGUIApp(t, func() {
+		server := httptest.NewServer(guiHandler())
+		defer server.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"/api/events", nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		reader := bufio.NewReader(resp.Body)
+		// Drain the two initial events.
+		for i := 0; i < 2; i++ {
+			if _, err := reader.ReadString('\n'); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := reader.ReadString('\n'); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := reader.ReadString('\n'); err != nil {
+				t.Fatal(err)
+			}
+		}
+		app.CacheHits.Add(7)
+		deadline := time.Now().Add(3 * time.Second)
+		for time.Now().Before(deadline) {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				t.Fatalf("read pushed event: %v", err)
+			}
+			if strings.TrimSpace(line) != "event: stats" {
+				continue
+			}
+			dataLine, err := reader.ReadString('\n')
+			if err != nil {
+				t.Fatal(err)
+			}
+			var payload map[string]interface{}
+			if err := json.Unmarshal([]byte(strings.TrimPrefix(strings.TrimSpace(dataLine), "data: ")), &payload); err != nil {
+				t.Fatal(err)
+			}
+			if payload["cache"] == float64(7) {
+				return
+			}
+		}
+		t.Fatal("no stats update was pushed after state changed")
 	})
 }

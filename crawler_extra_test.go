@@ -265,7 +265,7 @@ func TestEndToEndLocalServer(t *testing.T) {
 	final := crawlLoop(startIndex)
 	reportResults(final)
 
-	if app.CacheHits+app.OnlineDownloads == 0 {
+	if app.CacheHits.Load()+app.OnlineDownloads.Load() == 0 {
 		t.Fatal("no pages were processed")
 	}
 	if app.AcceptedDocs == 0 {
@@ -322,12 +322,12 @@ func TestResolveProfileNameCaseInsensitive(t *testing.T) {
 func TestResetForProfile(t *testing.T) {
 	withApp(t, func() {
 		app.AcceptedDocs = 9
-		app.CacheHits = 4
+		app.CacheHits.Store(4)
 		app.LPool = []aLink{{URL: "https://a.org"}}
 		app.RejectionCounts["non_english"] = 3
 		app.GUILastError = "old"
 		app.ResetForProfile("local")
-		if app.AcceptedDocs != 0 || app.CacheHits != 0 || len(app.LPool) != 0 ||
+		if app.AcceptedDocs != 0 || app.CacheHits.Load() != 0 || len(app.LPool) != 0 ||
 			len(app.RejectionCounts) != 0 || app.GUILastError != "" || app.ProfileName != "local" {
 			t.Fatalf("state not reset: %+v", app)
 		}
