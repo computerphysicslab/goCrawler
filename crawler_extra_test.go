@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/spf13/viper"
+
 	"goCrawler/storelib"
 )
 
@@ -557,6 +559,121 @@ func TestNotifyCompletionCanBeDisabled(t *testing.T) {
 		case payload := <-payloads:
 			t.Fatalf("completion notification sent while disabled: %v", payload)
 		case <-time.After(100 * time.Millisecond):
+		}
+	})
+}
+
+func TestEnsureModuleRoot(t *testing.T) {
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(old)
+
+	root := t.TempDir()
+	for _, name := range []string{"go.mod", "crawler.yaml"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte("module goCrawler\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	nested := filepath.Join(root, "profiles")
+	if err := os.MkdirAll(nested, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(nested); err != nil {
+		t.Fatal(err)
+	}
+	ensureModuleRoot()
+	got, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != root {
+		t.Fatalf("working directory = %q, want module root %q", got, root)
+	}
+}
+
+func TestTechnicalStopwordRatio(t *testing.T) {
+	text := "Photometric calibration residuals decrease when regression matrices are factorized iteratively. " +
+		"Detector response characterization requires repeated variance estimation across exposure sequences. " +
+		"Signal extraction uses robust median statistics."
+
+	withApp(t, func() {
+		setupTestConfig()
+		app.MinStopwordRatio = 0.1
+		app.MaxStopwordRatio = 0.38
+		if got := filterParagraphs([]string{text}, "https://example.org/article")[0]; got != "" {
+			t.Fatal("technical paragraph should be rejected with the classic 0.1 minimum")
+		}
+
+		app.MinStopwordRatio = 0
+		paragraphs := filterParagraphs([]string{text}, "https://example.org/article")
+		if paragraphs[0] == "" {
+			t.Fatal("technical paragraph should survive with minStopwordRatio = 0")
+		}
+		if content := buildCuratedContent(paragraphs); !strings.Contains(content, "Photometric calibration") {
+			t.Fatalf("technical content missing from curated output: %q", content)
+		}
+	})
+}
+
+func TestProfileStopwordRatioKeys(t *testing.T) {
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(old)
+
+	dir := t.TempDir()
+	profile := `curatedDomains: "example\\.org"
+linkOk: "article"
+regexRankingKeywords: "(?i)\\W(data|method)\\W"
+bootstrapingLinks: ["https://example.org/article"]
+minDocLen: 200
+maxDocLen: 100000
+scoreThreshold: 10
+minStopwordRatio: 0.05
+maxStopwordRatio: 0.55
+`
+	if err := os.WriteFile(filepath.Join(dir, "tech.yaml"), []byte(profile), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	withApp(t, func() {
+		app.ProfileName = "tech"
+		if err := yamlInitSpecific(); err != nil {
+			t.Fatalf("yamlInitSpecific: %v", err)
+		}
+		if app.MinStopwordRatio != 0.05 || app.MaxStopwordRatio != 0.55 {
+			t.Fatalf("ratios = %.2f/%.2f, want 0.05/0.55", app.MinStopwordRatio, app.MaxStopwordRatio)
+		}
+		if err := validateConfig(); err != nil {
+			t.Fatalf("valid ratio range rejected: %v", err)
+		}
+		app.MinStopwordRatio = 0.8
+		if err := validateConfig(); err == nil {
+			t.Fatal("inverted ratio range accepted")
+		}
+	})
+}
+
+func TestDefaultBannedDomainsAllowsWikipedia(t *testing.T) {
+	withApp(t, func() {
+		vp := viper.New()
+		vp.SetConfigFile("crawler.yaml")
+		if err := vp.ReadInConfig(); err != nil {
+			t.Fatalf("read crawler.yaml: %v", err)
+		}
+		app.RegexBannedDomains = vp.GetString("regexBannedDomains")
+		compileConfigRegexes()
+
+		if isBanned("https://en.wikipedia.org/wiki/Andromeda_Galaxy", "en.wikipedia.org") {
+			t.Fatal("default config must not ban en.wikipedia.org")
+		}
+		if !isBanned("https://facebook.com/profile", "facebook.com") {
+			t.Fatal("default config must still ban facebook.com")
 		}
 	})
 }

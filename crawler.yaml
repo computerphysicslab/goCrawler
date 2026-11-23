@@ -1,4 +1,4 @@
-regexBannedDomains: "(?i)((facebook|twitter|reddit|instagram|google|youtube|etherscan|urldefense|thesexyouwant)\\.(com|org)|archive\\.org|repubblica\\.it|(^en)\\.wikipedia\\.org|anchor\\.fm|doi\\.org|github\\.com|blockscout|etherscan|polygonscan|qoinfaucet|pinterest)"
+regexBannedDomains: "(?i)((facebook|twitter|reddit|instagram|google|youtube|etherscan|urldefense|thesexyouwant)\\.(com|org)|archive\\.org|repubblica\\.it|anchor\\.fm|doi\\.org|github\\.com|blockscout|etherscan|polygonscan|qoinfaucet|pinterest)"
 
 regexLinkBannedTokens: "(?i)(login|signup|search|pdf|\\.(pdf|ps|xls|ods|csv|json|png|jpg|gif|zip|tar|gz|iso|rar|mp3|wav|avi|mpeg|mpg|mp4|mov|docx|exe|7z|ppt|doc|rs|tgz))"
 

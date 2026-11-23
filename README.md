@@ -106,8 +106,8 @@ For each downloaded page (`doNextLink`, `crawler.go:1089`):
 
 1. Split into paragraphs; drop paragraphs not detected as English.
 2. Strip URLs, HTML tags, very long tokens (> 80 chars) and markup leftovers.
-3. Compute the stopword ratio; drop paragraphs below 0.1.
-4. Build `curatedContent` from paragraphs of at least 200 characters with stopword ratio 0.1–0.38.
+3. Compute the stopword ratio; drop paragraphs below `minStopwordRatio` (default `0.1`).
+4. Build `curatedContent` from paragraphs of at least 200 characters within `minStopwordRatio`..`maxStopwordRatio` (defaults `0.1`..`0.38`). Technical prose can set `minStopwordRatio: 0.0` via the profile; see `profiles/examples/technical.yaml`.
 5. Apply `minDocLen` / `maxDocLen`.
 6. Reject near-duplicates using a signature of the seven most frequent tokens.
 7. Apply `scoreThreshold`.
@@ -186,7 +186,7 @@ all checks pass.
 
 | Key | Meaning |
 |---|---|
-| `regexBannedDomains` | Domains never followed (social networks, search engines, GitHub, Wikipedia, etc.). |
+| `regexBannedDomains` | Domains never followed (social networks, search engines, GitHub, etc.); Wikipedia is **not** banned by default. |
 | `regexLinkBannedTokens` | URL tokens/extensions rejected (login, search, PDF, images, archives, ...). |
 | `engStopWordsWOthe` | English stopword list; `"the"` is prepended automatically. |
 | `engLowRelevancyWords` | Low-information words added to the stopword regex. |
@@ -218,6 +218,8 @@ regexRankingKeywords: |  # case-insensitive regex used to score paragraph conten
 
 minDocLen: 50            # minimum curated text length
 maxDocLen: 100000        # maximum curated text length
+minStopwordRatio: 0.1    # lower stopword bound (default 0.1; use 0.0 for technical prose)
+maxStopwordRatio: 0.38   # upper stopword bound (default 0.38)
 scoreThreshold: 20       # minimum relevance score (default 0 if omitted)
 
 process_pdf: true        # allow downloading PDFs (default false)
@@ -235,6 +237,13 @@ The effective URL whitelist is built as
 directory for backwards compatibility. The argument to `go run crawler.go <name>` is the profile
 name without its extension; the resolved path is printed as `profile file:` at startup.
 
+**Run from the module root.** `go run crawler.go` resolves the `goCrawler/...` imports from the
+current working directory, so launching it elsewhere fails with
+`cannot find package goCrawler/iolib`. Use `./run.sh <profile>` from any directory: it `cd`s to the
+module root first. A compiled binary also autodetects its module root (via the working directory,
+the executable path and the build-time source path) when `crawler.yaml` is not in the current
+directory; an explicit `-config=` disables that relocation.
+
 PDF URLs stay in `regexLinkBannedTokens` by default. Setting `process_pdf: true` bypasses that
 single token check for `.pdf` URLs when the profile is loaded; banned domains and the `linkOk`
 whitelist still apply. Extracted text is cached under a separate `pdf_` prefix.
@@ -249,8 +258,9 @@ and used for HTTP requests. It is not included in the repository.
 ## Running the crawler
 
 ```shell
-make run PROFILE=crypto             # resolves profiles/crypto.yaml
-go run crawler.go astrophotography  # resolves profiles/astrophotography.yaml
+./run.sh crypto                     # works from any directory; resolves profiles/crypto.yaml
+make run PROFILE=crypto             # resolves profiles/crypto.yaml (from the module root)
+go run crawler.go astrophotography  # resolves profiles/astrophotography.yaml (module root only)
 go run crawler.go astrophotography --resume   # restore link pool and counters from SQLite
 
 # other CLI options
@@ -481,7 +491,7 @@ requests. The SQLite file was 32 MB for those 76 pages. Note that the warm run i
 > **Warning:** the three `linksNotOk*.log` files grow without limit and are never deduplicated. In
 > historical runs they reached about 1.9 GB (over 45 million lines), mostly repeated social-share and
 > navigation links. They are safe to delete; the useful knowledge extracted from them is recorded
-> in `context-ai.md` (in the repository root of the workspace).
+> in `ai-context.md` (in the repository root of the workspace).
 
 ---
 
@@ -600,7 +610,7 @@ By default Redis listens on `127.0.0.1:6379`, which is the hard-coded endpoint i
 
 ## Testing
 
-The suite has 65 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
+The suite has 123 tests: unit tests for configuration validation, ranking (keyword/TF-IDF/semantic),
 state persistence, download errors, link filtering, stores and robots policy; HTTP handler tests for
 every Workbench endpoint via `httptest`; and an end-to-end crawl against a local HTTP server with two
 workers.

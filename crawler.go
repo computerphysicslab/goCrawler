@@ -29,7 +29,6 @@ import (
 	"regexp"
 	"runtime"
 
-	"github.com/skip2/go-qrcode"
 	"sort"
 	"strconv"
 	"strings"
@@ -39,11 +38,14 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/skip2/go-qrcode"
+
+	"log/slog"
+
 	"github.com/jackdanger/collectlinks"
 	snowballeng "github.com/kljensen/snowball/english"
 	"github.com/spf13/viper"
 	"jaytaylor.com/html2text"
-	"log/slog"
 
 	"github.com/abadojack/whatlanggo"
 
@@ -105,6 +107,8 @@ type Crawler struct {
 	BootstrapLinks           []string
 	MinDocLen                int
 	MaxDocLen                int
+	MinStopwordRatio         float64
+	MaxStopwordRatio         float64
 	MaxLinksPerPage          int
 	CrawlDelay               time.Duration
 	RankingStrategy          string
@@ -191,6 +195,8 @@ func newCrawler() *Crawler {
 		MaxDownloadBytes: 5 << 20,
 		PDFMaxBytes:      25 << 20,
 		PDFPagesLimit:    pdftextlib.DefaultPageLimit,
+		MinStopwordRatio: 0.1,
+		MaxStopwordRatio: 0.38,
 		RankingStrategy:  "hybrid",
 		Synonyms:         make(map[string][]string),
 		LinkIndex:        make(map[string]int),
@@ -1949,9 +1955,9 @@ func filterParagraphs(paragraphs []string, url string) []string {
 			continue
 		}
 		ratio := float64(stopWordsCount(p4)) / float64(len(tokenize(p4))+1)
-		if ratio < 0.1 {
+		if ratio < app.MinStopwordRatio {
 			recordRejection("stopword_ratio", url,
-				fmt.Sprintf("stopword ratio %.3f below 0.1", ratio), p4)
+				fmt.Sprintf("stopword ratio %.3f below %.3f", ratio, app.MinStopwordRatio), p4)
 			paragraphs[i] = ""
 		} else {
 			paragraphs[i] = p4
@@ -1968,7 +1974,7 @@ func buildCuratedContent(paragraphs []string) string {
 			continue
 		}
 		ratio := float64(stopWordsCount(p)) / float64(tokensCount(p)+1)
-		if ratio < 0.1 || ratio > 0.38 {
+		if ratio < app.MinStopwordRatio || ratio > app.MaxStopwordRatio {
 			continue
 		}
 		content += "\n" + p
@@ -2338,6 +2344,12 @@ func yamlInitSpecific() error {
 	app.BootstrapLinks = vp.GetStringSlice("bootstrapingLinks")
 	app.MinDocLen = vp.GetInt("minDocLen")
 	app.MaxDocLen = vp.GetInt("maxDocLen")
+	if vp.IsSet("minStopwordRatio") {
+		app.MinStopwordRatio = vp.GetFloat64("minStopwordRatio")
+	}
+	if vp.IsSet("maxStopwordRatio") {
+		app.MaxStopwordRatio = vp.GetFloat64("maxStopwordRatio")
+	}
 	app.ScoreThreshold = float64(vp.GetInt("scoreThreshold"))
 	app.MaxLinksPerPage = vp.GetInt("maxLinksPerPage")
 	if ms := vp.GetInt("crawlDelayMs"); ms > 0 {
@@ -2373,6 +2385,7 @@ func yamlInitSpecific() error {
 	fmt.Printf("\n\nregexLinkOk: %s", app.RegexLinkOk)
 	fmt.Printf("\n\nregexRankingKeywords: %s", app.RegexRankingKeywords)
 	fmt.Printf("\n\nbootstrapingLinks: %+v", app.BootstrapLinks)
+	fmt.Printf("\n\nstopwordRatio: %.3f..%.3f", app.MinStopwordRatio, app.MaxStopwordRatio)
 	return nil
 }
 
@@ -2823,7 +2836,7 @@ func guiHandler() http.Handler {
 			text := strings.TrimSpace(doc["text"])
 			b.WriteString(fmt.Sprintf("[%d] %s\n%s\n\n", i+1, doc["url"], text))
 		}
-		b.WriteString("\nTASK: Identify further high-value pages, articles, documentation and datasets that match these keywords and extend the curated content. Explain briefly why each source is relevant. All results, all pages you provide and the entire report must always be written in English.\n")
+		b.WriteString("\nTASK: Identify further high-value pages, articles, documentation and datasets that match these keywords and extend the curated content. Explain briefly why each source is relevant. All results, all pages you provide and the entire report must always be written in English. The result must be a markdown file to be downloaded\n")
 		writeJSON(w, map[string]string{"prompt": b.String()})
 	})
 	mux.HandleFunc("/api/urls", func(w http.ResponseWriter, r *http.Request) {
@@ -4020,13 +4033,14 @@ func filterCorpusScope(docs []map[string]string, scope string) []map[string]stri
 
 // usage prints the command-line usage message.
 func usage() {
-	fmt.Println("Usage: go run crawler.go <profile>")
+	fmt.Println("Usage: ./run.sh <profile>   (or: go run crawler.go <profile> from the module root)")
 	fmt.Println("  <profile>  profile name (without .yaml), from profiles/ or the working directory")
 	fmt.Println("  --selftest run built-in checks and exit")
 	fmt.Println("  --resume   restore a previous crawl from the cache store")
 	fmt.Println("  -profile=, -backend=, -cache=, -log-level=, -workers=N, -max-links=N")
 	fmt.Println("  -dry-run, -explore, -query=TEXT, -generate-profile=URL, -version, -license, -gui [-gui-port=N]")
-	fmt.Println("Examples: go run crawler.go crypto --resume | go run crawler.go -query=drizzle")
+	fmt.Println("  Profiles accept minStopwordRatio / maxStopwordRatio (defaults 0.1 / 0.38).")
+	fmt.Println("Examples: ./run.sh crypto --resume | ./run.sh -query=drizzle")
 }
 
 // startSessionOutput tees stdout to the terminal and to a timestamped file in logs/.
@@ -4117,6 +4131,11 @@ func validateConfig() error {
 	var problems []string
 	if app.MinDocLen < 0 || app.MaxDocLen <= app.MinDocLen {
 		problems = append(problems, fmt.Sprintf("invalid document length range %d..%d", app.MinDocLen, app.MaxDocLen))
+	}
+	if math.IsNaN(app.MinStopwordRatio) || math.IsNaN(app.MaxStopwordRatio) ||
+		app.MinStopwordRatio < 0 || app.MaxStopwordRatio > 1 ||
+		app.MinStopwordRatio > app.MaxStopwordRatio {
+		problems = append(problems, fmt.Sprintf("invalid stopword ratio range %.3f..%.3f", app.MinStopwordRatio, app.MaxStopwordRatio))
 	}
 	if app.ScoreThreshold < 0 {
 		problems = append(problems, "scoreThreshold must be >= 0")
@@ -4287,8 +4306,53 @@ func reportResults(finalIndex int) {
 }
 
 // run initializes the crawler, executes the crawl and reports results.
+// ensureModuleRoot moves to the module root when the working directory lacks
+// crawler.yaml but an ancestor (or the executable's directory chain) has it.
+// This lets a compiled binary run from any directory. `go run crawler.go` must
+// still be launched from the module root because Go resolves goCrawler/...
+// imports from the working directory; ./run.sh does that automatically.
+func ensureModuleRoot() {
+	if iolib.FileExists("crawler.yaml") {
+		return
+	}
+	for _, arg := range os.Args[1:] {
+		if strings.HasPrefix(arg, "-config=") || strings.HasPrefix(arg, "--config=") {
+			return // explicit config: respect the caller's paths
+		}
+	}
+	starts := make([]string, 0, 3)
+	if cwd, err := os.Getwd(); err == nil {
+		starts = append(starts, cwd)
+	}
+	if exe, err := os.Executable(); err == nil {
+		starts = append(starts, filepath.Dir(exe))
+	}
+	// Source path baked in at build time lets a compiled binary find its tree
+	// even when installed outside it.
+	if _, file, _, ok := runtime.Caller(0); ok {
+		starts = append(starts, filepath.Dir(file))
+	}
+	for _, start := range starts {
+		dir := start
+		for {
+			if iolib.FileExists(filepath.Join(dir, "go.mod")) && iolib.FileExists(filepath.Join(dir, "crawler.yaml")) {
+				if err := os.Chdir(dir); err == nil {
+					fmt.Printf("Module root detected: %s\n", dir)
+					return
+				}
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+}
+
 func run() error {
 	app = newCrawler()
+	ensureModuleRoot()
 	crawlCtx, cancelCrawl = context.WithCancel(context.Background())
 	defer cancelCrawl()
 	sigCh := make(chan os.Signal, 2)
@@ -4350,6 +4414,8 @@ func setupTestConfig() {
 	app.RegexBannedDomains = `(?i)(facebook|twitter)\.(com|org)`
 	app.RegexLinkBannedTokens = `(?i)(login|signup|pdf|\.(pdf|jpg))`
 	compileConfigRegexes()
+	app.MinStopwordRatio = 0.1
+	app.MaxStopwordRatio = 0.38
 	app.RankingStrategy = "hybrid"
 	app.Synonyms = make(map[string][]string)
 	buildRankingRegex()

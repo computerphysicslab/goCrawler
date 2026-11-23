@@ -75,6 +75,7 @@ Items P01–P21 of the senior audit and GUI MVP are **complete**, as are P22, P2
 | v1.8.17 | 2026-11-18 | Single-instance Workbench lock with stale recovery, graceful SIGINT/SIGTERM shutdown and no silent port fallback |
 | v1.8.18 | 2026-11-18 | Interactive termination of previous Workbench instances, inline URL capture in URL Seeds and clear `pdf_disabled` rejection |
 | v1.8.19 | 2026-11-18 | Default-yes instance prompt and scoped corpus export (all / last crawl / today) with session markers |
+| Unreleased | 2026-11-23 | Module-root autodetection + `./run.sh`; configurable stopword ratio with `technical` example profile; Wikipedia unblocked in default config |
 
 ### Historically completed items (1–35)
 

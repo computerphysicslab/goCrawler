@@ -15,6 +15,10 @@ a single Go binary, an embedded loopback-only web Workbench, and zero required e
    ```
 
 3. For the Workbench, start `./crawler -gui` and open <http://127.0.0.1:8765>.
+4. Run commands from the module root: `go run crawler.go` resolves the `goCrawler/...` imports
+   from the current directory and fails elsewhere with `cannot find package goCrawler/iolib`.
+   From any other directory use `./run.sh <args>`, which changes to the module root first. A
+   compiled binary autodetects the root when `crawler.yaml` is missing from the working directory.
 
 The default cache is local SQLite (`./cache/cache.db`); Redis is optional. `profiles/*.yaml` are
 gitignored because they contain research-specific seeds — put shareable examples in

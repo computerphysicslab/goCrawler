@@ -1,3 +1,15 @@
+## [Unreleased] - 2026-11-23
+
+### Added
+- `./run.sh` wrapper: `go run crawler.go` now works from any directory by resolving the module root.
+  Compiled binaries autodetect the root from the working directory, executable path or build-time
+  source path; an explicit `-config=` disables relocation.
+- Profile keys `minStopwordRatio` / `maxStopwordRatio` (defaults `0.1` / `0.38`) with validation,
+  plus `profiles/examples/technical.yaml` for dense technical prose that the old 0.1 floor rejected.
+
+### Fixed
+- Default `regexBannedDomains` no longer bans `en.wikipedia.org`.
+
 ## [v1.8.19] - 2026-11-18
 
 ### Changed

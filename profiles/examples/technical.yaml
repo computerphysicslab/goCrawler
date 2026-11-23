@@ -1,0 +1,24 @@
+# Technical / research profile: dense prose with domain nouns and acronyms.
+# The classic 0.1 minimum stopword ratio rejects nearly every such paragraph,
+# so minStopwordRatio is lowered to 0 and the upper bound relaxed to 0.60.
+# Copy to profiles/ and edit the seeds before running.
+
+curatedDomains: |
+  arxiv\.org|nasa\.gov|stsci\.edu|esahubble\.org|nature\.com|sciencedirect\.com|springer\.com|ieee\.org|acm\.org
+
+linkOk: |
+  research|paper|article|study|method|results|documentation|technical|analysis|review|science|data
+
+regexRankingKeywords: |
+  (?i)\W(algorithm|analysis|calibration|data|dataset|error|experiment|framework|implementation|measurement|method|model|noise|parameter|performance|precision|processing|protocol|resolution|result|signal|software|spectrum|statistic|system|technique|theory|validation)\W
+
+minDocLen: 200
+maxDocLen: 100000
+scoreThreshold: 15
+minStopwordRatio: 0.0
+maxStopwordRatio: 0.60
+rankingStrategy: hybrid
+maxLinksPerPage: 200
+
+bootstrapingLinks:
+- "https://arxiv.org/list/astro-ph/recent"
